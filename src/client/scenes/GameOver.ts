@@ -1,6 +1,8 @@
 import { Scene } from 'phaser';
 import * as Phaser from 'phaser';
 
+const VIEWPORT_REFRESH_EVENT = 'devvit:viewport-refresh';
+
 export class GameOver extends Scene {
   camera: Phaser.Cameras.Scene2D.Camera;
   background: Phaser.GameObjects.Image;
@@ -38,11 +40,19 @@ export class GameOver extends Scene {
       const { width, height } = gameSize;
       this.updateLayout(width, height);
     });
+    this.events.on(VIEWPORT_REFRESH_EVENT, this.handleViewportRefresh, this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.events.off(VIEWPORT_REFRESH_EVENT, this.handleViewportRefresh, this);
+    });
 
     // Return to Main Menu on tap / click
     this.input.once('pointerdown', () => {
       this.scene.start('MainMenu');
     });
+  }
+
+  private handleViewportRefresh(): void {
+    this.updateLayout(this.scale.width, this.scale.height);
   }
 
   private updateLayout(width: number, height: number): void {

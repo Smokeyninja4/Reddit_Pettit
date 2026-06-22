@@ -1,4 +1,7 @@
 import { Scene, GameObjects } from 'phaser';
+import * as Phaser from 'phaser';
+
+const VIEWPORT_REFRESH_EVENT = 'devvit:viewport-refresh';
 
 export class MainMenu extends Scene {
   private background: GameObjects.Image | null = null;
@@ -22,6 +25,11 @@ export class MainMenu extends Scene {
   create(): void {
     this.refreshLayout();
     this.scale.on('resize', () => this.refreshLayout());
+    this.events.on(VIEWPORT_REFRESH_EVENT, this.refreshLayout, this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.scale.off('resize', this.refreshLayout, this);
+      this.events.off(VIEWPORT_REFRESH_EVENT, this.refreshLayout, this);
+    });
     this.input.once('pointerdown', () => {
       this.scene.start('Game');
     });

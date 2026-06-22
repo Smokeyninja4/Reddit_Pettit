@@ -3,6 +3,8 @@ import * as Phaser from 'phaser';
 import { fetchPettitState, resolvePettitVote, submitPettitVote } from '../pettitApi';
 import type { PettitViewModel, TraitKey } from '../../shared/pettit';
 
+const VIEWPORT_REFRESH_EVENT = 'devvit:viewport-refresh';
+
 type LayoutMetrics = {
   width: number;
   height: number;
@@ -21,6 +23,7 @@ type LayoutMetrics = {
 };
 
 export class Game extends Scene {
+  private static readonly optionIdDataKey = 'optionId';
   private camera!: Phaser.Cameras.Scene2D.Camera;
   private background!: Phaser.GameObjects.Image;
   private questCardBackground!: Phaser.GameObjects.Rectangle;
@@ -135,9 +138,22 @@ export class Game extends Scene {
     this.scale.on('resize', (gameSize: Phaser.Structs.Size) => {
       this.updateLayout(gameSize.width, gameSize.height);
     });
+    this.events.on(VIEWPORT_REFRESH_EVENT, this.handleViewportRefresh, this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.events.off(VIEWPORT_REFRESH_EVENT, this.handleViewportRefresh, this);
+    });
 
     this.updateLayout(this.scale.width, this.scale.height);
     void this.loadState();
+  }
+
+  private handleViewportRefresh(): void {
+    if (this.pettitState) {
+      this.renderState();
+      return;
+    }
+
+    this.updateLayout(this.scale.width, this.scale.height);
   }
 
   private getLayoutMetrics(width: number, height: number): LayoutMetrics {
@@ -362,10 +378,17 @@ export class Game extends Scene {
           }
         });
         createdButton.on('pointerout', () => {
-          this.applyOptionState(createdButton, option.id);
+          const currentOptionId = createdButton.getData(Game.optionIdDataKey) as string | undefined;
+          this.applyOptionState(createdButton, currentOptionId ?? option.id);
         });
         createdButton.on('pointerdown', () => {
-          void this.handleVote(option.id);
+          const currentOptionId = createdButton.getData(Game.optionIdDataKey) as string | undefined;
+
+          if (!currentOptionId) {
+            return;
+          }
+
+          void this.handleVote(currentOptionId);
         });
         this.optionButtons.push(createdButton);
       }
@@ -425,6 +448,7 @@ export class Game extends Scene {
         return;
       }
 
+      button.setData(Game.optionIdDataKey, option.id);
       button.setText(`${option.label} • ${option.votes}`);
       this.applyOptionState(button, option.id);
     });
@@ -472,6 +496,16 @@ export class Game extends Scene {
       this.renderState();
     } catch (error) {
       console.error('Failed to submit vote:', error);
+
+      if (error instanceof Error && error.message === 'The selected option is no longer valid') {
+        this.statusText.setText('That choice just changed. Refreshing Pettit...');
+        this.updateLayout(this.scale.width, this.scale.height);
+        await this.loadState();
+        this.statusText.setText('That quest updated before your vote landed. Please choose again.');
+        this.updateLayout(this.scale.width, this.scale.height);
+        return;
+      }
+
       this.statusText.setText(error instanceof Error ? error.message : 'Failed to submit vote.');
       this.updateLayout(this.scale.width, this.scale.height);
     }
