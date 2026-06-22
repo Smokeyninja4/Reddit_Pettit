@@ -44,6 +44,10 @@ type TraitBarVisual = {
   value: Phaser.GameObjects.Text;
 };
 
+const clamp = (value: number, min: number, max: number): number => {
+  return Math.max(min, Math.min(value, max));
+};
+
 export class Game extends Scene {
   private static readonly optionIdDataKey = 'optionId';
   private camera!: Phaser.Cameras.Scene2D.Camera;
@@ -274,7 +278,7 @@ export class Game extends Scene {
   }
 
   private getLayoutMetrics(width: number, height: number): LayoutMetrics {
-    const mode: LayoutMode = width >= 980 && height >= 720 ? 'dashboard' : 'stacked';
+    const mode: LayoutMode = width >= 1060 && height >= 720 ? 'dashboard' : 'stacked';
     const scaleFactor = Math.min(Math.min(width / 1320, height / 980), 1);
     const padding = Math.round((mode === 'dashboard' ? 22 : 18) * scaleFactor);
     const gap = Math.round((mode === 'dashboard' ? 18 : 14) * scaleFactor);
@@ -385,68 +389,56 @@ export class Game extends Scene {
     const top = metrics.contentTop;
     const rightWidth = metrics.rightColumnWidth;
     const leftWidth = metrics.leftColumnWidth;
-    const topRowHeight = Math.round(metrics.frameHeight * 0.42);
+    const memoryHeight = clamp(Math.round(metrics.frameHeight * 0.17), 112, 164);
+    const topAreaHeight = metrics.contentBottom - top - metrics.gap - memoryHeight;
+    const creatureHeight = clamp(Math.round(topAreaHeight * 0.56), 210, 300);
+    const actionHeight = topAreaHeight - creatureHeight - metrics.gap;
+    const traitHeight = clamp(Math.round(topAreaHeight * 0.29), 136, 188);
+    const topActionHeight = clamp(Math.round(topAreaHeight * 0.12), 72, 96);
+    const resolveHeight = clamp(Math.round(topAreaHeight * 0.13), 74, 98);
+    const journalHeight = topAreaHeight - traitHeight - topActionHeight - resolveHeight - metrics.gap * 3;
+    const bottomY = top + topAreaHeight + metrics.gap;
 
-    const creatureFrame: PanelFrame = {
+    const creatureFrame: PanelFrame = { x: leftX, y: top, width: leftWidth, height: creatureHeight };
+    const actionFrame: PanelFrame = {
       x: leftX,
-      y: top,
+      y: creatureFrame.y + creatureFrame.height + metrics.gap,
       width: leftWidth,
-      height: topRowHeight,
+      height: actionHeight,
     };
-    const traitFrame: PanelFrame = {
-      x: rightX,
-      y: top,
-      width: rightWidth,
-      height: Math.round(topRowHeight * 0.64),
-    };
+    const traitFrame: PanelFrame = { x: rightX, y: top, width: rightWidth, height: traitHeight };
     const topActionFrame: PanelFrame = {
       x: rightX,
       y: traitFrame.y + traitFrame.height + metrics.gap,
       width: rightWidth,
-      height: topRowHeight - traitFrame.height - metrics.gap,
+      height: topActionHeight,
     };
-
-    this.layoutCreaturePanel(metrics, creatureFrame);
-    this.layoutTraitPanel(metrics, traitFrame);
-    this.layoutTopActionPanel(metrics, topActionFrame);
-
-    const actionsTop = creatureFrame.y + creatureFrame.height + metrics.gap;
-    const actionsHeight = metrics.actionButtonHeight + metrics.cardInsetY * 2 + 40;
-    const actionFrame: PanelFrame = {
-      x: leftX,
-      y: actionsTop,
-      width: leftWidth,
-      height: actionsHeight,
-    };
-    this.layoutActionPanel(metrics, actionFrame);
-
-    const lowerTop = actionFrame.y + actionFrame.height + metrics.gap;
-    const lowerHeight = metrics.contentBottom - lowerTop;
-    const journalWidth = Math.round(leftWidth * 0.62);
-    const memoryWidth = leftWidth - journalWidth - metrics.gap;
-
     const journalFrame: PanelFrame = {
-      x: leftX,
-      y: lowerTop,
-      width: journalWidth,
-      height: lowerHeight,
-    };
-    const memoryFrame: PanelFrame = {
-      x: leftX + journalWidth + metrics.gap,
-      y: lowerTop,
-      width: memoryWidth,
-      height: lowerHeight,
-    };
-    const resolveFrame: PanelFrame = {
       x: rightX,
       y: topActionFrame.y + topActionFrame.height + metrics.gap,
       width: rightWidth,
-      height: metrics.contentBottom - (topActionFrame.y + topActionFrame.height + metrics.gap),
+      height: Math.max(journalHeight, 92),
+    };
+    const resolveFrame: PanelFrame = {
+      x: rightX,
+      y: journalFrame.y + journalFrame.height + metrics.gap,
+      width: rightWidth,
+      height: resolveHeight,
+    };
+    const memoryFrame: PanelFrame = {
+      x: leftX,
+      y: bottomY,
+      width: leftWidth + metrics.gap + rightWidth,
+      height: memoryHeight,
     };
 
+    this.layoutCreaturePanel(metrics, creatureFrame);
+    this.layoutActionPanel(metrics, actionFrame);
+    this.layoutTraitPanel(metrics, traitFrame);
+    this.layoutTopActionPanel(metrics, topActionFrame);
     this.layoutJournalPanel(metrics, journalFrame);
-    this.layoutMemoryPanel(metrics, memoryFrame);
     this.layoutResolveArea(metrics, resolveFrame);
+    this.layoutMemoryPanel(metrics, memoryFrame);
   }
 
   private layoutStackedDashboard(metrics: LayoutMetrics): void {
@@ -542,8 +534,10 @@ export class Game extends Scene {
     }
 
     this.creatureCaptionText.setPosition(innerX + 22, innerY + 18);
-    this.futureSlotText.setPosition(innerX + innerWidth - 170, innerY + artHeight - 56);
-    this.futureSlotText.setOrigin(0.5);
+    this.creatureCaptionText.setWordWrapWidth(Math.max(220, innerWidth * 0.55));
+    this.futureSlotText.setWordWrapWidth(Math.max(180, innerWidth * 0.36));
+    this.futureSlotText.setPosition(innerX + innerWidth - 16, innerY + artHeight - 14);
+    this.futureSlotText.setOrigin(1, 1);
   }
 
   private layoutActionPanel(metrics: LayoutMetrics, frame: PanelFrame): void {
@@ -553,6 +547,7 @@ export class Game extends Scene {
     const innerX = frame.x + metrics.cardInsetX;
     const innerY = frame.y + metrics.cardInsetY;
     const innerWidth = frame.width - metrics.cardInsetX * 2;
+    const buttonCount = Math.max(this.optionButtons.length, 1);
 
     this.actionTitleText.setPosition(innerX, innerY);
     this.voteSummaryText.setPosition(innerX, innerY + this.actionTitleText.height + 10);
@@ -561,7 +556,7 @@ export class Game extends Scene {
     const buttonTop = this.voteSummaryText.y + this.voteSummaryText.height + 18;
     const buttonWidth =
       metrics.mode === 'dashboard'
-        ? Math.floor((innerWidth - metrics.buttonGap * (Math.max(this.optionButtons.length, 1) - 1)) / Math.max(this.optionButtons.length, 1))
+        ? Math.floor((innerWidth - metrics.buttonGap * (buttonCount - 1)) / buttonCount)
         : innerWidth;
 
     this.optionButtons.forEach((button, index) => {
@@ -587,9 +582,11 @@ export class Game extends Scene {
       return;
     }
 
-    const barTrackWidth = frame.width - metrics.cardInsetX * 2 - 88;
+    const labelWidth = clamp(Math.round(frame.width * 0.22), 74, 96);
+    const valueWidth = 34;
+    const barTrackWidth = frame.width - metrics.cardInsetX * 2 - labelWidth - valueWidth - 10;
     const startY = this.traitPanelTitle.y + this.traitPanelTitle.height + 18;
-    const rowGap = 34;
+    const rowGap = clamp(Math.round(frame.height * 0.17), 28, 36);
     const barKeys: TraitKey[] = ['curiosity', 'chaos', 'trust', 'courage'];
 
     barKeys.forEach((traitKey, index) => {
@@ -600,9 +597,9 @@ export class Game extends Scene {
 
       const rowY = startY + index * rowGap;
       bar.label.setPosition(frame.x + metrics.cardInsetX, rowY - 10);
-      bar.track.setPosition(frame.x + metrics.cardInsetX + 88, rowY);
+      bar.track.setPosition(frame.x + metrics.cardInsetX + labelWidth, rowY);
       bar.track.setSize(barTrackWidth, 12);
-      bar.value.setPosition(frame.x + frame.width - metrics.cardInsetX - 28, rowY - 12);
+      bar.value.setPosition(frame.x + frame.width - metrics.cardInsetX - valueWidth, rowY - 12);
 
       const value = this.pettitState?.pettit.traits[traitKey] ?? 0;
       const fillWidth = Math.max(18, Math.round((barTrackWidth * value) / 100));
@@ -655,7 +652,7 @@ export class Game extends Scene {
     this.statusText.setPosition(frame.x + frame.width / 2, frame.y + metrics.cardInsetY);
     this.resolveButton.setPosition(
       frame.x + frame.width / 2,
-      this.statusText.y + this.statusText.height + 14
+      Math.min(this.statusText.y + this.statusText.height + 14, frame.y + frame.height - this.resolveButton.height - 8)
     );
   }
 
