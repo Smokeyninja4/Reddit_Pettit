@@ -59,7 +59,15 @@ export class Game extends Scene {
   private summaryText!: Phaser.GameObjects.Text;
   private creaturePanel!: Phaser.GameObjects.Rectangle;
   private creatureArtFrame!: Phaser.GameObjects.Rectangle;
-  private creatureArt!: Phaser.GameObjects.Image;
+  private creatureShadow!: Phaser.GameObjects.Ellipse;
+  private creatureBody!: Phaser.GameObjects.Ellipse;
+  private creatureBelly!: Phaser.GameObjects.Ellipse;
+  private creatureBlushLeft!: Phaser.GameObjects.Ellipse;
+  private creatureBlushRight!: Phaser.GameObjects.Ellipse;
+  private creatureEyeLeft!: Phaser.GameObjects.Ellipse;
+  private creatureEyeRight!: Phaser.GameObjects.Ellipse;
+  private creatureSpark!: Phaser.GameObjects.Ellipse;
+  private creatureMouth!: Phaser.GameObjects.Arc;
   private creatureCaptionText!: Phaser.GameObjects.Text;
   private futureSlotText!: Phaser.GameObjects.Text;
   private actionPanel!: Phaser.GameObjects.Rectangle;
@@ -122,17 +130,25 @@ export class Game extends Scene {
 
     this.creaturePanel = this.createPanel(0x171f27, 0x273743);
     this.creatureArtFrame = this.createPanel(0x203040, 0x3f6179);
-    this.creatureArt = this.add.image(0, 0, 'background');
+    this.creatureShadow = this.add.ellipse(0, 0, 100, 30, 0x091017, 0.45);
+    this.creatureBody = this.add.ellipse(0, 0, 160, 190, 0xfff1d8, 1).setStrokeStyle(3, 0x4e3a2f, 0.9);
+    this.creatureBelly = this.add.ellipse(0, 0, 88, 78, 0xfff9ee, 0.95).setStrokeStyle(2, 0xe4d7c3, 0.8);
+    this.creatureBlushLeft = this.add.ellipse(0, 0, 22, 14, 0xffb58f, 0.85);
+    this.creatureBlushRight = this.add.ellipse(0, 0, 22, 14, 0xffb58f, 0.85);
+    this.creatureEyeLeft = this.add.ellipse(0, 0, 12, 18, 0x1a2026, 1);
+    this.creatureEyeRight = this.add.ellipse(0, 0, 12, 18, 0x1a2026, 1);
+    this.creatureSpark = this.add.ellipse(0, 0, 20, 20, 0xff8f3f, 1).setStrokeStyle(2, 0x5d3421, 0.85);
+    this.creatureMouth = this.add.arc(0, 0, 18, 160, 20, false).setStrokeStyle(3, 0x1a2026, 1);
     this.creatureCaptionText = this.add.text(0, 0, '', {
       fontFamily: 'Georgia',
-      fontSize: '24px',
+      fontSize: '28px',
       color: '#fff3dc',
       align: 'center',
     });
     this.futureSlotText = this.add.text(0, 0, '', {
       fontFamily: 'Trebuchet MS',
-      fontSize: '15px',
-      color: '#a4b5c1',
+      fontSize: '16px',
+      color: '#d7e7f0',
       align: 'center',
       wordWrap: { width: 280 },
     });
@@ -341,8 +357,8 @@ export class Game extends Scene {
     this.titleText.setFontSize(Math.round(34 * scale));
     this.subtitleText.setFontSize(Math.round(15 * scale));
     this.summaryText.setFontSize(Math.round(17 * scale));
-    this.creatureCaptionText.setFontSize(Math.round(24 * scale));
-    this.futureSlotText.setFontSize(Math.round(14 * scale));
+    this.creatureCaptionText.setFontSize(Math.round(28 * scale));
+    this.futureSlotText.setFontSize(Math.round(15 * scale));
     this.actionTitleText.setFontSize(Math.round(23 * scale));
     this.voteSummaryText.setFontSize(Math.round(17 * scale));
     this.traitPanelTitle.setFontSize(Math.round(22 * scale));
@@ -408,7 +424,7 @@ export class Game extends Scene {
     const leftWidth = metrics.leftColumnWidth;
     const memoryHeight = clamp(Math.round(metrics.frameHeight * 0.17), 112, 164);
     const topAreaHeight = metrics.contentBottom - top - metrics.gap - memoryHeight;
-    const creatureHeight = clamp(Math.round(topAreaHeight * 0.56), 210, 300);
+    const creatureHeight = clamp(Math.round(topAreaHeight * 0.42), 180, 238);
     const actionHeight = topAreaHeight - creatureHeight - metrics.gap;
     const traitHeight = clamp(Math.round(topAreaHeight * 0.29), 136, 188);
     const topActionHeight = clamp(Math.round(topAreaHeight * 0.12), 72, 96);
@@ -463,7 +479,7 @@ export class Game extends Scene {
     const contentWidth = metrics.leftColumnWidth;
     let currentTop = metrics.contentTop;
 
-    const creatureHeight = Math.round(metrics.frameHeight * 0.26);
+    const creatureHeight = Math.round(metrics.frameHeight * 0.2);
     const creatureFrame: PanelFrame = {
       x: contentX,
       y: currentTop,
@@ -543,18 +559,79 @@ export class Game extends Scene {
 
     this.creatureArtFrame.setPosition(innerX, innerY);
     this.creatureArtFrame.setSize(innerWidth, artHeight);
+    const creatureCenterX = innerX + innerWidth * 0.5;
+    const creatureCenterY = innerY + artHeight * 0.58;
+    const bodyWidth = Math.min(innerWidth * 0.33, artHeight * 0.72);
+    const bodyHeight = Math.min(artHeight * 0.7, bodyWidth * 1.12);
+    const eyeOffsetX = bodyWidth * 0.16;
+    const eyeY = creatureCenterY - bodyHeight * 0.12;
+    const blushOffsetX = bodyWidth * 0.22;
+    const blushY = creatureCenterY + bodyHeight * 0.04;
+    const mood = this.pettitState?.pettit.mood ?? 'curious';
 
-    this.creatureArt.setPosition(innerX + innerWidth / 2, innerY + artHeight / 2);
-    if (this.creatureArt.width > 0 && this.creatureArt.height > 0) {
-      const artScale = Math.max(innerWidth / this.creatureArt.width, artHeight / this.creatureArt.height);
-      this.creatureArt.setScale(artScale);
+    this.creatureShadow.setPosition(creatureCenterX, creatureCenterY + bodyHeight * 0.34);
+    this.creatureShadow.setSize(bodyWidth * 0.78, bodyHeight * 0.18);
+    this.creatureBody.setPosition(creatureCenterX, creatureCenterY);
+    this.creatureBody.setSize(bodyWidth, bodyHeight);
+    this.creatureBelly.setPosition(creatureCenterX, creatureCenterY + bodyHeight * 0.16);
+    this.creatureBelly.setSize(bodyWidth * 0.52, bodyHeight * 0.4);
+    this.creatureEyeLeft.setPosition(creatureCenterX - eyeOffsetX, eyeY);
+    this.creatureEyeRight.setPosition(creatureCenterX + eyeOffsetX, eyeY);
+    this.creatureBlushLeft.setPosition(creatureCenterX - blushOffsetX, blushY);
+    this.creatureBlushRight.setPosition(creatureCenterX + blushOffsetX, blushY);
+    this.creatureSpark.setPosition(creatureCenterX + bodyWidth * 0.16, creatureCenterY - bodyHeight * 0.52);
+    this.creatureSpark.setSize(bodyWidth * 0.12, bodyWidth * 0.12);
+    this.layoutCreatureFace(mood, creatureCenterX, creatureCenterY, bodyWidth, bodyHeight);
+
+    this.creatureCaptionText.setPosition(innerX + 20, innerY + 16);
+    this.creatureCaptionText.setWordWrapWidth(innerWidth - 40);
+    this.futureSlotText.setWordWrapWidth(Math.max(180, innerWidth * 0.42));
+    this.futureSlotText.setPosition(innerX + innerWidth - 18, innerY + 18);
+    this.futureSlotText.setOrigin(1, 0);
+  }
+
+  private layoutCreatureFace(
+    mood: PettitViewModel['pettit']['mood'],
+    centerX: number,
+    centerY: number,
+    bodyWidth: number,
+    bodyHeight: number
+  ): void {
+    const mouthY = centerY + bodyHeight * 0.08;
+
+    this.creatureEyeLeft.setSize(bodyWidth * 0.065, bodyHeight * 0.1);
+    this.creatureEyeRight.setSize(bodyWidth * 0.065, bodyHeight * 0.1);
+    this.creatureMouth.setPosition(centerX, mouthY);
+    this.creatureMouth.setRadius(bodyWidth * 0.12);
+    this.creatureMouth.setRotation(0);
+
+    if (mood === 'excited') {
+      this.creatureEyeLeft.setSize(bodyWidth * 0.055, bodyHeight * 0.12);
+      this.creatureEyeRight.setSize(bodyWidth * 0.055, bodyHeight * 0.12);
+      this.creatureMouth.setStartAngle(150);
+      this.creatureMouth.setEndAngle(30);
+      return;
     }
 
-    this.creatureCaptionText.setPosition(innerX + 22, innerY + 18);
-    this.creatureCaptionText.setWordWrapWidth(Math.max(220, innerWidth * 0.55));
-    this.futureSlotText.setWordWrapWidth(Math.max(180, innerWidth * 0.36));
-    this.futureSlotText.setPosition(innerX + innerWidth - 16, innerY + artHeight - 14);
-    this.futureSlotText.setOrigin(1, 1);
+    if (mood === 'thoughtful') {
+      this.creatureEyeLeft.setPosition(centerX - bodyWidth * 0.18, centerY - bodyHeight * 0.14);
+      this.creatureEyeRight.setPosition(centerX + bodyWidth * 0.14, centerY - bodyHeight * 0.1);
+      this.creatureMouth.setStartAngle(190);
+      this.creatureMouth.setEndAngle(350);
+      return;
+    }
+
+    if (mood === 'nervous') {
+      this.creatureEyeLeft.setSize(bodyWidth * 0.07, bodyHeight * 0.11);
+      this.creatureEyeRight.setSize(bodyWidth * 0.07, bodyHeight * 0.11);
+      this.creatureMouth.setStartAngle(205);
+      this.creatureMouth.setEndAngle(335);
+      this.creatureMouth.setRotation(0.12);
+      return;
+    }
+
+    this.creatureMouth.setStartAngle(170);
+    this.creatureMouth.setEndAngle(10);
   }
 
   private layoutActionPanel(metrics: LayoutMetrics, frame: PanelFrame): void {
@@ -760,8 +837,10 @@ export class Game extends Scene {
       `Day ${pettit.ageDays} • Mood: ${this.capitalize(pettit.mood)} • Top traits: ${pettit.topTraits.map((trait) => this.formatTraitName(trait)).join(' + ')}`
     );
 
-    this.creatureCaptionText.setText(`${pettit.name} is waiting for the next community choice.`);
-    this.futureSlotText.setText('Future slots:\ncreature art • evolution • subreddit stats');
+    this.creatureCaptionText.setText(`${pettit.name}`);
+    this.futureSlotText.setText(
+      `Mood: ${this.capitalize(pettit.mood)}\nA tiny placeholder creature while Pettit grows into its final form.`
+    );
 
     this.actionTitleText.setText(activeQuest.title);
     this.voteSummaryText.setText(
