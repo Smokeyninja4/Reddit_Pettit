@@ -32,6 +32,7 @@ import {
 
 type WorldSnapshot = {
   state: PettitState;
+  stats: PettitStats;
   activeQuest: ActiveQuest;
   memories: PettitMemory[];
   journals: PettitJournalEntry[];
@@ -237,6 +238,12 @@ const buildViewModel = (snapshot: WorldSnapshot): PettitViewModel => {
       traits: snapshot.state.traits,
       topTraits: getTopTraits(snapshot.state.traits, 2),
     },
+    communityStats: {
+      ageDays: snapshot.state.ageDays,
+      totalVotes: snapshot.stats.totalVotes,
+      questsCompleted: snapshot.stats.resolvedQuestCount,
+      memoriesCreated: snapshot.stats.memoryCount,
+    },
     activeQuest: {
       ...snapshot.activeQuest,
       totalVotes,
@@ -249,8 +256,9 @@ const buildViewModel = (snapshot: WorldSnapshot): PettitViewModel => {
 };
 
 const loadWorldSnapshot = async (subredditName: string, username: string | null): Promise<WorldSnapshot> => {
-  const [state, activeQuest, memories, journals, voterMap] = await Promise.all([
+  const [state, stats, activeQuest, memories, journals, voterMap] = await Promise.all([
     getOrCreateState(subredditName),
+    getOrCreateStats(subredditName),
     getOrCreateActiveQuest(subredditName),
     getMemories(subredditName),
     getJournals(subredditName),
@@ -259,6 +267,7 @@ const loadWorldSnapshot = async (subredditName: string, username: string | null)
 
   return {
     state,
+    stats,
     activeQuest,
     memories,
     journals,
@@ -322,6 +331,7 @@ export const submitVote = async (
 
   return buildViewModel({
     state,
+    stats,
     activeQuest: nextQuest,
     memories,
     journals,
@@ -387,6 +397,7 @@ export const resolveVote = async (subredditName: string, username: string | null
   return {
     state: buildViewModel({
       state: nextState,
+      stats: nextStats,
       activeQuest: nextQuest,
       memories: nextMemories,
       journals: nextJournals,

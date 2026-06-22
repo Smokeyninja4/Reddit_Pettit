@@ -96,6 +96,12 @@ export type PettitViewModel = {
     traits: PettitTraits;
     topTraits: TraitKey[];
   };
+  communityStats: {
+    ageDays: number;
+    totalVotes: number;
+    questsCompleted: number;
+    memoriesCreated: number;
+  };
   activeQuest: ActiveQuest & {
     totalVotes: number;
     hasVoted: boolean;

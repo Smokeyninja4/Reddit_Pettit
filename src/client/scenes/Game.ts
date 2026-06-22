@@ -159,7 +159,7 @@ export class Game extends Scene {
     });
 
     this.topActionPanel = this.createPanel(0x171f27, 0x273743);
-    this.topActionTitle = this.add.text(0, 0, 'Today’s Top Action', {
+    this.topActionTitle = this.add.text(0, 0, 'Community Stats', {
       fontFamily: 'Georgia',
       fontSize: '22px',
       color: '#fff2cf',
@@ -167,7 +167,7 @@ export class Game extends Scene {
     this.topActionBody = this.add.text(0, 0, '', {
       fontFamily: 'Trebuchet MS',
       fontSize: '17px',
-      color: '#ffe39f',
+      color: '#d7e7f0',
       wordWrap: { width: 240 },
       lineSpacing: 6,
     });
@@ -769,7 +769,12 @@ export class Game extends Scene {
     );
 
     this.topActionBody.setText(
-      `${this.humanizeOptionId(activeQuest.selectedOptionId ?? activeQuest.options[0]?.id ?? 'feed')} • ${activeQuest.totalVotes} total vote${activeQuest.totalVotes === 1 ? '' : 's'}`
+      [
+        `Age: Day ${pettit.ageDays}`,
+        `Total Votes: ${this.formatCount(this.pettitState.communityStats.totalVotes)}`,
+        `Quests Completed: ${this.formatCount(this.pettitState.communityStats.questsCompleted)}`,
+        `Memories Created: ${this.formatCount(this.pettitState.communityStats.memoriesCreated)}`,
+      ].join('\n')
     );
 
     this.renderTraitBars();
@@ -964,6 +969,10 @@ export class Game extends Scene {
       .split('-')
       .map((part) => this.capitalize(part))
       .join(' ');
+  }
+
+  private formatCount(value: number): string {
+    return value.toLocaleString();
   }
 
   private capitalize(value: string): string {
