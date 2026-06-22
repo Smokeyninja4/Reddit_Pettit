@@ -144,6 +144,7 @@ api.post('/resolve', async (c) => {
       type: 'vote-resolved',
       state: result.state,
       resolution: result.resolution,
+      traitFeedback: result.traitFeedback,
     });
   } catch (error) {
     console.error('API Resolve Error:', error);

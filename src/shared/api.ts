@@ -1,4 +1,4 @@
-import type { PettitViewModel } from './pettit';
+import type { PettitViewModel, TraitKey } from './pettit';
 
 export type GetPettitStateResponse = {
   type: 'state';
@@ -21,6 +21,16 @@ export type ResolveVoteResponse = {
     winningOptionId: string;
     memoryId: string;
     journalId: string;
+  };
+  traitFeedback: {
+    appliedChanges: Array<{
+      trait: TraitKey;
+      before: number;
+      after: number;
+      delta: number;
+    }>;
+    topTraits: TraitKey[];
+    summary: string;
   };
 };
 

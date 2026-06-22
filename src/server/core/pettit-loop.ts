@@ -45,24 +45,91 @@ type ResolveResult = {
     memoryId: string;
     journalId: string;
   };
+  traitFeedback: {
+    appliedChanges: Array<{
+      trait: TraitKey;
+      before: number;
+      after: number;
+      delta: number;
+    }>;
+    topTraits: TraitKey[];
+    summary: string;
+  };
 };
 
 const clampTraitValue = (value: number): number => Math.max(0, Math.min(100, value));
 
+type AppliedTraitChange = {
+  trait: TraitKey;
+  before: number;
+  after: number;
+  delta: number;
+};
+
 const applyTraitEffects = (
   currentTraits: PettitTraits,
   traitEffects: Partial<Record<TraitKey, number>>
-): PettitTraits => {
+): { nextTraits: PettitTraits; appliedChanges: AppliedTraitChange[] } => {
   const nextTraits: PettitTraits = { ...currentTraits };
+  const appliedChanges: AppliedTraitChange[] = [];
 
   for (const [traitKey, delta] of Object.entries(traitEffects) as [TraitKey, number][]) {
     const currentValue = nextTraits[traitKey];
     const dampener = currentValue >= 80 ? 0.5 : currentValue >= 60 ? 0.75 : 1;
     const adjustedDelta = delta * dampener;
-    nextTraits[traitKey] = clampTraitValue(Math.round(currentValue + adjustedDelta));
+    const nextValue = clampTraitValue(Math.round(currentValue + adjustedDelta));
+    nextTraits[traitKey] = nextValue;
+
+    if (nextValue !== currentValue) {
+      appliedChanges.push({
+        trait: traitKey,
+        before: currentValue,
+        after: nextValue,
+        delta: nextValue - currentValue,
+      });
+    }
   }
 
-  return nextTraits;
+  appliedChanges.sort((left, right) => Math.abs(right.delta) - Math.abs(left.delta));
+
+  return { nextTraits, appliedChanges };
+};
+
+const joinTraitLabels = (traits: TraitKey[]): string => {
+  const labels = traits.map((trait) => trait.charAt(0).toUpperCase() + trait.slice(1).toLowerCase());
+
+  if (labels.length === 0) {
+    return '';
+  }
+
+  if (labels.length === 1) {
+    return labels[0] ?? '';
+  }
+
+  if (labels.length === 2) {
+    return `${labels[0]} and ${labels[1]}`;
+  }
+
+  const leading = labels.slice(0, -1).join(', ');
+  const trailing = labels[labels.length - 1] ?? '';
+  return `${leading}, and ${trailing}`;
+};
+
+const createTraitFeedbackSummary = (
+  appliedChanges: AppliedTraitChange[],
+  topTraits: TraitKey[]
+): string => {
+  if (appliedChanges.length === 0) {
+    return 'Pettit stayed much the same this time.';
+  }
+
+  const increasedTraits = appliedChanges.filter((change) => change.delta > 0).map((change) => change.trait);
+
+  if (increasedTraits.length > 0) {
+    return `Pettit grew more ${joinTraitLabels(increasedTraits).toLowerCase()}.`;
+  }
+
+  return `Pettit shifted toward ${joinTraitLabels(topTraits).toLowerCase()}.`;
 };
 
 const createMemoryRecord = (
@@ -273,7 +340,8 @@ export const resolveVote = async (subredditName: string, username: string | null
   const winningOption = selectWinningOption(activeQuest);
   const template = getQuestTemplateById(activeQuest.templateId);
   const outcome = getOutcomeForOption(template, winningOption.id);
-  const nextTraits = applyTraitEffects(state.traits, outcome.traitEffects);
+  const { nextTraits, appliedChanges } = applyTraitEffects(state.traits, outcome.traitEffects);
+  const topTraits = getTopTraits(nextTraits, 2);
   const nextStats: PettitStats = {
     ...stats,
     resolvedQuestCount: stats.resolvedQuestCount + 1,
@@ -328,6 +396,11 @@ export const resolveVote = async (subredditName: string, username: string | null
       winningOptionId: winningOption.id,
       memoryId: memory.id,
       journalId: journal.id,
+    },
+    traitFeedback: {
+      appliedChanges,
+      topTraits,
+      summary: createTraitFeedbackSummary(appliedChanges, topTraits),
     },
   };
 };

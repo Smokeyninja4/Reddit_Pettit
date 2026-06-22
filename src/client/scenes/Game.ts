@@ -2,6 +2,7 @@ import { Scene } from 'phaser';
 import * as Phaser from 'phaser';
 import { fetchPettitState, resolvePettitVote, submitPettitVote } from '../pettitApi';
 import type { PettitViewModel, TraitKey } from '../../shared/pettit';
+import type { ResolveVoteResponse } from '../../shared/api';
 
 const VIEWPORT_REFRESH_EVENT = 'devvit:viewport-refresh';
 
@@ -76,10 +77,15 @@ export class Game extends Scene {
   private memoryTitleText!: Phaser.GameObjects.Text;
   private memoryBodyText!: Phaser.GameObjects.Text;
   private statusText!: Phaser.GameObjects.Text;
+  private traitFeedbackText!: Phaser.GameObjects.Text;
   private resolveButton!: Phaser.GameObjects.Text;
   private optionButtons: Phaser.GameObjects.Text[] = [];
   private traitBars: Record<TraitKey, TraitBarVisual> | null = null;
   private pettitState: PettitViewModel | null = null;
+  private latestTraitFeedback: ResolveVoteResponse['traitFeedback'] | null = null;
+  private readonly handleScaleResize = (gameSize: Phaser.Structs.Size): void => {
+    this.updateLayout(gameSize.width, gameSize.height);
+  };
 
   constructor() {
     super('Game');
@@ -204,6 +210,15 @@ export class Game extends Scene {
       lineSpacing: 4,
     });
     this.statusText.setOrigin(0.5, 0);
+    this.traitFeedbackText = this.add.text(0, 0, '', {
+      fontFamily: 'Trebuchet MS',
+      fontSize: '15px',
+      color: '#d9e4ec',
+      align: 'center',
+      wordWrap: { width: 280 },
+      lineSpacing: 4,
+    });
+    this.traitFeedbackText.setOrigin(0.5, 0);
 
     this.resolveButton = this.add
       .text(0, 0, 'Resolve current vote', {
@@ -223,13 +238,14 @@ export class Game extends Scene {
 
     this.createTraitBars();
 
-    this.scale.on('resize', (gameSize: Phaser.Structs.Size) => {
-      this.updateLayout(gameSize.width, gameSize.height);
-    });
+    this.scale.on('resize', this.handleScaleResize, this);
     this.events.on(VIEWPORT_REFRESH_EVENT, this.handleViewportRefresh, this);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+    const cleanupSceneListeners = (): void => {
+      this.scale.off('resize', this.handleScaleResize, this);
       this.events.off(VIEWPORT_REFRESH_EVENT, this.handleViewportRefresh, this);
-    });
+    };
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, cleanupSceneListeners);
+    this.events.once(Phaser.Scenes.Events.DESTROY, cleanupSceneListeners);
 
     this.updateLayout(this.scale.width, this.scale.height);
     void this.loadState();
@@ -337,6 +353,7 @@ export class Game extends Scene {
     this.memoryTitleText.setFontSize(Math.round(22 * scale));
     this.memoryBodyText.setFontSize(Math.round(15 * scale));
     this.statusText.setFontSize(Math.round(15 * scale));
+    this.traitFeedbackText.setFontSize(Math.round(14 * scale));
     this.resolveButton.setFontSize(Math.round(17 * scale));
 
     this.optionButtons.forEach((button) => {
@@ -650,9 +667,17 @@ export class Game extends Scene {
     const statusWidth = frame.width - metrics.cardInsetX * 2;
     this.statusText.setWordWrapWidth(statusWidth);
     this.statusText.setPosition(frame.x + frame.width / 2, frame.y + metrics.cardInsetY);
+    this.traitFeedbackText.setWordWrapWidth(statusWidth);
+    this.traitFeedbackText.setPosition(
+      frame.x + frame.width / 2,
+      this.statusText.y + this.statusText.height + 10
+    );
     this.resolveButton.setPosition(
       frame.x + frame.width / 2,
-      Math.min(this.statusText.y + this.statusText.height + 14, frame.y + frame.height - this.resolveButton.height - 8)
+      Math.min(
+        this.traitFeedbackText.y + this.traitFeedbackText.height + 14,
+        frame.y + frame.height - this.resolveButton.height - 8
+      )
     );
   }
 
@@ -660,6 +685,7 @@ export class Game extends Scene {
     try {
       const response = await fetchPettitState();
       this.pettitState = response.state;
+      this.latestTraitFeedback = null;
       this.statusText.setText('The community is deciding what Pettit should do next.');
       this.syncOptionButtons();
       this.renderState();
@@ -748,6 +774,7 @@ export class Game extends Scene {
 
     this.renderTraitBars();
     this.renderOptionButtons();
+    this.renderTraitFeedback();
 
     if (latestJournal) {
       this.journalTitleText.setText(`Journal • ${latestJournal.title}`);
@@ -818,6 +845,20 @@ export class Game extends Scene {
     });
   }
 
+  private renderTraitFeedback(): void {
+    if (!this.latestTraitFeedback) {
+      this.traitFeedbackText.setText('');
+      return;
+    }
+
+    const changeLines = this.latestTraitFeedback.appliedChanges
+      .slice(0, 2)
+      .map((change) => `${this.formatTraitName(change.trait)} ${change.delta > 0 ? '+' : ''}${change.delta}`);
+
+    const text = [this.latestTraitFeedback.summary, ...changeLines].join('\n');
+    this.traitFeedbackText.setText(text);
+  }
+
   private applyOptionState(button: Phaser.GameObjects.Text, optionId: string): void {
     const quest = this.pettitState?.activeQuest;
 
@@ -859,6 +900,7 @@ export class Game extends Scene {
 
     try {
       this.statusText.setText('Recording your vote...');
+      this.latestTraitFeedback = null;
       this.updateLayout(this.scale.width, this.scale.height);
       const response = await submitPettitVote({ optionId });
       this.pettitState = response.state;
@@ -888,6 +930,7 @@ export class Game extends Scene {
       this.updateLayout(this.scale.width, this.scale.height);
       const response = await resolvePettitVote();
       this.pettitState = response.state;
+      this.latestTraitFeedback = response.traitFeedback;
       this.statusText.setText(`Resolved with "${this.humanizeOptionId(response.resolution.winningOptionId)}".`);
       this.syncOptionButtons();
       this.renderState();

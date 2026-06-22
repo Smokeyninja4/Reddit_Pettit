@@ -9,6 +9,9 @@ export class MainMenu extends Scene {
   private subtitle: GameObjects.Text | null = null;
   private prompt: GameObjects.Text | null = null;
   private panel: GameObjects.Rectangle | null = null;
+  private readonly handleScaleResize = (): void => {
+    this.refreshLayout();
+  };
 
   constructor() {
     super('MainMenu');
@@ -24,12 +27,14 @@ export class MainMenu extends Scene {
 
   create(): void {
     this.refreshLayout();
-    this.scale.on('resize', () => this.refreshLayout());
+    this.scale.on('resize', this.handleScaleResize, this);
     this.events.on(VIEWPORT_REFRESH_EVENT, this.refreshLayout, this);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      this.scale.off('resize', this.refreshLayout, this);
+    const cleanupSceneListeners = (): void => {
+      this.scale.off('resize', this.handleScaleResize, this);
       this.events.off(VIEWPORT_REFRESH_EVENT, this.refreshLayout, this);
-    });
+    };
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, cleanupSceneListeners);
+    this.events.once(Phaser.Scenes.Events.DESTROY, cleanupSceneListeners);
     this.input.once('pointerdown', () => {
       this.scene.start('Game');
     });
