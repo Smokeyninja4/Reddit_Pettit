@@ -4,9 +4,27 @@ export type PettitMood = 'curious' | 'excited' | 'thoughtful' | 'nervous';
 
 export type PettitTraits = Record<TraitKey, number>;
 
-export type MemoryType = 'learning' | 'adventure' | 'friendship' | 'community' | 'funny' | 'special';
+export type MemoryType =
+  | 'learning'
+  | 'adventure'
+  | 'friendship'
+  | 'community'
+  | 'funny'
+  | 'special'
+  | 'gift';
 
-export type QuestCategory = 'explore' | 'learn' | 'social';
+export type QuestCategory = 'explore' | 'learn' | 'social' | 'community';
+
+export type GiftCategory = 'clothing' | 'tools' | 'toys' | 'books' | 'community' | 'funny';
+
+export type PettitInventoryItem = {
+  id: string;
+  name: string;
+  description: string;
+  category: GiftCategory;
+  source: string;
+  obtainedAt: string;
+};
 
 export type QuestOption = {
   id: string;
@@ -41,6 +59,7 @@ export type QuestOptionOutcome = {
   importance: number;
   mood: PettitMood;
   traitEffects: Partial<Record<TraitKey, number>>;
+  awardedGiftId?: string;
 };
 
 export type QuestTemplate = {
@@ -77,6 +96,7 @@ export type PettitState = {
   ageDays: number;
   mood: PettitMood;
   traits: PettitTraits;
+  inventory: PettitInventoryItem[];
   activeQuestId: string;
   latestJournalId: string | null;
 };
@@ -102,6 +122,7 @@ export type PettitViewModel = {
     questsCompleted: number;
     memoriesCreated: number;
   };
+  inventory: PettitInventoryItem[];
   activeQuest: ActiveQuest & {
     totalVotes: number;
     hasVoted: boolean;

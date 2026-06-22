@@ -84,6 +84,9 @@ export class Game extends Scene {
   private memoryPanel!: Phaser.GameObjects.Rectangle;
   private memoryTitleText!: Phaser.GameObjects.Text;
   private memoryBodyText!: Phaser.GameObjects.Text;
+  private inventoryPanel!: Phaser.GameObjects.Rectangle;
+  private inventoryTitleText!: Phaser.GameObjects.Text;
+  private inventoryBodyText!: Phaser.GameObjects.Text;
   private statusText!: Phaser.GameObjects.Text;
   private traitFeedbackText!: Phaser.GameObjects.Text;
   private resolveButton!: Phaser.GameObjects.Text;
@@ -215,6 +218,19 @@ export class Game extends Scene {
       color: '#d7e7f0',
       wordWrap: { width: 240 },
       lineSpacing: 8,
+    });
+    this.inventoryPanel = this.createPanel(0x171f27, 0x273743);
+    this.inventoryTitleText = this.add.text(0, 0, 'Community Gifts', {
+      fontFamily: 'Georgia',
+      fontSize: '22px',
+      color: '#f5ead1',
+    });
+    this.inventoryBodyText = this.add.text(0, 0, '', {
+      fontFamily: 'Trebuchet MS',
+      fontSize: '15px',
+      color: '#d7e7f0',
+      wordWrap: { width: 240 },
+      lineSpacing: 6,
     });
 
     this.statusText = this.add.text(0, 0, 'Loading Pettit...', {
@@ -368,6 +384,8 @@ export class Game extends Scene {
     this.journalBodyText.setFontSize(Math.round(17 * scale));
     this.memoryTitleText.setFontSize(Math.round(22 * scale));
     this.memoryBodyText.setFontSize(Math.round(15 * scale));
+    this.inventoryTitleText.setFontSize(Math.round(20 * scale));
+    this.inventoryBodyText.setFontSize(Math.round(14 * scale));
     this.statusText.setFontSize(Math.round(15 * scale));
     this.traitFeedbackText.setFontSize(Math.round(14 * scale));
     this.resolveButton.setFontSize(Math.round(17 * scale));
@@ -458,10 +476,18 @@ export class Game extends Scene {
       width: rightWidth,
       height: resolveHeight,
     };
+    const bottomWidth = leftWidth + metrics.gap + rightWidth;
+    const inventoryWidth = clamp(Math.round(bottomWidth * 0.32), 220, 320);
     const memoryFrame: PanelFrame = {
       x: leftX,
       y: bottomY,
-      width: leftWidth + metrics.gap + rightWidth,
+      width: bottomWidth - inventoryWidth - metrics.gap,
+      height: memoryHeight,
+    };
+    const inventoryFrame: PanelFrame = {
+      x: memoryFrame.x + memoryFrame.width + metrics.gap,
+      y: bottomY,
+      width: inventoryWidth,
       height: memoryHeight,
     };
 
@@ -472,6 +498,7 @@ export class Game extends Scene {
     this.layoutJournalPanel(metrics, journalFrame);
     this.layoutResolveArea(metrics, resolveFrame);
     this.layoutMemoryPanel(metrics, memoryFrame);
+    this.layoutInventoryPanel(metrics, inventoryFrame);
   }
 
   private layoutStackedDashboard(metrics: LayoutMetrics): void {
@@ -528,6 +555,16 @@ export class Game extends Scene {
     };
     this.layoutMemoryPanel(metrics, memoryFrame);
     currentTop += memoryHeight + metrics.gap;
+
+    const inventoryHeight = Math.round(metrics.frameHeight * 0.14);
+    const inventoryFrame: PanelFrame = {
+      x: contentX,
+      y: currentTop,
+      width: contentWidth,
+      height: inventoryHeight,
+    };
+    this.layoutInventoryPanel(metrics, inventoryFrame);
+    currentTop += inventoryHeight + metrics.gap;
 
     const topActionHeight = 88;
     const topActionFrame: PanelFrame = {
@@ -740,6 +777,19 @@ export class Game extends Scene {
     this.memoryBodyText.setWordWrapWidth(innerWidth);
   }
 
+  private layoutInventoryPanel(metrics: LayoutMetrics, frame: PanelFrame): void {
+    this.inventoryPanel.setPosition(frame.x, frame.y);
+    this.inventoryPanel.setSize(frame.width, frame.height);
+
+    const innerX = frame.x + metrics.cardInsetX;
+    const innerY = frame.y + metrics.cardInsetY;
+    const innerWidth = frame.width - metrics.cardInsetX * 2;
+
+    this.inventoryTitleText.setPosition(innerX, innerY);
+    this.inventoryBodyText.setPosition(innerX, innerY + this.inventoryTitleText.height + 10);
+    this.inventoryBodyText.setWordWrapWidth(innerWidth);
+  }
+
   private layoutResolveArea(metrics: LayoutMetrics, frame: PanelFrame): void {
     const statusWidth = frame.width - metrics.cardInsetX * 2;
     this.statusText.setWordWrapWidth(statusWidth);
@@ -876,6 +926,18 @@ export class Game extends Scene {
       );
     } else {
       this.memoryBodyText.setText('No memories yet. The first resolved quest will give Pettit something to remember.');
+    }
+
+    if (this.pettitState.inventory.length > 0) {
+      this.inventoryBodyText.setText(
+        this.pettitState.inventory
+          .slice(-4)
+          .reverse()
+          .map((item) => `${item.name}\n${this.formatGiftCategory(item.category)} • ${item.description}`)
+          .join('\n\n')
+      );
+    } else {
+      this.inventoryBodyText.setText('No gifts yet. A community gift round will let everyone choose something Pettit can keep.');
     }
 
     this.updateLayout(this.scale.width, this.scale.height);
@@ -1052,6 +1114,13 @@ export class Game extends Scene {
 
   private formatCount(value: number): string {
     return value.toLocaleString();
+  }
+
+  private formatGiftCategory(category: string): string {
+    return category
+      .split('-')
+      .map((part) => this.capitalize(part))
+      .join(' ');
   }
 
   private capitalize(value: string): string {

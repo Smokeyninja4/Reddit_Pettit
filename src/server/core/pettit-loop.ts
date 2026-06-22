@@ -1,5 +1,6 @@
 import type {
   ActiveQuest,
+  PettitInventoryItem,
   PettitJournalEntry,
   PettitMemory,
   PettitMood,
@@ -12,11 +13,16 @@ import type {
   QuestTemplate,
   TraitKey,
 } from '../../shared/pettit';
-import { getTopTraits, getQuestTemplateById, getStarterQuestByIndex } from './pettit-seed';
+import { getGiftById, buildGiftQuestTemplate, selectGiftRoundGiftIds } from './pettit-gifts';
+import {
+  createQuestInstanceFromTemplate,
+  getTopTraits,
+  getQuestTemplateById,
+  getStarterQuestByIndex,
+} from './pettit-seed';
 import {
   appendJournal,
   appendMemory,
-  createQuestInstance,
   getJournals,
   getMemories,
   getOrCreateActiveQuest,
@@ -244,6 +250,7 @@ const buildViewModel = (snapshot: WorldSnapshot): PettitViewModel => {
       questsCompleted: snapshot.stats.resolvedQuestCount,
       memoriesCreated: snapshot.stats.memoryCount,
     },
+    inventory: snapshot.state.inventory,
     activeQuest: {
       ...snapshot.activeQuest,
       totalVotes,
@@ -273,6 +280,30 @@ const loadWorldSnapshot = async (subredditName: string, username: string | null)
     journals,
     selectedOptionId: username ? voterMap[username] ?? null : null,
   };
+};
+
+const createInventoryItem = (
+  inventory: PettitInventoryItem[],
+  giftId: string
+): PettitInventoryItem => {
+  const gift = getGiftById(giftId);
+  return {
+    id: `inventory-${inventory.length + 1}`,
+    name: gift.name,
+    description: gift.description,
+    category: gift.category,
+    source: 'Community Gift Vote',
+    obtainedAt: new Date().toISOString(),
+  };
+};
+
+const selectNextQuestTemplate = (state: PettitState, resolvedQuestCount: number): QuestTemplate => {
+  if (resolvedQuestCount > 0 && resolvedQuestCount % 3 === 0) {
+    const giftIds = selectGiftRoundGiftIds(state.inventory, 3);
+    return buildGiftQuestTemplate(giftIds);
+  }
+
+  return getStarterQuestByIndex(resolvedQuestCount % 3);
 };
 
 export const getPettitViewModel = async (
@@ -360,10 +391,13 @@ export const resolveVote = async (subredditName: string, username: string | null
   };
   const memory = createMemoryRecord(outcome, nextStats.memoryCount);
   const previousMemory = memories.length > 0 ? memories[memories.length - 1] ?? null : null;
+  const nextInventory =
+    outcome.awardedGiftId ? [...state.inventory, createInventoryItem(state.inventory, outcome.awardedGiftId)] : state.inventory;
   const nextStateBeforeJournal: PettitState = {
     ...state,
     mood: outcome.mood,
     traits: nextTraits,
+    inventory: nextInventory,
     ageDays: state.ageDays,
   };
   const journal = createJournalEntry(
@@ -374,8 +408,8 @@ export const resolveVote = async (subredditName: string, username: string | null
     previousMemory,
     nextStats.journalCount
   );
-  const nextQuestTemplate = getStarterQuestByIndex(nextStats.resolvedQuestCount % 3);
-  const nextQuest = createQuestInstance(nextQuestTemplate.id, nextStats.resolvedQuestCount + 1);
+  const nextQuestTemplate = selectNextQuestTemplate(nextStateBeforeJournal, nextStats.resolvedQuestCount);
+  const nextQuest = createQuestInstanceFromTemplate(nextQuestTemplate, nextStats.resolvedQuestCount + 1);
   const nextState: PettitState = {
     ...nextStateBeforeJournal,
     activeQuestId: nextQuest.id,

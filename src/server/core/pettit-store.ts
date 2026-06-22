@@ -6,7 +6,12 @@ import type {
   PettitState,
   PettitStats,
 } from '../../shared/pettit';
-import { createDefaultPettitState, createDefaultStats, getQuestTemplateById } from './pettit-seed';
+import {
+  createDefaultPettitState,
+  createDefaultStats,
+  createQuestInstanceFromTemplate,
+  getQuestTemplateById,
+} from './pettit-seed';
 
 type VoterMap = Record<string, string>;
 
@@ -49,20 +54,7 @@ const calculateAgeDays = (createdAt: string): number => {
 
 export const createQuestInstance = (templateId: string, sequenceNumber: number): ActiveQuest => {
   const template = getQuestTemplateById(templateId);
-
-  return {
-    id: `${template.id}-${sequenceNumber}`,
-    templateId: template.id,
-    title: template.title,
-    description: template.description,
-    category: template.category,
-    createdAt: new Date().toISOString(),
-    options: template.options.map((option) => ({
-      id: option.id,
-      label: option.label,
-      votes: 0,
-    })),
-  };
+  return createQuestInstanceFromTemplate(template, sequenceNumber);
 };
 
 export const getOrCreateState = async (subredditName: string): Promise<PettitState> => {
@@ -73,6 +65,7 @@ export const getOrCreateState = async (subredditName: string): Promise<PettitSta
     const refreshedState: PettitState = {
       ...storedState,
       ageDays: calculateAgeDays(storedState.createdAt),
+      inventory: storedState.inventory ?? [],
     };
 
     await redis.set(keys.state, JSON.stringify(refreshedState));

@@ -1,10 +1,12 @@
 import type {
+  ActiveQuest,
   PettitState,
   PettitStats,
   PettitTraits,
   QuestTemplate,
   TraitKey,
 } from '../../shared/pettit';
+import { getGiftQuestTemplateById, isGiftQuestTemplateId } from './pettit-gifts';
 
 const DEFAULT_TRAITS: PettitTraits = {
   curiosity: 52,
@@ -163,6 +165,7 @@ export const createDefaultPettitState = (subredditName: string): PettitState => 
   ageDays: 0,
   mood: 'curious',
   traits: { ...DEFAULT_TRAITS },
+  inventory: [],
   activeQuestId: `${getStarterQuestByIndex(0).id}-1`,
   latestJournalId: null,
 });
@@ -186,6 +189,10 @@ export const getStarterQuestByIndex = (index: number): QuestTemplate => {
 };
 
 export const getQuestTemplateById = (templateId: string): QuestTemplate => {
+  if (isGiftQuestTemplateId(templateId)) {
+    return getGiftQuestTemplateById(templateId);
+  }
+
   const quest = STARTER_QUESTS.find((candidate) => candidate.id === templateId);
 
   if (!quest) {
@@ -200,3 +207,20 @@ export const getTopTraits = (traits: PettitTraits, limit: number): TraitKey[] =>
     .sort((left, right) => right[1] - left[1])
     .slice(0, limit)
     .map(([traitKey]) => traitKey);
+
+export const createQuestInstanceFromTemplate = (
+  template: QuestTemplate,
+  sequenceNumber: number
+): ActiveQuest => ({
+  id: `${template.id}-${sequenceNumber}`,
+  templateId: template.id,
+  title: template.title,
+  description: template.description,
+  category: template.category,
+  createdAt: new Date().toISOString(),
+  options: template.options.map((option) => ({
+    id: option.id,
+    label: option.label,
+    votes: 0,
+  })),
+});
