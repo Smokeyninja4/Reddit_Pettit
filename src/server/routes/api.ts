@@ -4,12 +4,15 @@ import type {
   ErrorResponse,
   GetPettitStateResponse,
   ResolveVoteResponse,
+  SubmitNameRequest,
+  SubmitNameResponse,
   SubmitVoteRequest,
   SubmitVoteResponse,
 } from '../../shared/api';
 import {
   getPettitViewModel,
   resolveVote,
+  submitName,
   submitVote,
 } from '../core/pettit-loop';
 
@@ -117,6 +120,110 @@ api.post('/vote', async (c) => {
       {
         status: 'error',
         message: error instanceof Error ? error.message : 'Failed to record vote',
+      },
+      500
+    );
+  }
+});
+
+api.post('/name', async (c) => {
+  const subredditName = context.subredditName;
+
+  try {
+    if (!subredditName) {
+      return c.json<ErrorResponse>(
+        {
+          status: 'error',
+          message: 'subredditName is required but missing from context',
+        },
+        400
+      );
+    }
+
+    const username = await reddit.getCurrentUsername();
+
+    if (!username) {
+      return c.json<ErrorResponse>(
+        {
+          status: 'error',
+          message: 'A Reddit username is required to submit a name',
+        },
+        400
+      );
+    }
+
+    const body = await c.req.json<SubmitNameRequest>();
+
+    if (!body.targetKey || !body.proposedName) {
+      return c.json<ErrorResponse>(
+        {
+          status: 'error',
+          message: 'targetKey and proposedName are required',
+        },
+        400
+      );
+    }
+
+    const result = await submitName(subredditName, username, body.targetKey, body.proposedName);
+
+    return c.json<SubmitNameResponse>({
+      type: 'name-submitted',
+      pendingNamingTargets: result.pendingNamingTargets,
+      message: result.message,
+    });
+  } catch (error) {
+    console.error('API Name Error:', error);
+
+    if (
+      error instanceof Error &&
+      ['INVALID_NAMING_TARGET', 'INVALID_NAME', 'NAME_TOO_LONG'].includes(error.message)
+    ) {
+      return c.json<ErrorResponse>(
+        {
+          status: 'error',
+          message:
+            error.message === 'NAME_TOO_LONG'
+              ? 'Names must be 32 characters or fewer'
+              : 'That naming target is not available right now',
+        },
+        400
+      );
+    }
+
+    if (error instanceof Error && error.message === 'DUPLICATE_NAME_SUBMISSION') {
+      return c.json<ErrorResponse>(
+        {
+          status: 'error',
+          message: 'You have already submitted a name for this target',
+        },
+        409
+      );
+    }
+
+    if (error instanceof Error && error.message === 'DUPLICATE_NAME') {
+      return c.json<ErrorResponse>(
+        {
+          status: 'error',
+          message: 'That name has already been submitted for this target',
+        },
+        409
+      );
+    }
+
+    if (error instanceof Error && error.message === 'NAME_BALLOT_FULL') {
+      return c.json<ErrorResponse>(
+        {
+          status: 'error',
+          message: 'That naming ballot is already full',
+        },
+        409
+      );
+    }
+
+    return c.json<ErrorResponse>(
+      {
+        status: 'error',
+        message: error instanceof Error ? error.message : 'Failed to submit name',
       },
       500
     );

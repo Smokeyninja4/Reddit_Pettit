@@ -17,13 +17,48 @@ export type QuestCategory = 'explore' | 'learn' | 'social' | 'community';
 
 export type GiftCategory = 'clothing' | 'tools' | 'toys' | 'books' | 'community' | 'funny';
 
+export type NamingTargetType = 'gift' | 'landmark';
+
 export type PettitInventoryItem = {
   id: string;
+  giftId: string;
   name: string;
   description: string;
   category: GiftCategory;
   source: string;
   obtainedAt: string;
+  canonName?: string;
+};
+
+export type PettitLandmark = {
+  id: string;
+  baseName: string;
+  description: string;
+  sourceQuestTemplateId: string;
+  discoveredAt: string;
+  canonName?: string;
+};
+
+export type PettitNameSubmission = {
+  username: string;
+  proposedName: string;
+  submittedAt: string;
+};
+
+export type CanonNameRecord = {
+  targetType: NamingTargetType;
+  targetId: string;
+  baseName: string;
+  canonName: string;
+  description: string;
+};
+
+export type PendingNamingTarget = {
+  targetType: NamingTargetType;
+  targetId: string;
+  baseName: string;
+  description: string;
+  submissionCount: number;
 };
 
 export type QuestOption = {
@@ -60,6 +95,12 @@ export type QuestOptionOutcome = {
   mood: PettitMood;
   traitEffects: Partial<Record<TraitKey, number>>;
   awardedGiftId?: string;
+  discoveredLandmarkId?: string;
+  namingTarget?: {
+    type: NamingTargetType;
+    targetId: string;
+    canonName: string;
+  };
 };
 
 export type QuestTemplate = {
@@ -97,6 +138,7 @@ export type PettitState = {
   mood: PettitMood;
   traits: PettitTraits;
   inventory: PettitInventoryItem[];
+  landmarks: PettitLandmark[];
   activeQuestId: string;
   latestJournalId: string | null;
 };
@@ -123,6 +165,8 @@ export type PettitViewModel = {
     memoriesCreated: number;
   };
   inventory: PettitInventoryItem[];
+  knownNames: CanonNameRecord[];
+  pendingNamingTargets: PendingNamingTarget[];
   activeQuest: ActiveQuest & {
     totalVotes: number;
     hasVoted: boolean;

@@ -7,6 +7,7 @@ import type {
   TraitKey,
 } from '../../shared/pettit';
 import { getGiftQuestTemplateById, isGiftQuestTemplateId } from './pettit-gifts';
+import { getNamingQuestTemplateById, isNamingQuestTemplateId } from './pettit-naming';
 
 const DEFAULT_TRAITS: PettitTraits = {
   curiosity: 52,
@@ -37,6 +38,7 @@ export const STARTER_QUESTS: readonly QuestTemplate[] = [
         importance: 4,
         mood: 'excited',
         traitEffects: { courage: 3, curiosity: 2 },
+        discoveredLandmarkId: 'mossy-cave',
       },
       {
         optionId: 'observe',
@@ -47,6 +49,7 @@ export const STARTER_QUESTS: readonly QuestTemplate[] = [
         importance: 3,
         mood: 'thoughtful',
         traitEffects: { curiosity: 3 },
+        discoveredLandmarkId: 'mossy-cave',
       },
       {
         optionId: 'leave',
@@ -57,6 +60,7 @@ export const STARTER_QUESTS: readonly QuestTemplate[] = [
         importance: 2,
         mood: 'nervous',
         traitEffects: { trust: 1 },
+        discoveredLandmarkId: 'mossy-cave',
       },
       {
         optionId: 'ask-help',
@@ -67,6 +71,7 @@ export const STARTER_QUESTS: readonly QuestTemplate[] = [
         importance: 4,
         mood: 'curious',
         traitEffects: { trust: 3, curiosity: 1 },
+        discoveredLandmarkId: 'mossy-cave',
       },
     ],
   },
@@ -90,6 +95,7 @@ export const STARTER_QUESTS: readonly QuestTemplate[] = [
         importance: 3,
         mood: 'curious',
         traitEffects: { curiosity: 3, trust: 1 },
+        discoveredLandmarkId: 'stargazing-hill',
       },
       {
         optionId: 'read-book',
@@ -100,6 +106,7 @@ export const STARTER_QUESTS: readonly QuestTemplate[] = [
         importance: 3,
         mood: 'thoughtful',
         traitEffects: { curiosity: 2, trust: 1 },
+        discoveredLandmarkId: 'stargazing-hill',
       },
       {
         optionId: 'observe-sky',
@@ -110,6 +117,7 @@ export const STARTER_QUESTS: readonly QuestTemplate[] = [
         importance: 4,
         mood: 'thoughtful',
         traitEffects: { curiosity: 2, courage: 1 },
+        discoveredLandmarkId: 'stargazing-hill',
       },
     ],
   },
@@ -133,6 +141,7 @@ export const STARTER_QUESTS: readonly QuestTemplate[] = [
         importance: 4,
         mood: 'excited',
         traitEffects: { trust: 2, courage: 2 },
+        discoveredLandmarkId: 'traveller-road',
       },
       {
         optionId: 'feed',
@@ -143,6 +152,7 @@ export const STARTER_QUESTS: readonly QuestTemplate[] = [
         importance: 3,
         mood: 'curious',
         traitEffects: { trust: 3 },
+        discoveredLandmarkId: 'traveller-road',
       },
       {
         optionId: 'give-supplies',
@@ -153,6 +163,7 @@ export const STARTER_QUESTS: readonly QuestTemplate[] = [
         importance: 3,
         mood: 'excited',
         traitEffects: { trust: 2, courage: 1 },
+        discoveredLandmarkId: 'traveller-road',
       },
     ],
   },
@@ -166,6 +177,7 @@ export const createDefaultPettitState = (subredditName: string): PettitState => 
   mood: 'curious',
   traits: { ...DEFAULT_TRAITS },
   inventory: [],
+  landmarks: [],
   activeQuestId: `${getStarterQuestByIndex(0).id}-1`,
   latestJournalId: null,
 });
@@ -189,6 +201,10 @@ export const getStarterQuestByIndex = (index: number): QuestTemplate => {
 };
 
 export const getQuestTemplateById = (templateId: string): QuestTemplate => {
+  if (isNamingQuestTemplateId(templateId)) {
+    return getNamingQuestTemplateById(templateId);
+  }
+
   if (isGiftQuestTemplateId(templateId)) {
     return getGiftQuestTemplateById(templateId);
   }

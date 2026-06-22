@@ -1,9 +1,11 @@
 import type {
   ActiveQuest,
+  PendingNamingTarget,
   PettitInventoryItem,
   PettitJournalEntry,
   PettitMemory,
   PettitMood,
+  PettitNameSubmission,
   PettitState,
   PettitStats,
   PettitTraits,
@@ -14,6 +16,16 @@ import type {
   TraitKey,
 } from '../../shared/pettit';
 import { getGiftById, buildGiftQuestTemplate, selectGiftRoundGiftIds } from './pettit-gifts';
+import {
+  applyCanonName,
+  clearNamingTargetSubmissions,
+  discoverLandmark,
+  getCanonNames,
+  getPendingNamingTargets,
+  personalizeQuestText,
+  selectReadyNamingQuestTemplate,
+  submitNameForTarget,
+} from './pettit-naming';
 import {
   createQuestInstanceFromTemplate,
   getTopTraits,
@@ -29,8 +41,10 @@ import {
   getOrCreateState,
   getOrCreateStats,
   getVoterMap,
+  getNameSubmissions,
   resetVoterMap,
   saveActiveQuest,
+  saveNameSubmissions,
   saveState,
   saveStats,
   saveVoterMap,
@@ -43,6 +57,7 @@ type WorldSnapshot = {
   memories: PettitMemory[];
   journals: PettitJournalEntry[];
   selectedOptionId: string | null;
+  pendingNamingTargets: PendingNamingTarget[];
 };
 
 type ResolveResult = {
@@ -251,6 +266,8 @@ const buildViewModel = (snapshot: WorldSnapshot): PettitViewModel => {
       memoriesCreated: snapshot.stats.memoryCount,
     },
     inventory: snapshot.state.inventory,
+    knownNames: getCanonNames(snapshot.state),
+    pendingNamingTargets: snapshot.pendingNamingTargets,
     activeQuest: {
       ...snapshot.activeQuest,
       totalVotes,
@@ -263,13 +280,14 @@ const buildViewModel = (snapshot: WorldSnapshot): PettitViewModel => {
 };
 
 const loadWorldSnapshot = async (subredditName: string, username: string | null): Promise<WorldSnapshot> => {
-  const [state, stats, activeQuest, memories, journals, voterMap] = await Promise.all([
+  const [state, stats, activeQuest, memories, journals, voterMap, nameSubmissions] = await Promise.all([
     getOrCreateState(subredditName),
     getOrCreateStats(subredditName),
     getOrCreateActiveQuest(subredditName),
     getMemories(subredditName),
     getJournals(subredditName),
     getVoterMap(subredditName),
+    getNameSubmissions(subredditName),
   ]);
 
   return {
@@ -279,6 +297,7 @@ const loadWorldSnapshot = async (subredditName: string, username: string | null)
     memories,
     journals,
     selectedOptionId: username ? voterMap[username] ?? null : null,
+    pendingNamingTargets: getPendingNamingTargets(state, nameSubmissions),
   };
 };
 
@@ -287,17 +306,31 @@ const createInventoryItem = (
   giftId: string
 ): PettitInventoryItem => {
   const gift = getGiftById(giftId);
+  const existingCanonName = inventory.find((item) => item.giftId === giftId && item.canonName)?.canonName;
+
   return {
     id: `inventory-${inventory.length + 1}`,
+    giftId,
     name: gift.name,
     description: gift.description,
     category: gift.category,
     source: 'Community Gift Vote',
     obtainedAt: new Date().toISOString(),
+    canonName: existingCanonName,
   };
 };
 
-const selectNextQuestTemplate = (state: PettitState, resolvedQuestCount: number): QuestTemplate => {
+const selectNextQuestTemplate = (
+  state: PettitState,
+  resolvedQuestCount: number,
+  nameSubmissions: Record<string, PettitNameSubmission[]>
+): QuestTemplate => {
+  const namingQuestTemplate = selectReadyNamingQuestTemplate(state, nameSubmissions);
+
+  if (namingQuestTemplate) {
+    return namingQuestTemplate;
+  }
+
   if (resolvedQuestCount > 0 && resolvedQuestCount % 3 === 0) {
     const giftIds = selectGiftRoundGiftIds(state.inventory, 3);
     return buildGiftQuestTemplate(giftIds);
@@ -319,13 +352,14 @@ export const submitVote = async (
   username: string,
   optionId: string
 ): Promise<PettitViewModel> => {
-  const [activeQuest, voterMap, stats, state, memories, journals] = await Promise.all([
+  const [activeQuest, voterMap, stats, state, memories, journals, nameSubmissions] = await Promise.all([
     getOrCreateActiveQuest(subredditName),
     getVoterMap(subredditName),
     getOrCreateStats(subredditName),
     getOrCreateState(subredditName),
     getMemories(subredditName),
     getJournals(subredditName),
+    getNameSubmissions(subredditName),
   ]);
 
   if (voterMap[username]) {
@@ -362,20 +396,63 @@ export const submitVote = async (
 
   return buildViewModel({
     state,
-    stats,
+    stats: nextStats,
     activeQuest: nextQuest,
     memories,
     journals,
     selectedOptionId: optionId,
+    pendingNamingTargets: getPendingNamingTargets(state, nameSubmissions),
   });
 };
 
+export const submitName = async (
+  subredditName: string,
+  username: string,
+  targetKey: string,
+  proposedName: string
+): Promise<{ pendingNamingTargets: PendingNamingTarget[]; message: string }> => {
+  const [state, submissionMap] = await Promise.all([
+    getOrCreateState(subredditName),
+    getNameSubmissions(subredditName),
+  ]);
+
+  const nextSubmissionMap = submitNameForTarget(state, submissionMap, username, targetKey, proposedName);
+  await saveNameSubmissions(subredditName, nextSubmissionMap);
+
+  const { targetType, targetId } = (() => {
+    const [targetTypeValue, ...targetIdParts] = targetKey.split(':');
+
+    if ((targetTypeValue !== 'gift' && targetTypeValue !== 'landmark') || targetIdParts.length === 0) {
+      throw new Error('INVALID_NAMING_TARGET');
+    }
+
+    return {
+      targetType: targetTypeValue,
+      targetId: targetIdParts.join(':'),
+    };
+  })();
+
+  const pendingTargets = getPendingNamingTargets(state, nextSubmissionMap);
+  const target = pendingTargets.find(
+    (candidate) => candidate.targetType === targetType && candidate.targetId === targetId
+  );
+
+  return {
+    pendingNamingTargets: pendingTargets,
+    message:
+      target && target.submissionCount >= 3
+        ? `${target.baseName} is ready for a naming vote.`
+        : 'Name submitted. The community is one step closer to making it canon.',
+  };
+};
+
 export const resolveVote = async (subredditName: string, username: string | null): Promise<ResolveResult> => {
-  const [state, activeQuest, memories, stats] = await Promise.all([
+  const [state, activeQuest, memories, stats, nameSubmissions] = await Promise.all([
     getOrCreateState(subredditName),
     getOrCreateActiveQuest(subredditName),
     getMemories(subredditName),
     getOrCreateStats(subredditName),
+    getNameSubmissions(subredditName),
   ]);
 
   const winningOption = selectWinningOption(activeQuest);
@@ -389,26 +466,55 @@ export const resolveVote = async (subredditName: string, username: string | null
     memoryCount: stats.memoryCount + 1,
     journalCount: stats.journalCount + 1,
   };
-  const memory = createMemoryRecord(outcome, nextStats.memoryCount);
-  const previousMemory = memories.length > 0 ? memories[memories.length - 1] ?? null : null;
   const nextInventory =
     outcome.awardedGiftId ? [...state.inventory, createInventoryItem(state.inventory, outcome.awardedGiftId)] : state.inventory;
-  const nextStateBeforeJournal: PettitState = {
+  let nextStateBeforeJournal: PettitState = {
     ...state,
     mood: outcome.mood,
     traits: nextTraits,
     inventory: nextInventory,
+    landmarks: state.landmarks,
     ageDays: state.ageDays,
   };
+  nextStateBeforeJournal = discoverLandmark(nextStateBeforeJournal, outcome.discoveredLandmarkId);
+
+  let nextNameSubmissions = nameSubmissions;
+
+  if (outcome.namingTarget) {
+    nextStateBeforeJournal = applyCanonName(
+      nextStateBeforeJournal,
+      outcome.namingTarget.type,
+      outcome.namingTarget.targetId,
+      outcome.namingTarget.canonName
+    );
+    nextNameSubmissions = clearNamingTargetSubmissions(
+      nextNameSubmissions,
+      outcome.namingTarget.type,
+      outcome.namingTarget.targetId
+    );
+  }
+
+  const personalizedOutcome: QuestOptionOutcome = {
+    ...outcome,
+    resultText: personalizeQuestText(nextStateBeforeJournal, activeQuest.templateId, outcome.resultText),
+    memoryTitle: outcome.memoryTitle,
+    memoryDescription: personalizeQuestText(nextStateBeforeJournal, activeQuest.templateId, outcome.memoryDescription),
+  };
+  const memory = createMemoryRecord(personalizedOutcome, nextStats.memoryCount);
+  const previousMemory = memories.length > 0 ? memories[memories.length - 1] ?? null : null;
   const journal = createJournalEntry(
     nextStateBeforeJournal,
     activeQuest,
-    outcome,
+    personalizedOutcome,
     memory,
     previousMemory,
     nextStats.journalCount
   );
-  const nextQuestTemplate = selectNextQuestTemplate(nextStateBeforeJournal, nextStats.resolvedQuestCount);
+  const nextQuestTemplate = selectNextQuestTemplate(
+    nextStateBeforeJournal,
+    nextStats.resolvedQuestCount,
+    nextNameSubmissions
+  );
   const nextQuest = createQuestInstanceFromTemplate(nextQuestTemplate, nextStats.resolvedQuestCount + 1);
   const nextState: PettitState = {
     ...nextStateBeforeJournal,
@@ -425,6 +531,7 @@ export const resolveVote = async (subredditName: string, username: string | null
     saveState(subredditName, nextState),
     saveActiveQuest(subredditName, nextQuest),
     saveStats(subredditName, nextStats),
+    saveNameSubmissions(subredditName, nextNameSubmissions),
     resetVoterMap(subredditName),
   ]);
 
@@ -436,6 +543,7 @@ export const resolveVote = async (subredditName: string, username: string | null
       memories: nextMemories,
       journals: nextJournals,
       selectedOptionId: username ? null : null,
+      pendingNamingTargets: getPendingNamingTargets(nextState, nextNameSubmissions),
     }),
     resolution: {
       winningOptionId: winningOption.id,

@@ -3,6 +3,7 @@ import type {
   ActiveQuest,
   PettitJournalEntry,
   PettitMemory,
+  PettitNameSubmission,
   PettitState,
   PettitStats,
 } from '../../shared/pettit';
@@ -14,6 +15,7 @@ import {
 } from './pettit-seed';
 
 type VoterMap = Record<string, string>;
+type NamingSubmissionMap = Record<string, PettitNameSubmission[]>;
 
 const parseJson = <T>(value: string | null | undefined, fallback: T): T => {
   if (!value) {
@@ -38,6 +40,7 @@ export const buildPettitKeys = (subredditName: string) => {
     memories: `${prefix}:memories`,
     journals: `${prefix}:journals`,
     stats: `${prefix}:stats`,
+    namingSubmissions: `${prefix}:naming:submissions`,
   };
 };
 
@@ -66,6 +69,7 @@ export const getOrCreateState = async (subredditName: string): Promise<PettitSta
       ...storedState,
       ageDays: calculateAgeDays(storedState.createdAt),
       inventory: storedState.inventory ?? [],
+      landmarks: storedState.landmarks ?? [],
     };
 
     await redis.set(keys.state, JSON.stringify(refreshedState));
@@ -160,4 +164,17 @@ export const getOrCreateStats = async (subredditName: string): Promise<PettitSta
 export const saveStats = async (subredditName: string, stats: PettitStats): Promise<void> => {
   const keys = buildPettitKeys(subredditName);
   await redis.set(keys.stats, JSON.stringify(stats));
+};
+
+export const getNameSubmissions = async (subredditName: string): Promise<NamingSubmissionMap> => {
+  const keys = buildPettitKeys(subredditName);
+  return parseJson<NamingSubmissionMap>(await redis.get(keys.namingSubmissions), {});
+};
+
+export const saveNameSubmissions = async (
+  subredditName: string,
+  submissionMap: NamingSubmissionMap
+): Promise<void> => {
+  const keys = buildPettitKeys(subredditName);
+  await redis.set(keys.namingSubmissions, JSON.stringify(submissionMap));
 };

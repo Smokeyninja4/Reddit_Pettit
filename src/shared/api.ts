@@ -1,4 +1,4 @@
-import type { PettitViewModel, TraitKey } from './pettit';
+import type { PendingNamingTarget, PettitViewModel, TraitKey } from './pettit';
 
 export type GetPettitStateResponse = {
   type: 'state';
@@ -12,6 +12,17 @@ export type SubmitVoteRequest = {
 export type SubmitVoteResponse = {
   type: 'vote-recorded';
   state: PettitViewModel;
+};
+
+export type SubmitNameRequest = {
+  targetKey: string;
+  proposedName: string;
+};
+
+export type SubmitNameResponse = {
+  type: 'name-submitted';
+  pendingNamingTargets: PendingNamingTarget[];
+  message: string;
 };
 
 export type ResolveVoteResponse = {

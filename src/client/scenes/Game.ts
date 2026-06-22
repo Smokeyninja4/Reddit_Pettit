@@ -86,6 +86,9 @@ export class Game extends Scene {
   private memoryPanel!: Phaser.GameObjects.Rectangle;
   private memoryTitleText!: Phaser.GameObjects.Text;
   private memoryBodyText!: Phaser.GameObjects.Text;
+  private namesPanel!: Phaser.GameObjects.Rectangle;
+  private namesTitleText!: Phaser.GameObjects.Text;
+  private namesBodyText!: Phaser.GameObjects.Text;
   private inventoryPanel!: Phaser.GameObjects.Rectangle;
   private inventoryTitleText!: Phaser.GameObjects.Text;
   private inventoryBodyText!: Phaser.GameObjects.Text;
@@ -229,6 +232,19 @@ export class Game extends Scene {
       color: '#d7e7f0',
       wordWrap: { width: 240 },
       lineSpacing: 8,
+    });
+    this.namesPanel = this.createPanel(0x18212a, 0x2b3c48);
+    this.namesTitleText = this.add.text(0, 0, 'Community Names', {
+      fontFamily: 'Georgia',
+      fontSize: '22px',
+      color: '#f2ead7',
+    });
+    this.namesBodyText = this.add.text(0, 0, '', {
+      fontFamily: 'Trebuchet MS',
+      fontSize: '14px',
+      color: '#d7e7f0',
+      wordWrap: { width: 220 },
+      lineSpacing: 7,
     });
     this.inventoryPanel = this.createPanel(0x18212a, 0x2b3c48);
     this.inventoryTitleText = this.add.text(0, 0, 'Keepsakes', {
@@ -394,6 +410,8 @@ export class Game extends Scene {
     this.journalBodyText.setFontSize(Math.round(17 * scale));
     this.memoryTitleText.setFontSize(Math.round(21 * scale));
     this.memoryBodyText.setFontSize(Math.round(14 * scale));
+    this.namesTitleText.setFontSize(Math.round(19 * scale));
+    this.namesBodyText.setFontSize(Math.round(13 * scale));
     this.inventoryTitleText.setFontSize(Math.round(19 * scale));
     this.inventoryBodyText.setFontSize(Math.round(13 * scale));
     this.statusText.setFontSize(Math.round(14 * scale));
@@ -487,15 +505,22 @@ export class Game extends Scene {
       height: resolveHeight,
     };
     const bottomWidth = leftWidth + metrics.gap + rightWidth;
-    const inventoryWidth = clamp(Math.round(bottomWidth * 0.29), 240, 320);
+    const namesWidth = clamp(Math.round(bottomWidth * 0.2), 200, 240);
+    const inventoryWidth = clamp(Math.round(bottomWidth * 0.24), 220, 280);
     const memoryFrame: PanelFrame = {
       x: leftX,
       y: bottomY,
-      width: bottomWidth - inventoryWidth - metrics.gap,
+      width: bottomWidth - namesWidth - inventoryWidth - metrics.gap * 2,
+      height: memoryHeight,
+    };
+    const namesFrame: PanelFrame = {
+      x: memoryFrame.x + memoryFrame.width + metrics.gap,
+      y: bottomY,
+      width: namesWidth,
       height: memoryHeight,
     };
     const inventoryFrame: PanelFrame = {
-      x: memoryFrame.x + memoryFrame.width + metrics.gap,
+      x: namesFrame.x + namesFrame.width + metrics.gap,
       y: bottomY,
       width: inventoryWidth,
       height: memoryHeight,
@@ -508,6 +533,7 @@ export class Game extends Scene {
     this.layoutJournalPanel(metrics, journalFrame);
     this.layoutResolveArea(metrics, resolveFrame);
     this.layoutMemoryPanel(metrics, memoryFrame);
+    this.layoutNamesPanel(metrics, namesFrame);
     this.layoutInventoryPanel(metrics, inventoryFrame);
   }
 
@@ -565,6 +591,16 @@ export class Game extends Scene {
     };
     this.layoutMemoryPanel(metrics, memoryFrame);
     currentTop += memoryHeight + metrics.gap;
+
+    const namesHeight = Math.round(metrics.frameHeight * 0.11);
+    const namesFrame: PanelFrame = {
+      x: contentX,
+      y: currentTop,
+      width: contentWidth,
+      height: namesHeight,
+    };
+    this.layoutNamesPanel(metrics, namesFrame);
+    currentTop += namesHeight + metrics.gap;
 
     const inventoryHeight = Math.round(metrics.frameHeight * 0.13);
     const inventoryFrame: PanelFrame = {
@@ -799,6 +835,19 @@ export class Game extends Scene {
     this.inventoryBodyText.setWordWrapWidth(innerWidth);
   }
 
+  private layoutNamesPanel(metrics: LayoutMetrics, frame: PanelFrame): void {
+    this.namesPanel.setPosition(frame.x, frame.y);
+    this.namesPanel.setSize(frame.width, frame.height);
+
+    const innerX = frame.x + metrics.cardInsetX;
+    const innerY = frame.y + metrics.cardInsetY;
+    const innerWidth = frame.width - metrics.cardInsetX * 2;
+
+    this.namesTitleText.setPosition(innerX, innerY);
+    this.namesBodyText.setPosition(innerX, innerY + this.namesTitleText.height + 10);
+    this.namesBodyText.setWordWrapWidth(innerWidth);
+  }
+
   private layoutResolveArea(metrics: LayoutMetrics, frame: PanelFrame): void {
     this.resolvePanel.setPosition(frame.x, frame.y);
     this.resolvePanel.setSize(frame.width, frame.height);
@@ -919,6 +968,9 @@ export class Game extends Scene {
         `${this.formatCount(this.pettitState.communityStats.totalVotes)} Votes`,
         `${this.formatCount(this.pettitState.communityStats.questsCompleted)} Stories`,
         `${this.formatCount(this.pettitState.communityStats.memoriesCreated)} Keepsakes`,
+        this.pettitState.pendingNamingTargets.length > 0
+          ? `${this.formatCount(this.pettitState.pendingNamingTargets.length)} Names waiting`
+          : 'No names waiting',
       ].join('\n')
     );
 
@@ -949,11 +1001,33 @@ export class Game extends Scene {
         this.pettitState.inventory
           .slice(-4)
           .reverse()
-          .map((item) => `${item.name}\n${this.formatGiftCategory(item.category)} - ${item.description}`)
+          .map((item) =>
+            item.canonName
+              ? `${item.canonName}\n${item.name} - ${item.description}`
+              : `${item.name}\n${this.formatGiftCategory(item.category)} - ${item.description}`
+          )
           .join('\n\n')
       );
     } else {
       this.inventoryBodyText.setText('No gifts yet. A community gift round will let everyone choose something Pettit can keep.');
+    }
+
+    if (this.pettitState.knownNames.length > 0) {
+      this.namesBodyText.setText(
+        this.pettitState.knownNames
+          .slice(0, 4)
+          .map((entry) => `${entry.canonName}\n${entry.baseName}`)
+          .join('\n\n')
+      );
+    } else if (this.pettitState.pendingNamingTargets.length > 0) {
+      this.namesBodyText.setText(
+        this.pettitState.pendingNamingTargets
+          .slice(0, 3)
+          .map((target) => `${target.baseName}\n${target.submissionCount}/3 names submitted`)
+          .join('\n\n')
+      );
+    } else {
+      this.namesBodyText.setText('Canon names will appear here once the community starts naming gifts and places.');
     }
 
     this.updateLayout(this.scale.width, this.scale.height);

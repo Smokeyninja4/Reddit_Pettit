@@ -76,7 +76,7 @@ const buildGiftOutcome = (gift: GiftDefinition) => ({
   optionId: gift.id,
   resultText: `${gift.moodLine} The whole gift felt like a message from the community: we want you to keep growing.`,
   memoryTitle: `Received ${gift.name}`,
-  memoryDescription: `The community chose to give Pettit ${gift.description.toLowerCase()}`,
+  memoryDescription: `The community chose to give Pettit ${gift.description.toLowerCase()}.`,
   memoryType: 'gift' as const,
   importance: 4,
   mood: 'excited' as const,
@@ -90,7 +90,7 @@ export const buildGiftQuestTemplate = (giftIds: readonly string[]): QuestTemplat
 
   return {
     id: questId,
-    title: 'Choose Pettit’s Next Gift',
+    title: "Choose Pettit's Next Gift",
     description: 'The community is sending Pettit a keepsake. Which gift should become part of its story next?',
     category: 'community',
     options: gifts.map((gift) => ({
