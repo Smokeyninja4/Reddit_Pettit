@@ -69,6 +69,7 @@ export class Game extends Scene {
   private creatureSpark!: Phaser.GameObjects.Ellipse;
   private creatureMouth!: Phaser.GameObjects.Arc;
   private creatureCaptionText!: Phaser.GameObjects.Text;
+  private moodBadgeText!: Phaser.GameObjects.Text;
   private futureSlotText!: Phaser.GameObjects.Text;
   private actionPanel!: Phaser.GameObjects.Rectangle;
   private actionTitleText!: Phaser.GameObjects.Text;
@@ -81,6 +82,7 @@ export class Game extends Scene {
   private journalPanel!: Phaser.GameObjects.Rectangle;
   private journalTitleText!: Phaser.GameObjects.Text;
   private journalBodyText!: Phaser.GameObjects.Text;
+  private resolvePanel!: Phaser.GameObjects.Rectangle;
   private memoryPanel!: Phaser.GameObjects.Rectangle;
   private memoryTitleText!: Phaser.GameObjects.Text;
   private memoryBodyText!: Phaser.GameObjects.Text;
@@ -104,14 +106,14 @@ export class Game extends Scene {
 
   create(): void {
     this.camera = this.cameras.main;
-    this.camera.setBackgroundColor(0x11181f);
+    this.camera.setBackgroundColor(0x0b1218);
 
     this.background = this.add.image(512, 384, 'background').setAlpha(0.12);
 
     this.rootPanel = this.add
-      .rectangle(0, 0, 100, 100, 0x121a22, 0.96)
+      .rectangle(0, 0, 100, 100, 0x10171f, 0.98)
       .setOrigin(0)
-      .setStrokeStyle(2, 0x31414c, 0.95);
+      .setStrokeStyle(2, 0x263846, 0.48);
 
     this.titleText = this.add.text(0, 0, '', {
       fontFamily: 'Georgia',
@@ -127,12 +129,12 @@ export class Game extends Scene {
     });
     this.summaryText = this.add.text(0, 0, '', {
       fontFamily: 'Trebuchet MS',
-      fontSize: '17px',
-      color: '#c9d4dd',
+      fontSize: '16px',
+      color: '#b8c7d3',
     });
 
-    this.creaturePanel = this.createPanel(0x171f27, 0x273743);
-    this.creatureArtFrame = this.createPanel(0x203040, 0x3f6179);
+    this.creaturePanel = this.createPanel(0x17202a, 0x324759);
+    this.creatureArtFrame = this.createPanel(0x223243, 0x48657b);
     this.creatureShadow = this.add.ellipse(0, 0, 100, 30, 0x091017, 0.45);
     this.creatureBody = this.add.ellipse(0, 0, 160, 190, 0xfff1d8, 1).setStrokeStyle(3, 0x4e3a2f, 0.9);
     this.creatureBelly = this.add.ellipse(0, 0, 88, 78, 0xfff9ee, 0.95).setStrokeStyle(2, 0xe4d7c3, 0.8);
@@ -145,18 +147,26 @@ export class Game extends Scene {
     this.creatureCaptionText = this.add.text(0, 0, '', {
       fontFamily: 'Georgia',
       fontSize: '28px',
-      color: '#fff3dc',
+      color: '#fff1d2',
+      align: 'left',
+    });
+    this.moodBadgeText = this.add.text(0, 0, '', {
+      fontFamily: 'Trebuchet MS',
+      fontSize: '15px',
+      color: '#13202a',
+      backgroundColor: '#ffd67a',
+      padding: { x: 10, y: 5 },
       align: 'center',
     });
     this.futureSlotText = this.add.text(0, 0, '', {
       fontFamily: 'Trebuchet MS',
       fontSize: '16px',
-      color: '#d7e7f0',
-      align: 'center',
+      color: '#d1dfeb',
+      align: 'right',
       wordWrap: { width: 280 },
     });
 
-    this.actionPanel = this.createPanel(0x171f27, 0x273743);
+    this.actionPanel = this.createPanel(0x1a222c, 0x2d3f4d);
     this.actionTitleText = this.add.text(0, 0, '', {
       fontFamily: 'Georgia',
       fontSize: '24px',
@@ -165,20 +175,20 @@ export class Game extends Scene {
     this.voteSummaryText = this.add.text(0, 0, '', {
       fontFamily: 'Trebuchet MS',
       fontSize: '17px',
-      color: '#d2dce5',
+      color: '#d8e1e8',
       wordWrap: { width: 500 },
-      lineSpacing: 6,
+      lineSpacing: 8,
     });
 
-    this.traitPanel = this.createPanel(0x171f27, 0x273743);
+    this.traitPanel = this.createPanel(0x162029, 0x2b3d49);
     this.traitPanelTitle = this.add.text(0, 0, 'Traits', {
       fontFamily: 'Georgia',
       fontSize: '24px',
       color: '#fff2cf',
     });
 
-    this.topActionPanel = this.createPanel(0x171f27, 0x273743);
-    this.topActionTitle = this.add.text(0, 0, 'Community Stats', {
+    this.topActionPanel = this.createPanel(0x1a222b, 0x2b3d49);
+    this.topActionTitle = this.add.text(0, 0, 'Community Progress', {
       fontFamily: 'Georgia',
       fontSize: '22px',
       color: '#fff2cf',
@@ -188,10 +198,10 @@ export class Game extends Scene {
       fontSize: '17px',
       color: '#d7e7f0',
       wordWrap: { width: 240 },
-      lineSpacing: 6,
+      lineSpacing: 8,
     });
 
-    this.journalPanel = this.createPanel(0x171f27, 0x273743);
+    this.journalPanel = this.createPanel(0x1a212a, 0x334756);
     this.journalTitleText = this.add.text(0, 0, '', {
       fontFamily: 'Georgia',
       fontSize: '26px',
@@ -205,8 +215,9 @@ export class Game extends Scene {
       wordWrap: { width: 520 },
       lineSpacing: 8,
     });
+    this.resolvePanel = this.createPanel(0x182029, 0x314554);
 
-    this.memoryPanel = this.createPanel(0x171f27, 0x273743);
+    this.memoryPanel = this.createPanel(0x18212a, 0x2b3c48);
     this.memoryTitleText = this.add.text(0, 0, 'Recent Memories', {
       fontFamily: 'Georgia',
       fontSize: '24px',
@@ -219,8 +230,8 @@ export class Game extends Scene {
       wordWrap: { width: 240 },
       lineSpacing: 8,
     });
-    this.inventoryPanel = this.createPanel(0x171f27, 0x273743);
-    this.inventoryTitleText = this.add.text(0, 0, 'Community Gifts', {
+    this.inventoryPanel = this.createPanel(0x18212a, 0x2b3c48);
+    this.inventoryTitleText = this.add.text(0, 0, 'Keepsakes', {
       fontFamily: 'Georgia',
       fontSize: '22px',
       color: '#f5ead1',
@@ -236,21 +247,19 @@ export class Game extends Scene {
     this.statusText = this.add.text(0, 0, 'Loading Pettit...', {
       fontFamily: 'Trebuchet MS',
       fontSize: '16px',
-      color: '#ffe9a8',
-      align: 'center',
+      color: '#f6ddb0',
+      align: 'left',
       wordWrap: { width: 280 },
       lineSpacing: 4,
     });
-    this.statusText.setOrigin(0.5, 0);
     this.traitFeedbackText = this.add.text(0, 0, '', {
       fontFamily: 'Trebuchet MS',
       fontSize: '15px',
-      color: '#d9e4ec',
-      align: 'center',
+      color: '#d7e3ea',
+      align: 'left',
       wordWrap: { width: 280 },
       lineSpacing: 4,
     });
-    this.traitFeedbackText.setOrigin(0.5, 0);
 
     this.resolveButton = this.add
       .text(0, 0, 'Resolve current vote', {
@@ -258,9 +267,9 @@ export class Game extends Scene {
         fontSize: '18px',
         color: '#142028',
         backgroundColor: '#f6c453',
-        padding: { x: 16, y: 10 },
+        padding: { x: 22, y: 12 },
       })
-      .setOrigin(0.5, 0)
+      .setOrigin(0, 0)
       .setInteractive({ useHandCursor: true })
       .on('pointerdown', () => {
         void this.handleResolve();
@@ -285,9 +294,9 @@ export class Game extends Scene {
 
   private createPanel(fillColor: number, strokeColor: number): Phaser.GameObjects.Rectangle {
     return this.add
-      .rectangle(0, 0, 100, 100, fillColor, 0.94)
+      .rectangle(0, 0, 100, 100, fillColor, 0.96)
       .setOrigin(0)
-      .setStrokeStyle(1, strokeColor, 0.95);
+      .setStrokeStyle(1, strokeColor, 0.42);
   }
 
   private createTraitBars(): void {
@@ -327,16 +336,16 @@ export class Game extends Scene {
 
   private getLayoutMetrics(width: number, height: number): LayoutMetrics {
     const mode: LayoutMode = width >= 1060 && height >= 720 ? 'dashboard' : 'stacked';
-    const scaleFactor = Math.min(Math.min(width / 1320, height / 980), 1);
-    const padding = Math.round((mode === 'dashboard' ? 22 : 18) * scaleFactor);
-    const gap = Math.round((mode === 'dashboard' ? 18 : 14) * scaleFactor);
-    const frameWidth = Math.min(width - padding * 2, mode === 'dashboard' ? 1180 : 860);
+    const scaleFactor = Math.min(Math.min(width / 1360, height / 980), 1);
+    const padding = Math.round((mode === 'dashboard' ? 28 : 20) * scaleFactor);
+    const gap = Math.round((mode === 'dashboard' ? 27 : 18) * scaleFactor);
+    const frameWidth = Math.min(width - padding * 2, mode === 'dashboard' ? 1220 : 860);
     const frameHeight = Math.min(height - padding * 2, 900);
     const frameLeft = (width - frameWidth) / 2;
     const frameTop = (height - frameHeight) / 2;
-    const contentTop = frameTop + 106 * scaleFactor;
+    const contentTop = frameTop + 98 * scaleFactor;
     const contentBottom = frameTop + frameHeight - padding;
-    const leftColumnWidth = mode === 'dashboard' ? Math.round(frameWidth * 0.62) : frameWidth - padding * 2;
+    const leftColumnWidth = mode === 'dashboard' ? Math.round(frameWidth * 0.64) : frameWidth - padding * 2;
     const rightColumnWidth =
       mode === 'dashboard'
         ? frameWidth - padding * 2 - leftColumnWidth - gap
@@ -353,11 +362,11 @@ export class Game extends Scene {
       padding,
       gap,
       panelRadius: 18,
-      titleGap: Math.round(8 * scaleFactor),
-      cardInsetX: Math.round(18 * scaleFactor),
-      cardInsetY: Math.round(16 * scaleFactor),
-      buttonGap: Math.round(12 * scaleFactor),
-      actionButtonHeight: Math.round((mode === 'dashboard' ? 58 : 50) * scaleFactor),
+      titleGap: Math.round(10 * scaleFactor),
+      cardInsetX: Math.round(22 * scaleFactor),
+      cardInsetY: Math.round(20 * scaleFactor),
+      buttonGap: Math.round(14 * scaleFactor),
+      actionButtonHeight: Math.round((mode === 'dashboard' ? 62 : 52) * scaleFactor),
       scaleFactor,
       contentTop,
       contentBottom,
@@ -370,24 +379,25 @@ export class Game extends Scene {
     const compact = metrics.mode === 'dashboard' ? 1 : 0.9;
     const scale = metrics.scaleFactor * compact;
 
-    this.titleText.setFontSize(Math.round(34 * scale));
+    this.titleText.setFontSize(Math.round(38 * scale));
     this.subtitleText.setFontSize(Math.round(15 * scale));
-    this.summaryText.setFontSize(Math.round(17 * scale));
-    this.creatureCaptionText.setFontSize(Math.round(28 * scale));
-    this.futureSlotText.setFontSize(Math.round(15 * scale));
-    this.actionTitleText.setFontSize(Math.round(23 * scale));
-    this.voteSummaryText.setFontSize(Math.round(17 * scale));
-    this.traitPanelTitle.setFontSize(Math.round(22 * scale));
-    this.topActionTitle.setFontSize(Math.round(20 * scale));
-    this.topActionBody.setFontSize(Math.round(16 * scale));
-    this.journalTitleText.setFontSize(Math.round(25 * scale));
+    this.summaryText.setFontSize(Math.round(16 * scale));
+    this.creatureCaptionText.setFontSize(Math.round(30 * scale));
+    this.moodBadgeText.setFontSize(Math.round(13 * scale));
+    this.futureSlotText.setFontSize(Math.round(13 * scale));
+    this.actionTitleText.setFontSize(Math.round(27 * scale));
+    this.voteSummaryText.setFontSize(Math.round(18 * scale));
+    this.traitPanelTitle.setFontSize(Math.round(21 * scale));
+    this.topActionTitle.setFontSize(Math.round(18 * scale));
+    this.topActionBody.setFontSize(Math.round(14 * scale));
+    this.journalTitleText.setFontSize(Math.round(27 * scale));
     this.journalBodyText.setFontSize(Math.round(17 * scale));
-    this.memoryTitleText.setFontSize(Math.round(22 * scale));
-    this.memoryBodyText.setFontSize(Math.round(15 * scale));
-    this.inventoryTitleText.setFontSize(Math.round(20 * scale));
-    this.inventoryBodyText.setFontSize(Math.round(14 * scale));
-    this.statusText.setFontSize(Math.round(15 * scale));
-    this.traitFeedbackText.setFontSize(Math.round(14 * scale));
+    this.memoryTitleText.setFontSize(Math.round(21 * scale));
+    this.memoryBodyText.setFontSize(Math.round(14 * scale));
+    this.inventoryTitleText.setFontSize(Math.round(19 * scale));
+    this.inventoryBodyText.setFontSize(Math.round(13 * scale));
+    this.statusText.setFontSize(Math.round(14 * scale));
+    this.traitFeedbackText.setFontSize(Math.round(13 * scale));
     this.resolveButton.setFontSize(Math.round(17 * scale));
 
     this.optionButtons.forEach((button) => {
@@ -440,13 +450,13 @@ export class Game extends Scene {
     const top = metrics.contentTop;
     const rightWidth = metrics.rightColumnWidth;
     const leftWidth = metrics.leftColumnWidth;
-    const memoryHeight = clamp(Math.round(metrics.frameHeight * 0.17), 112, 164);
+    const memoryHeight = clamp(Math.round(metrics.frameHeight * 0.18), 128, 180);
     const topAreaHeight = metrics.contentBottom - top - metrics.gap - memoryHeight;
-    const creatureHeight = clamp(Math.round(topAreaHeight * 0.42), 180, 238);
+    const creatureHeight = clamp(Math.round(topAreaHeight * 0.4), 188, 236);
     const actionHeight = topAreaHeight - creatureHeight - metrics.gap;
-    const traitHeight = clamp(Math.round(topAreaHeight * 0.29), 136, 188);
-    const topActionHeight = clamp(Math.round(topAreaHeight * 0.12), 72, 96);
-    const resolveHeight = clamp(Math.round(topAreaHeight * 0.13), 74, 98);
+    const traitHeight = clamp(Math.round(topAreaHeight * 0.3), 150, 194);
+    const topActionHeight = clamp(Math.round(topAreaHeight * 0.12), 74, 98);
+    const resolveHeight = clamp(Math.round(topAreaHeight * 0.2), 124, 158);
     const journalHeight = topAreaHeight - traitHeight - topActionHeight - resolveHeight - metrics.gap * 3;
     const bottomY = top + topAreaHeight + metrics.gap;
 
@@ -477,7 +487,7 @@ export class Game extends Scene {
       height: resolveHeight,
     };
     const bottomWidth = leftWidth + metrics.gap + rightWidth;
-    const inventoryWidth = clamp(Math.round(bottomWidth * 0.32), 220, 320);
+    const inventoryWidth = clamp(Math.round(bottomWidth * 0.29), 240, 320);
     const memoryFrame: PanelFrame = {
       x: leftX,
       y: bottomY,
@@ -516,7 +526,7 @@ export class Game extends Scene {
     this.layoutCreaturePanel(metrics, creatureFrame);
     currentTop += creatureHeight + metrics.gap;
 
-    const traitHeight = 176;
+    const traitHeight = 170;
     const traitFrame: PanelFrame = {
       x: contentX,
       y: currentTop,
@@ -536,7 +546,7 @@ export class Game extends Scene {
     this.layoutActionPanel(metrics, actionFrame);
     currentTop += actionHeight + metrics.gap;
 
-    const journalHeight = Math.round(metrics.frameHeight * 0.24);
+    const journalHeight = Math.round(metrics.frameHeight * 0.22);
     const journalFrame: PanelFrame = {
       x: contentX,
       y: currentTop,
@@ -546,7 +556,7 @@ export class Game extends Scene {
     this.layoutJournalPanel(metrics, journalFrame);
     currentTop += journalHeight + metrics.gap;
 
-    const memoryHeight = Math.round(metrics.frameHeight * 0.16);
+    const memoryHeight = Math.round(metrics.frameHeight * 0.14);
     const memoryFrame: PanelFrame = {
       x: contentX,
       y: currentTop,
@@ -556,7 +566,7 @@ export class Game extends Scene {
     this.layoutMemoryPanel(metrics, memoryFrame);
     currentTop += memoryHeight + metrics.gap;
 
-    const inventoryHeight = Math.round(metrics.frameHeight * 0.14);
+    const inventoryHeight = Math.round(metrics.frameHeight * 0.13);
     const inventoryFrame: PanelFrame = {
       x: contentX,
       y: currentTop,
@@ -566,7 +576,7 @@ export class Game extends Scene {
     this.layoutInventoryPanel(metrics, inventoryFrame);
     currentTop += inventoryHeight + metrics.gap;
 
-    const topActionHeight = 88;
+    const topActionHeight = 84;
     const topActionFrame: PanelFrame = {
       x: contentX,
       y: currentTop,
@@ -596,9 +606,9 @@ export class Game extends Scene {
 
     this.creatureArtFrame.setPosition(innerX, innerY);
     this.creatureArtFrame.setSize(innerWidth, artHeight);
-    const creatureCenterX = innerX + innerWidth * 0.5;
-    const creatureCenterY = innerY + artHeight * 0.58;
-    const bodyWidth = Math.min(innerWidth * 0.33, artHeight * 0.72);
+    const creatureCenterX = innerX + innerWidth * 0.48;
+    const creatureCenterY = innerY + artHeight * 0.6;
+    const bodyWidth = Math.min(innerWidth * 0.26, artHeight * 0.72);
     const bodyHeight = Math.min(artHeight * 0.7, bodyWidth * 1.12);
     const eyeOffsetX = bodyWidth * 0.16;
     const eyeY = creatureCenterY - bodyHeight * 0.12;
@@ -620,10 +630,11 @@ export class Game extends Scene {
     this.creatureSpark.setSize(bodyWidth * 0.12, bodyWidth * 0.12);
     this.layoutCreatureFace(mood, creatureCenterX, creatureCenterY, bodyWidth, bodyHeight);
 
-    this.creatureCaptionText.setPosition(innerX + 20, innerY + 16);
-    this.creatureCaptionText.setWordWrapWidth(innerWidth - 40);
-    this.futureSlotText.setWordWrapWidth(Math.max(180, innerWidth * 0.42));
-    this.futureSlotText.setPosition(innerX + innerWidth - 18, innerY + 18);
+    this.creatureCaptionText.setPosition(innerX + 18, innerY + 14);
+    this.creatureCaptionText.setWordWrapWidth(innerWidth * 0.34);
+    this.moodBadgeText.setPosition(innerX + innerWidth - this.moodBadgeText.width - 18, innerY + 14);
+    this.futureSlotText.setWordWrapWidth(Math.max(180, innerWidth * 0.36));
+    this.futureSlotText.setPosition(innerX + innerWidth - 18, this.moodBadgeText.y + this.moodBadgeText.height + 10);
     this.futureSlotText.setOrigin(1, 0);
   }
 
@@ -680,11 +691,12 @@ export class Game extends Scene {
     const innerWidth = frame.width - metrics.cardInsetX * 2;
     const buttonCount = Math.max(this.optionButtons.length, 1);
 
-    this.actionTitleText.setPosition(innerX, innerY);
-    this.voteSummaryText.setPosition(innerX, innerY + this.actionTitleText.height + 10);
+    this.actionTitleText.setPosition(innerX, innerY + 4);
+    this.actionTitleText.setWordWrapWidth(innerWidth);
+    this.voteSummaryText.setPosition(innerX, innerY + this.actionTitleText.height + 20);
     this.voteSummaryText.setWordWrapWidth(innerWidth);
 
-    const buttonTop = this.voteSummaryText.y + this.voteSummaryText.height + 18;
+    const buttonTop = this.voteSummaryText.y + this.voteSummaryText.height + 24;
     const buttonWidth =
       metrics.mode === 'dashboard'
         ? Math.floor((innerWidth - metrics.buttonGap * (buttonCount - 1)) / buttonCount)
@@ -713,11 +725,11 @@ export class Game extends Scene {
       return;
     }
 
-    const labelWidth = clamp(Math.round(frame.width * 0.22), 74, 96);
+    const labelWidth = clamp(Math.round(frame.width * 0.24), 74, 100);
     const valueWidth = 34;
-    const barTrackWidth = frame.width - metrics.cardInsetX * 2 - labelWidth - valueWidth - 10;
-    const startY = this.traitPanelTitle.y + this.traitPanelTitle.height + 18;
-    const rowGap = clamp(Math.round(frame.height * 0.17), 28, 36);
+    const barTrackWidth = frame.width - metrics.cardInsetX * 2 - labelWidth - valueWidth - 14;
+    const startY = this.traitPanelTitle.y + this.traitPanelTitle.height + 16;
+    const rowGap = clamp(Math.round(frame.height * 0.16), 26, 34);
     const barKeys: TraitKey[] = ['curiosity', 'chaos', 'trust', 'courage'];
 
     barKeys.forEach((traitKey, index) => {
@@ -729,13 +741,13 @@ export class Game extends Scene {
       const rowY = startY + index * rowGap;
       bar.label.setPosition(frame.x + metrics.cardInsetX, rowY - 10);
       bar.track.setPosition(frame.x + metrics.cardInsetX + labelWidth, rowY);
-      bar.track.setSize(barTrackWidth, 12);
+      bar.track.setSize(barTrackWidth, 10);
       bar.value.setPosition(frame.x + frame.width - metrics.cardInsetX - valueWidth, rowY - 12);
 
       const value = this.pettitState?.pettit.traits[traitKey] ?? 0;
       const fillWidth = Math.max(18, Math.round((barTrackWidth * value) / 100));
       bar.fill.setPosition(bar.track.x, rowY);
-      bar.fill.setSize(fillWidth, 12);
+      bar.fill.setSize(fillWidth, 10);
     });
   }
 
@@ -743,10 +755,7 @@ export class Game extends Scene {
     this.topActionPanel.setPosition(frame.x, frame.y);
     this.topActionPanel.setSize(frame.width, frame.height);
     this.topActionTitle.setPosition(frame.x + metrics.cardInsetX, frame.y + metrics.cardInsetY);
-    this.topActionBody.setPosition(
-      frame.x + metrics.cardInsetX,
-      this.topActionTitle.y + this.topActionTitle.height + 10
-    );
+    this.topActionBody.setPosition(frame.x + metrics.cardInsetX, this.topActionTitle.y + this.topActionTitle.height + 6);
     this.topActionBody.setWordWrapWidth(frame.width - metrics.cardInsetX * 2);
   }
 
@@ -760,7 +769,7 @@ export class Game extends Scene {
 
     this.journalTitleText.setPosition(innerX, innerY);
     this.journalTitleText.setWordWrapWidth(innerWidth);
-    this.journalBodyText.setPosition(innerX, innerY + this.journalTitleText.height + 12);
+    this.journalBodyText.setPosition(innerX, innerY + this.journalTitleText.height + 10);
     this.journalBodyText.setWordWrapWidth(innerWidth);
   }
 
@@ -773,7 +782,7 @@ export class Game extends Scene {
     const innerWidth = frame.width - metrics.cardInsetX * 2;
 
     this.memoryTitleText.setPosition(innerX, innerY);
-    this.memoryBodyText.setPosition(innerX, innerY + this.memoryTitleText.height + 12);
+    this.memoryBodyText.setPosition(innerX, innerY + this.memoryTitleText.height + 10);
     this.memoryBodyText.setWordWrapWidth(innerWidth);
   }
 
@@ -791,21 +800,27 @@ export class Game extends Scene {
   }
 
   private layoutResolveArea(metrics: LayoutMetrics, frame: PanelFrame): void {
+    this.resolvePanel.setPosition(frame.x, frame.y);
+    this.resolvePanel.setSize(frame.width, frame.height);
+
     const statusWidth = frame.width - metrics.cardInsetX * 2;
+    const innerX = frame.x + metrics.cardInsetX;
+    const innerY = frame.y + metrics.cardInsetY;
+    const buttonWidth = Math.max(220, Math.min(frame.width - metrics.cardInsetX * 2, 320));
+
     this.statusText.setWordWrapWidth(statusWidth);
-    this.statusText.setPosition(frame.x + frame.width / 2, frame.y + metrics.cardInsetY);
+    this.statusText.setPosition(innerX, innerY);
     this.traitFeedbackText.setWordWrapWidth(statusWidth);
-    this.traitFeedbackText.setPosition(
-      frame.x + frame.width / 2,
-      this.statusText.y + this.statusText.height + 10
-    );
+    this.traitFeedbackText.setPosition(innerX, this.statusText.y + this.statusText.height + 10);
     this.resolveButton.setPosition(
-      frame.x + frame.width / 2,
-      Math.min(
-        this.traitFeedbackText.y + this.traitFeedbackText.height + 14,
-        frame.y + frame.height - this.resolveButton.height - 8
+      frame.x + (frame.width - buttonWidth) / 2,
+      Math.max(
+        this.traitFeedbackText.y + this.traitFeedbackText.height + 20,
+        frame.y + frame.height - this.resolveButton.height - metrics.cardInsetY
       )
     );
+    this.resolveButton.setFixedSize(buttonWidth, this.resolveButton.height);
+    this.resolveButton.setAlign('center');
   }
 
   private async loadState(): Promise<void> {
@@ -884,25 +899,26 @@ export class Game extends Scene {
     this.titleText.setText(pettit.name);
     this.subtitleText.setText('Community Creature');
     this.summaryText.setText(
-      `Day ${pettit.ageDays} • Mood: ${this.capitalize(pettit.mood)} • Top traits: ${pettit.topTraits.map((trait) => this.formatTraitName(trait)).join(' + ')}`
+      `Day ${pettit.ageDays} - Raised together - Top traits: ${pettit.topTraits.map((trait) => this.formatTraitName(trait)).join(' + ')}`
     );
 
     this.creatureCaptionText.setText(`${pettit.name}`);
+    this.moodBadgeText.setText(this.formatMoodBadge(pettit.mood));
+    this.applyMoodBadgeStyle(pettit.mood);
     this.futureSlotText.setText(
-      `Mood: ${this.capitalize(pettit.mood)}\nA tiny placeholder creature while Pettit grows into its final form.`
+      'Raised by the community.'
     );
 
     this.actionTitleText.setText(activeQuest.title);
     this.voteSummaryText.setText(
-      `${activeQuest.description}\n\nVotes: ${activeQuest.totalVotes}${activeQuest.hasVoted ? ' • Your vote is in.' : ' • Pick one action.'}`
+      `${activeQuest.description}\n\nVotes: ${activeQuest.totalVotes}${activeQuest.hasVoted ? ' - Your vote is in.' : ' - Pick one action.'}`
     );
 
     this.topActionBody.setText(
       [
-        `Age: Day ${pettit.ageDays}`,
-        `Total Votes: ${this.formatCount(this.pettitState.communityStats.totalVotes)}`,
-        `Quests Completed: ${this.formatCount(this.pettitState.communityStats.questsCompleted)}`,
-        `Memories Created: ${this.formatCount(this.pettitState.communityStats.memoriesCreated)}`,
+        `${this.formatCount(this.pettitState.communityStats.totalVotes)} Votes`,
+        `${this.formatCount(this.pettitState.communityStats.questsCompleted)} Stories`,
+        `${this.formatCount(this.pettitState.communityStats.memoriesCreated)} Keepsakes`,
       ].join('\n')
     );
 
@@ -911,8 +927,8 @@ export class Game extends Scene {
     this.renderTraitFeedback();
 
     if (latestJournal) {
-      this.journalTitleText.setText(`Journal • ${latestJournal.title}`);
-      this.journalBodyText.setText(latestJournal.content);
+      this.journalTitleText.setText(`Journal - ${latestJournal.title}`);
+      this.journalBodyText.setText(this.truncateJournalPreview(latestJournal.content));
     } else {
       this.journalTitleText.setText('Journal');
       this.journalBodyText.setText('Resolve the first vote to give Pettit its opening journal entry.');
@@ -921,7 +937,7 @@ export class Game extends Scene {
     if (recentMemories.length > 0) {
       this.memoryBodyText.setText(
         recentMemories
-          .map((memory) => `${memory.title}\n${memory.description}`)
+          .map((memory) => this.formatMemoryPreview(memory.title))
           .join('\n\n')
       );
     } else {
@@ -933,7 +949,7 @@ export class Game extends Scene {
         this.pettitState.inventory
           .slice(-4)
           .reverse()
-          .map((item) => `${item.name}\n${this.formatGiftCategory(item.category)} • ${item.description}`)
+          .map((item) => `${item.name}\n${this.formatGiftCategory(item.category)} - ${item.description}`)
           .join('\n\n')
       );
     } else {
@@ -1103,6 +1119,71 @@ export class Game extends Scene {
     }
 
     return this.capitalize(traitKey);
+  }
+
+  private truncateJournalPreview(content: string): string {
+    const compact = this.scale.width < 1060;
+    const maxLength = compact ? 200 : 150;
+    const normalized = content.replace(/\s+/g, ' ').trim();
+
+    if (normalized.length <= maxLength) {
+      return normalized;
+    }
+
+    return `${normalized.slice(0, maxLength).trimEnd()}...`;
+  }
+
+  private formatMemoryPreview(title: string): string {
+    const normalized = title.trim();
+    const compactTitle = normalized.length > 34 ? `${normalized.slice(0, 34).trimEnd()}...` : normalized;
+    return `${this.getMemoryIcon(normalized)} ${compactTitle}`;
+  }
+
+  private getMemoryIcon(title: string): string {
+    const lowercaseTitle = title.toLowerCase();
+
+    if (lowercaseTitle.includes('backpack') || lowercaseTitle.includes('gift')) {
+      return '🎒';
+    }
+
+    if (lowercaseTitle.includes('book') || lowercaseTitle.includes('story') || lowercaseTitle.includes('journal')) {
+      return '📖';
+    }
+
+    if (lowercaseTitle.includes('meal') || lowercaseTitle.includes('supplies') || lowercaseTitle.includes('packed')) {
+      return '📦';
+    }
+
+    if (lowercaseTitle.includes('star') || lowercaseTitle.includes('sky') || lowercaseTitle.includes('lantern')) {
+      return '✨';
+    }
+
+    return '•';
+  }
+
+  private formatMoodBadge(mood: PettitViewModel['pettit']['mood']): string {
+    return `${this.capitalize(mood)} Mood`;
+  }
+
+  private applyMoodBadgeStyle(mood: PettitViewModel['pettit']['mood']): void {
+    switch (mood) {
+      case 'excited':
+        this.moodBadgeText.setBackgroundColor('#f6b14b');
+        this.moodBadgeText.setColor('#1f1e1a');
+        return;
+      case 'thoughtful':
+        this.moodBadgeText.setBackgroundColor('#8aa7ff');
+        this.moodBadgeText.setColor('#10203f');
+        return;
+      case 'nervous':
+        this.moodBadgeText.setBackgroundColor('#f28a9e');
+        this.moodBadgeText.setColor('#341723');
+        return;
+      default:
+        this.moodBadgeText.setBackgroundColor('#7cd4a7');
+        this.moodBadgeText.setColor('#103026');
+        return;
+    }
   }
 
   private humanizeOptionId(optionId: string): string {
