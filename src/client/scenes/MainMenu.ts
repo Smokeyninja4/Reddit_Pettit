@@ -1,75 +1,94 @@
 import { Scene, GameObjects } from 'phaser';
 
 export class MainMenu extends Scene {
-  background: GameObjects.Image | null = null;
-  logo: GameObjects.Image | null = null;
-  title: GameObjects.Text | null = null;
+  private background: GameObjects.Image | null = null;
+  private title: GameObjects.Text | null = null;
+  private subtitle: GameObjects.Text | null = null;
+  private prompt: GameObjects.Text | null = null;
+  private panel: GameObjects.Rectangle | null = null;
 
   constructor() {
     super('MainMenu');
   }
 
-  /**
-   * Reset cached GameObject references every time the scene starts.
-   * The same Scene instance is reused by Phaser, so we must ensure
-   * stale (destroyed) objects are cleared out when the scene restarts.
-   */
   init(): void {
     this.background = null;
-    this.logo = null;
     this.title = null;
+    this.subtitle = null;
+    this.prompt = null;
+    this.panel = null;
   }
 
-  create() {
+  create(): void {
     this.refreshLayout();
-
-    // Re-calculate positions whenever the game canvas is resized (e.g. orientation change).
     this.scale.on('resize', () => this.refreshLayout());
-
     this.input.once('pointerdown', () => {
       this.scene.start('Game');
     });
   }
 
-  /**
-   * Positions and (lightly) scales all UI elements based on the current game size.
-   * Call this from create() and from any resize events.
-   */
   private refreshLayout(): void {
     const { width, height } = this.scale;
+    const scaleFactor = Math.min(width / 1024, height / 768);
+    const panelWidth = Math.min(width * 0.82, 760);
+    const panelHeight = Math.min(height * 0.44, 320);
 
-    // Resize camera to new viewport to prevent black bars
     this.cameras.resize(width, height);
 
-    // Background – stretch to fill the whole canvas
     if (!this.background) {
       this.background = this.add.image(0, 0, 'background').setOrigin(0);
     }
-    this.background!.setDisplaySize(width, height);
+    this.background.setDisplaySize(width, height);
 
-    // Logo – keep aspect but scale down for very small screens
-    const scaleFactor = Math.min(width / 1024, height / 768);
-
-    if (!this.logo) {
-      this.logo = this.add.image(0, 0, 'logo');
+    if (!this.panel) {
+      this.panel = this.add
+        .rectangle(0, 0, panelWidth, panelHeight, 0x101820, 0.78)
+        .setStrokeStyle(2, 0xf4ede1, 0.7);
     }
-    this.logo!.setPosition(width / 2, height * 0.38).setScale(scaleFactor);
+    this.panel.setPosition(width / 2, height / 2);
+    this.panel.setSize(panelWidth, panelHeight);
 
-    // Title text – create once, then scale on resize
-    const baseFontSize = 38;
     if (!this.title) {
       this.title = this.add
-        .text(0, 0, 'Main Menu', {
-          fontFamily: 'Arial Black',
-          fontSize: `${baseFontSize}px`,
-          color: '#ffffff',
-          stroke: '#000000',
-          strokeThickness: 8,
+        .text(0, 0, 'Pettit', {
+          fontFamily: 'Georgia',
+          fontSize: '52px',
+          color: '#fff8e8',
           align: 'center',
         })
         .setOrigin(0.5);
     }
-    this.title!.setPosition(width / 2, height * 0.6);
-    this.title!.setScale(scaleFactor);
+    this.title.setPosition(width / 2, height * 0.39);
+    this.title.setScale(scaleFactor);
+
+    if (!this.subtitle) {
+      this.subtitle = this.add
+        .text(0, 0, 'One pet. Thousands of owners.', {
+          fontFamily: 'Trebuchet MS',
+          fontSize: '24px',
+          color: '#f6c453',
+          align: 'center',
+          wordWrap: { width: panelWidth - 60 },
+        })
+        .setOrigin(0.5);
+    }
+    this.subtitle.setPosition(width / 2, height * 0.49);
+    this.subtitle.setScale(scaleFactor);
+    this.subtitle.setWordWrapWidth(panelWidth - 60);
+
+    if (!this.prompt) {
+      this.prompt = this.add
+        .text(0, 0, 'Tap anywhere to see what the community wants Pettit to do next.', {
+          fontFamily: 'Trebuchet MS',
+          fontSize: '21px',
+          color: '#d9e4ec',
+          align: 'center',
+          wordWrap: { width: panelWidth - 80 },
+        })
+        .setOrigin(0.5);
+    }
+    this.prompt.setPosition(width / 2, height * 0.61);
+    this.prompt.setScale(scaleFactor);
+    this.prompt.setWordWrapWidth(panelWidth - 80);
   }
 }

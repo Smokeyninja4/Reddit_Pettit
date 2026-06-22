@@ -1,30 +1,35 @@
-## Devvit Phaser Starter
+# Pettit
 
-A starter to build web applications on Reddit's developer platform
+One Pet. Thousands of Owners.
 
-- [Devvit](https://developers.reddit.com/): A way to build and deploy immersive games on Reddit
-- [Vite](https://vite.dev/): For compiling the webView
-- [Phaser](https://phaser.io/): 2D game engine
-- [Hono](https://hono.dev/): For backend logic
-- [TypeScript](https://www.typescriptlang.org/): For type safety
+Pettit is a community-raised virtual pet built for Reddit using Devvit and Phaser.
 
-## Getting Started
+## Core Idea
 
-> Make sure you have Node 22 downloaded on your machine before running!
+Every subreddit raises a single shared Pettit.
 
-1. Run `npm create devvit@latest --template=phaser`
-2. Go through the installation wizard. You will need to create a Reddit account and connect it to Reddit developers
-3. Copy the command on the success page into your terminal
+The community votes on decisions, shapes its personality, creates memories, and writes its story together.
+
+## Status
+
+Early prototype: first playable
+
+The current build supports a single shared Pettit per subreddit, community voting on one active quest, persistent memories and journals in Redis, and a manual vote-resolution flow for playtesting.
+
+## Stack
+
+- [Devvit](https://developers.reddit.com/)
+- [Vite](https://vite.dev/)
+- [Phaser](https://phaser.io/)
+- [Hono](https://hono.dev/)
+- [TypeScript](https://www.typescriptlang.org/)
 
 ## Commands
 
-- `npm run dev`: Starts a development server where you can develop your application live on Reddit.
-- `npm run build`: Builds your client and server projects
-- `npm run deploy`: Uploads a new version of your app
-- `npm run launch`: Publishes your app for review
-- `npm run login`: Logs your CLI into Reddit
-- `npm run type-check`: Type checks, lints, and prettifies your app
-
-## Credits
-
-Thanks to the Phaser team for [providing a great template](https://github.com/phaserjs/template-vite-ts)!
+- `npm run dev`: Starts a live Devvit playtest session
+- `npm run build`: Builds the client and server bundles
+- `npm run deploy`: Type-checks, lints, and uploads a new app version
+- `npm run launch`: Deploys and publishes the app
+- `npm run login`: Logs the Devvit CLI into Reddit
+- `npm run type-check`: Type checks the workspace
+- `npm run lint`: Runs ESLint across the source tree

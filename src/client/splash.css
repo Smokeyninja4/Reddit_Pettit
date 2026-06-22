@@ -2,9 +2,8 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
-    Arial, sans-serif;
-  color: #000000;
+  font-family: "Trebuchet MS", Arial, sans-serif;
+  color: #10202a;
 }
 
 .app {
@@ -15,72 +14,72 @@
   align-items: center;
   height: 100vh;
   margin: 0;
-  gap: 16px;
+  gap: 18px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top, rgba(255, 244, 199, 0.95), rgba(255, 244, 199, 0) 34%),
+    linear-gradient(180deg, #f7efe0 0%, #dcebf0 100%);
 }
 
-.snoo {
-  object-fit: contain;
-  width: 50%;
-  max-width: 250px;
-  margin: 0 auto;
+.halo {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(246, 196, 83, 0.8) 0%, rgba(246, 196, 83, 0.24) 38%, rgba(246, 196, 83, 0) 72%),
+    radial-gradient(circle at 40% 35%, #fef8eb 0%, #f8d584 22%, #c96f2f 56%, #784028 100%);
+  box-shadow: 0 22px 50px rgba(83, 63, 29, 0.18);
 }
 
 .content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  width: min(88vw, 520px);
 }
 
 .title {
-  font-size: 1.5em;
-  font-weight: bold;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.7rem, 4vw, 2.5rem);
+  font-weight: 700;
   text-align: center;
+  color: #18303c;
 }
 
 .description {
-  font-size: 1em;
+  font-size: 1rem;
   text-align: center;
-  color: #5c6c74;
+  color: #425761;
 }
 
-.code {
-  background-color: #e5ebee;
-  padding: 2px 4px;
-  border-radius: 4px;
+.mood {
+  font-size: 0.98rem;
+  text-align: center;
+  color: #7b4f18;
+  line-height: 1.45;
 }
 
 .start-button {
-  background-color: #d93900;
+  background-color: #18303c;
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   line-height: 1;
   border: none;
-  padding: 6px 16px;
-  height: 28px;
-  font-size: 1.1em;
-  border-radius: 12px;
+  padding: 12px 22px;
+  min-height: 42px;
+  font-size: 1rem;
+  border-radius: 999px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
+  box-shadow: 0 12px 24px rgba(24, 48, 60, 0.18);
 }
 
-.footer {
-  position: absolute;
-  bottom: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 12px;
-  font-size: 0.8em;
-  color: #666666;
-}
-
-.docs-link {
-  cursor: pointer;
-}
-
-.divider {
-  color: rgba(0, 0, 0, 0.1);
+.start-button:hover {
+  background-color: #0f232c;
+  transform: translateY(-1px);
 }

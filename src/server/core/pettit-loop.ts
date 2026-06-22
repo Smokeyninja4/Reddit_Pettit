@@ -1,0 +1,333 @@
+import type {
+  ActiveQuest,
+  PettitJournalEntry,
+  PettitMemory,
+  PettitMood,
+  PettitState,
+  PettitStats,
+  PettitTraits,
+  PettitViewModel,
+  QuestOption,
+  QuestOptionOutcome,
+  QuestTemplate,
+  TraitKey,
+} from '../../shared/pettit';
+import { getTopTraits, getQuestTemplateById, getStarterQuestByIndex } from './pettit-seed';
+import {
+  appendJournal,
+  appendMemory,
+  createQuestInstance,
+  getJournals,
+  getMemories,
+  getOrCreateActiveQuest,
+  getOrCreateState,
+  getOrCreateStats,
+  getVoterMap,
+  resetVoterMap,
+  saveActiveQuest,
+  saveState,
+  saveStats,
+  saveVoterMap,
+} from './pettit-store';
+
+type WorldSnapshot = {
+  state: PettitState;
+  activeQuest: ActiveQuest;
+  memories: PettitMemory[];
+  journals: PettitJournalEntry[];
+  selectedOptionId: string | null;
+};
+
+type ResolveResult = {
+  state: PettitViewModel;
+  resolution: {
+    winningOptionId: string;
+    memoryId: string;
+    journalId: string;
+  };
+};
+
+const clampTraitValue = (value: number): number => Math.max(0, Math.min(100, value));
+
+const applyTraitEffects = (
+  currentTraits: PettitTraits,
+  traitEffects: Partial<Record<TraitKey, number>>
+): PettitTraits => {
+  const nextTraits: PettitTraits = { ...currentTraits };
+
+  for (const [traitKey, delta] of Object.entries(traitEffects) as [TraitKey, number][]) {
+    const currentValue = nextTraits[traitKey];
+    const dampener = currentValue >= 80 ? 0.5 : currentValue >= 60 ? 0.75 : 1;
+    const adjustedDelta = delta * dampener;
+    nextTraits[traitKey] = clampTraitValue(Math.round(currentValue + adjustedDelta));
+  }
+
+  return nextTraits;
+};
+
+const createMemoryRecord = (
+  outcome: QuestOptionOutcome,
+  sequenceNumber: number
+): PettitMemory => ({
+  id: `memory-${sequenceNumber}`,
+  timestamp: new Date().toISOString(),
+  title: outcome.memoryTitle,
+  description: outcome.memoryDescription,
+  type: outcome.memoryType,
+  importance: outcome.importance,
+});
+
+const createJournalEntry = (
+  state: PettitState,
+  quest: ActiveQuest,
+  outcome: QuestOptionOutcome,
+  memory: PettitMemory,
+  previousMemory: PettitMemory | null,
+  sequenceNumber: number
+): PettitJournalEntry => {
+  const topTraits = getTopTraits(state.traits, 2);
+  const openingByMood: Record<PettitMood, string> = {
+    curious: 'Today felt full of questions in the best possible way.',
+    excited: 'Today moved quickly, and I liked it that way.',
+    thoughtful: 'Today felt quieter, but not empty.',
+    nervous: 'Today required a little more bravery than usual.',
+  };
+
+  const reflectionByTrait: Record<TraitKey, string> = {
+    curiosity: 'I keep learning that the world gets bigger every time I look a little closer.',
+    chaos: 'Sometimes the strangest decisions are the ones that turn into stories worth keeping.',
+    trust: 'It is easier to be brave when it feels like the community is walking beside me.',
+    courage: 'I am starting to believe that uncertainty can still lead somewhere good.',
+  };
+
+  const leadingTrait = topTraits[0] ?? 'curiosity';
+  const trailingTrait = topTraits[1] ?? leadingTrait;
+  const memoryCallback = previousMemory
+    ? `I also kept thinking about ${previousMemory.title.toLowerCase()}, which made today feel connected to everything that came before it.`
+    : 'It feels nice knowing that today will be one of the first stories I get to keep.';
+
+  const content = [
+    openingByMood[outcome.mood],
+    outcome.resultText,
+    reflectionByTrait[leadingTrait],
+    leadingTrait !== trailingTrait ? reflectionByTrait[trailingTrait] : memoryCallback,
+    leadingTrait === trailingTrait ? memoryCallback : 'I think I am becoming a little more myself every day.',
+  ].join(' ');
+
+  return {
+    id: `journal-${sequenceNumber}`,
+    date: new Date().toISOString(),
+    title: quest.title,
+    content,
+    relatedMemoryIds: [memory.id],
+    relatedQuestId: quest.id,
+  };
+};
+
+const selectWinningOption = (quest: ActiveQuest): QuestOption => {
+  const template = getQuestTemplateById(quest.templateId);
+  let winningOption: QuestOption | null = null;
+
+  for (const templateOption of template.options) {
+    const activeOption = quest.options.find((option) => option.id === templateOption.id);
+
+    if (!activeOption) {
+      continue;
+    }
+
+    if (!winningOption || activeOption.votes > winningOption.votes) {
+      winningOption = activeOption;
+    }
+  }
+
+  if (!winningOption) {
+    throw new Error('Active quest has no vote options');
+  }
+
+  return winningOption;
+};
+
+const getOutcomeForOption = (template: QuestTemplate, optionId: string): QuestOptionOutcome => {
+  const outcome = template.outcomes.find((candidate) => candidate.optionId === optionId);
+
+  if (!outcome) {
+    throw new Error(`Missing outcome for option ${optionId}`);
+  }
+
+  return outcome;
+};
+
+const buildViewModel = (snapshot: WorldSnapshot): PettitViewModel => {
+  const latestJournal = snapshot.journals.length > 0 ? snapshot.journals[snapshot.journals.length - 1] ?? null : null;
+  const recentMemories = snapshot.memories.slice(-3).reverse();
+  const totalVotes = snapshot.activeQuest.options.reduce((sum, option) => sum + option.votes, 0);
+
+  return {
+    pettit: {
+      name: snapshot.state.name,
+      ageDays: snapshot.state.ageDays,
+      mood: snapshot.state.mood,
+      traits: snapshot.state.traits,
+      topTraits: getTopTraits(snapshot.state.traits, 2),
+    },
+    activeQuest: {
+      ...snapshot.activeQuest,
+      totalVotes,
+      hasVoted: snapshot.selectedOptionId !== null,
+      selectedOptionId: snapshot.selectedOptionId,
+    },
+    latestJournal,
+    recentMemories,
+  };
+};
+
+const loadWorldSnapshot = async (subredditName: string, username: string | null): Promise<WorldSnapshot> => {
+  const [state, activeQuest, memories, journals, voterMap] = await Promise.all([
+    getOrCreateState(subredditName),
+    getOrCreateActiveQuest(subredditName),
+    getMemories(subredditName),
+    getJournals(subredditName),
+    getVoterMap(subredditName),
+  ]);
+
+  return {
+    state,
+    activeQuest,
+    memories,
+    journals,
+    selectedOptionId: username ? voterMap[username] ?? null : null,
+  };
+};
+
+export const getPettitViewModel = async (
+  subredditName: string,
+  username: string | null
+): Promise<PettitViewModel> => {
+  const snapshot = await loadWorldSnapshot(subredditName, username);
+  return buildViewModel(snapshot);
+};
+
+export const submitVote = async (
+  subredditName: string,
+  username: string,
+  optionId: string
+): Promise<PettitViewModel> => {
+  const [activeQuest, voterMap, stats, state, memories, journals] = await Promise.all([
+    getOrCreateActiveQuest(subredditName),
+    getVoterMap(subredditName),
+    getOrCreateStats(subredditName),
+    getOrCreateState(subredditName),
+    getMemories(subredditName),
+    getJournals(subredditName),
+  ]);
+
+  if (voterMap[username]) {
+    throw new Error('DUPLICATE_VOTE');
+  }
+
+  const nextOptions = activeQuest.options.map((option) =>
+    option.id === optionId ? { ...option, votes: option.votes + 1 } : option
+  );
+  const optionExists = nextOptions.some((option) => option.id === optionId);
+
+  if (!optionExists) {
+    throw new Error('INVALID_OPTION');
+  }
+
+  const nextQuest: ActiveQuest = {
+    ...activeQuest,
+    options: nextOptions,
+  };
+  const nextVoterMap = {
+    ...voterMap,
+    [username]: optionId,
+  };
+  const nextStats: PettitStats = {
+    ...stats,
+    totalVotes: stats.totalVotes + 1,
+  };
+
+  await Promise.all([
+    saveActiveQuest(subredditName, nextQuest),
+    saveVoterMap(subredditName, nextVoterMap),
+    saveStats(subredditName, nextStats),
+  ]);
+
+  return buildViewModel({
+    state,
+    activeQuest: nextQuest,
+    memories,
+    journals,
+    selectedOptionId: optionId,
+  });
+};
+
+export const resolveVote = async (subredditName: string, username: string | null): Promise<ResolveResult> => {
+  const [state, activeQuest, memories, stats] = await Promise.all([
+    getOrCreateState(subredditName),
+    getOrCreateActiveQuest(subredditName),
+    getMemories(subredditName),
+    getOrCreateStats(subredditName),
+  ]);
+
+  const winningOption = selectWinningOption(activeQuest);
+  const template = getQuestTemplateById(activeQuest.templateId);
+  const outcome = getOutcomeForOption(template, winningOption.id);
+  const nextTraits = applyTraitEffects(state.traits, outcome.traitEffects);
+  const nextStats: PettitStats = {
+    ...stats,
+    resolvedQuestCount: stats.resolvedQuestCount + 1,
+    memoryCount: stats.memoryCount + 1,
+    journalCount: stats.journalCount + 1,
+  };
+  const memory = createMemoryRecord(outcome, nextStats.memoryCount);
+  const previousMemory = memories.length > 0 ? memories[memories.length - 1] ?? null : null;
+  const nextStateBeforeJournal: PettitState = {
+    ...state,
+    mood: outcome.mood,
+    traits: nextTraits,
+    ageDays: state.ageDays,
+  };
+  const journal = createJournalEntry(
+    nextStateBeforeJournal,
+    activeQuest,
+    outcome,
+    memory,
+    previousMemory,
+    nextStats.journalCount
+  );
+  const nextQuestTemplate = getStarterQuestByIndex(nextStats.resolvedQuestCount % 3);
+  const nextQuest = createQuestInstance(nextQuestTemplate.id, nextStats.resolvedQuestCount + 1);
+  const nextState: PettitState = {
+    ...nextStateBeforeJournal,
+    activeQuestId: nextQuest.id,
+    latestJournalId: journal.id,
+  };
+
+  const [nextMemories, nextJournals] = await Promise.all([
+    appendMemory(subredditName, memory),
+    appendJournal(subredditName, journal),
+  ]);
+
+  await Promise.all([
+    saveState(subredditName, nextState),
+    saveActiveQuest(subredditName, nextQuest),
+    saveStats(subredditName, nextStats),
+    resetVoterMap(subredditName),
+  ]);
+
+  return {
+    state: buildViewModel({
+      state: nextState,
+      activeQuest: nextQuest,
+      memories: nextMemories,
+      journals: nextJournals,
+      selectedOptionId: username ? null : null,
+    }),
+    resolution: {
+      winningOptionId: winningOption.id,
+      memoryId: memory.id,
+      journalId: journal.id,
+    },
+  };
+};
