@@ -8,7 +8,7 @@ import type {
   PettitNameSubmission,
   PettitState,
 } from '../../shared/pettit';
-import { getGiftById } from './pettit-gifts';
+import { canonicalizeGiftId, getGiftById } from './pettit-gifts';
 
 type LandmarkDefinition = {
   id: string;
@@ -143,11 +143,13 @@ const getGiftTarget = (inventoryItem: PettitInventoryItem): NamingTarget | null 
     return null;
   }
 
+  const gift = getGiftById(inventoryItem.giftId);
+
   return {
     targetType: 'gift',
-    targetId: inventoryItem.giftId,
-    baseName: inventoryItem.name,
-    description: inventoryItem.description,
+    targetId: canonicalizeGiftId(inventoryItem.giftId),
+    baseName: gift.name,
+    description: gift.description,
     discoveredAt: inventoryItem.obtainedAt,
   };
 };
@@ -168,7 +170,10 @@ const getLandmarkTarget = (landmark: PettitLandmark): NamingTarget | null => {
 
 const getNamingTarget = (state: PettitState, targetType: NamingTargetType, targetId: string): NamingTarget | null => {
   if (targetType === 'gift') {
-    const item = state.inventory.find((candidate) => candidate.giftId === targetId && !candidate.canonName);
+    const canonicalTargetId = canonicalizeGiftId(targetId);
+    const item = state.inventory.find(
+      (candidate) => canonicalizeGiftId(candidate.giftId) === canonicalTargetId && !candidate.canonName
+    );
     return item ? getGiftTarget(item) : null;
   }
 
@@ -199,10 +204,10 @@ export const getCanonNames = (state: PettitState): CanonNameRecord[] => {
     .filter((item) => Boolean(item.canonName))
     .map((item) => ({
       targetType: 'gift',
-      targetId: item.giftId,
-      baseName: item.name,
+      targetId: canonicalizeGiftId(item.giftId),
+      baseName: getGiftById(item.giftId).name,
       canonName: item.canonName ?? item.name,
-      description: item.description,
+      description: getGiftById(item.giftId).description,
     }));
 
   const landmarkNames: CanonNameRecord[] = state.landmarks
@@ -419,7 +424,7 @@ export const applyCanonName = (
     return {
       ...state,
       inventory: state.inventory.map((item) =>
-        item.giftId === targetId && !item.canonName
+        canonicalizeGiftId(item.giftId) === canonicalizeGiftId(targetId) && !item.canonName
           ? {
               ...item,
               canonName,

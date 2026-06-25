@@ -3,6 +3,7 @@ import type {
   ActiveEncounter,
   EncounterAffinity,
   PettitJournalEntry,
+  PettitInventoryItem,
   PettitLandmark,
   PettitMemory,
   PettitNameSubmission,
@@ -16,6 +17,7 @@ import {
   createEncounterInstanceFromTemplate,
   getEncounterTemplateById,
 } from './pettit-seed';
+import { getGiftById, resolveInventoryGiftId } from './pettit-gifts';
 
 type VoterMap = Record<string, string>;
 type NamingSubmissionMap = Record<string, PettitNameSubmission[]>;
@@ -82,13 +84,36 @@ const normalizeLandmark = (landmark: PettitLandmark & { sourceQuestTemplateId?: 
   };
 };
 
+const normalizeInventoryItem = (item: Partial<PettitInventoryItem>, index: number): PettitInventoryItem | null => {
+  const resolvedGiftId = resolveInventoryGiftId(item);
+
+  if (!resolvedGiftId) {
+    return null;
+  }
+
+  const gift = getGiftById(resolvedGiftId);
+
+  return {
+    id: item.id ?? `inventory-legacy-${index + 1}`,
+    giftId: gift.id,
+    name: item.name ?? gift.name,
+    description: item.description ?? gift.description,
+    category: item.category ?? gift.category,
+    source: item.source ?? 'Community Gift Encounter',
+    obtainedAt: item.obtainedAt ?? new Date().toISOString(),
+    canonName: item.canonName,
+  };
+};
+
 const normalizeState = (storedState: LegacyState): PettitState => {
   const activeEncounterId = storedState.activeEncounterId ?? storedState.activeQuestId ?? 'encounter-cave-1';
 
   return {
     ...storedState,
     ageDays: calculateAgeDays(storedState.createdAt),
-    inventory: storedState.inventory ?? [],
+    inventory: (storedState.inventory ?? [])
+      .map((item, index) => normalizeInventoryItem(item as Partial<PettitInventoryItem>, index))
+      .filter((item): item is PettitInventoryItem => item !== null),
     landmarks: (storedState.landmarks ?? []).map((landmark) =>
       normalizeLandmark(landmark as PettitLandmark & { sourceQuestTemplateId?: string })
     ),
