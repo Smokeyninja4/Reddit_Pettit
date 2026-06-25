@@ -7,7 +7,6 @@ import type {
   PettitInventoryItem,
   PettitJournalEntry,
   PettitMemory,
-  PettitMood,
   PettitNameSubmission,
   PettitState,
   PettitStats,
@@ -16,6 +15,7 @@ import type {
   TraitKey,
 } from '../../shared/pettit';
 import { getGiftById, buildGiftEncounterTemplate, selectGiftEncounterIds } from './pettit-gifts';
+import { createJournalEntry } from './pettit-journal';
 import {
   applyCanonName,
   clearNamingTargetSubmissions,
@@ -168,53 +168,6 @@ const createMemoryRecord = (
   type: outcome.memoryType,
   importance: outcome.importance,
 });
-
-const createJournalEntry = (
-  state: PettitState,
-  encounter: ActiveEncounter,
-  outcome: EncounterOptionOutcome,
-  memory: PettitMemory,
-  previousMemory: PettitMemory | null,
-  sequenceNumber: number
-): PettitJournalEntry => {
-  const topTraits = getTopTraits(state.traits, 2);
-  const openingByMood: Record<PettitMood, string> = {
-    curious: 'Today felt full of questions in the best possible way.',
-    excited: 'Today moved quickly, and I liked it that way.',
-    thoughtful: 'Today felt quieter, but not empty.',
-    nervous: 'Today required a little more bravery than usual.',
-  };
-
-  const reflectionByTrait: Record<TraitKey, string> = {
-    curiosity: 'I keep learning that the world gets bigger every time I look a little closer.',
-    chaos: 'Sometimes the strangest decisions are the ones that turn into stories worth keeping.',
-    trust: 'It is easier to be brave when it feels like the community is walking beside me.',
-    courage: 'I am starting to believe that uncertainty can still lead somewhere good.',
-  };
-
-  const leadingTrait = topTraits[0] ?? 'curiosity';
-  const trailingTrait = topTraits[1] ?? leadingTrait;
-  const memoryCallback = previousMemory
-    ? `I also kept thinking about ${previousMemory.title.toLowerCase()}, which made today feel connected to everything that came before it.`
-    : 'It feels nice knowing that today will be one of the first stories I get to keep.';
-
-  const content = [
-    openingByMood[outcome.mood],
-    outcome.resultText,
-    reflectionByTrait[leadingTrait],
-    leadingTrait !== trailingTrait ? reflectionByTrait[trailingTrait] : memoryCallback,
-    leadingTrait === trailingTrait ? memoryCallback : 'I think I am becoming a little more myself every day.',
-  ].join(' ');
-
-  return {
-    id: `journal-${sequenceNumber}`,
-    date: new Date().toISOString(),
-    title: encounter.title,
-    content,
-    relatedMemoryIds: [memory.id],
-    relatedEncounterId: encounter.id,
-  };
-};
 
 const selectWinningOption = (encounter: ActiveEncounter): EncounterOption => {
   const template = getEncounterTemplateById(encounter.templateId);
