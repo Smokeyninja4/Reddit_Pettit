@@ -280,51 +280,95 @@ const isRareEncounterTurn = (resolvedEncounterCount: number): boolean => {
   return resolvedEncounterCount > 0 && resolvedEncounterCount % 20 === 0;
 };
 
-const buildWeightedPool = (
+const SEASONAL_ENCOUNTER_CHANCE = 0.14;
+const ENCOUNTER_WEIGHT_FLOOR = 5;
+
+const filterRepeatedEncounter = (
   candidates: readonly EncounterTemplate[],
-  state: PettitState,
   currentTemplateId: string
 ): EncounterTemplate[] => {
-  const topTraits = getTopTraits(state.traits, 2);
-  const currentTemplate = getEncounterTemplateById(currentTemplateId);
-
-  return candidates.flatMap((template) => {
-    const isCurrentAffinity = template.affinity === currentTemplate.affinity;
-    let weight =
-      template.affinity === topTraits[0]
-        ? 7
-        : template.affinity === topTraits[1]
-          ? 5
-          : template.affinity === 'seasonal'
-            ? 3
-            : 2;
-
-    if (isCurrentAffinity) {
-      weight = Math.max(1, weight - 2);
-    }
-
-    return Array.from({ length: weight }, () => template);
-  });
-};
-
-const pickWeightedEncounter = (
-  candidates: readonly EncounterTemplate[],
-  state: PettitState,
-  resolvedEncounterCount: number,
-  currentTemplateId: string
-): EncounterTemplate => {
   const canonicalCurrentId = canonicalizeEncounterTemplateId(currentTemplateId);
   const filteredCandidates = candidates.filter((template) => template.id !== canonicalCurrentId);
-  const safeCandidates = filteredCandidates.length > 0 ? filteredCandidates : [...candidates];
-  const weightedPool = buildWeightedPool(safeCandidates, state, currentTemplateId);
+  return filteredCandidates.length > 0 ? filteredCandidates : [...candidates];
+};
 
-  if (weightedPool.length === 0) {
+const pickRandomEncounter = (
+  candidates: readonly EncounterTemplate[],
+  currentTemplateId: string
+): EncounterTemplate => {
+  const safeCandidates = filterRepeatedEncounter(candidates, currentTemplateId);
+
+  if (safeCandidates.length === 0) {
     throw new Error('Encounter library is empty');
   }
 
-  const traitSeed = Object.values(state.traits).reduce((sum, value) => sum + value, 0);
-  const seed = traitSeed + resolvedEncounterCount * 7 + state.ageDays * 3;
-  return weightedPool[seed % weightedPool.length] ?? weightedPool[0]!;
+  const index = Math.floor(Math.random() * safeCandidates.length);
+  return safeCandidates[index] ?? safeCandidates[0]!;
+};
+
+const getTraitAffinityWeight = (state: PettitState, affinity: TraitKey): number => {
+  const traitValue = state.traits[affinity];
+  return ENCOUNTER_WEIGHT_FLOOR + Math.round((traitValue * traitValue) / 25);
+};
+
+const pickWeightedStandardEncounter = (
+  candidates: readonly EncounterTemplate[],
+  state: PettitState,
+  currentTemplateId: string
+): EncounterTemplate => {
+  const safeCandidates = filterRepeatedEncounter(candidates, currentTemplateId);
+
+  if (safeCandidates.length === 0) {
+    throw new Error('Encounter library is empty');
+  }
+
+  const groupedByAffinity: Record<TraitKey, EncounterTemplate[]> = {
+    curiosity: [],
+    courage: [],
+    trust: [],
+    chaos: [],
+  };
+
+  safeCandidates.forEach((template) => {
+    if (
+      template.affinity === 'curiosity' ||
+      template.affinity === 'courage' ||
+      template.affinity === 'trust' ||
+      template.affinity === 'chaos'
+    ) {
+      groupedByAffinity[template.affinity].push(template);
+    }
+  });
+
+  const availableFamilies = (Object.keys(groupedByAffinity) as TraitKey[]).filter(
+    (family) => groupedByAffinity[family].length > 0
+  );
+
+  if (availableFamilies.length === 0) {
+    throw new Error('No standard encounter families are available');
+  }
+
+  const chosenFamily = (() => {
+    const familyWeights = availableFamilies.map((family) => ({
+      family,
+      weight: getTraitAffinityWeight(state, family),
+    }));
+    const totalWeight = familyWeights.reduce((sum, entry) => sum + entry.weight, 0);
+    let roll = Math.random() * totalWeight;
+
+    for (const entry of familyWeights) {
+      roll -= entry.weight;
+
+      if (roll <= 0) {
+        return entry.family;
+      }
+    }
+
+    return familyWeights[familyWeights.length - 1]?.family ?? availableFamilies[0]!;
+  })();
+
+  const familyCandidates = groupedByAffinity[chosenFamily];
+  return pickRandomEncounter(familyCandidates, currentTemplateId);
 };
 
 const selectNextEncounterTemplate = (
@@ -345,15 +389,18 @@ const selectNextEncounterTemplate = (
   }
 
   if (isRareEncounterTurn(resolvedEncounterCount)) {
-    return pickWeightedEncounter(getRareEncounterTemplates(), state, resolvedEncounterCount, currentTemplateId);
+    return pickRandomEncounter(getRareEncounterTemplates(), currentTemplateId);
   }
 
-  const standardCandidates = [
-    ...getStandardEncounterTemplates(),
-    ...getSeasonalEncounterTemplates(),
-  ];
+  const seasonalCandidates = getSeasonalEncounterTemplates();
 
-  return pickWeightedEncounter(standardCandidates, state, resolvedEncounterCount, currentTemplateId);
+  if (seasonalCandidates.length > 0 && Math.random() < SEASONAL_ENCOUNTER_CHANCE) {
+    return pickRandomEncounter(seasonalCandidates, currentTemplateId);
+  }
+
+  const standardCandidates = getStandardEncounterTemplates();
+
+  return pickWeightedStandardEncounter(standardCandidates, state, currentTemplateId);
 };
 
 export const getPettitViewModel = async (
