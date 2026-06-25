@@ -51,7 +51,7 @@ menu.post('/name-form', async (c) => {
     if (targetOptions.length === 0) {
       return c.json<UiResponse>(
         {
-          showToast: 'Nothing is ready for naming yet. Resolve more quests or gifts first.',
+          showToast: 'Nothing is ready for naming yet. Resolve more encounters or gifts first.',
         },
         200
       );

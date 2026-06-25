@@ -1,21 +1,39 @@
 import { redis } from '@devvit/web/server';
 import type {
-  ActiveQuest,
+  ActiveEncounter,
+  EncounterAffinity,
   PettitJournalEntry,
+  PettitLandmark,
   PettitMemory,
   PettitNameSubmission,
   PettitState,
   PettitStats,
 } from '../../shared/pettit';
 import {
+  canonicalizeEncounterTemplateId,
   createDefaultPettitState,
   createDefaultStats,
-  createQuestInstanceFromTemplate,
-  getQuestTemplateById,
+  createEncounterInstanceFromTemplate,
+  getEncounterTemplateById,
 } from './pettit-seed';
 
 type VoterMap = Record<string, string>;
 type NamingSubmissionMap = Record<string, PettitNameSubmission[]>;
+
+type LegacyState = PettitState & {
+  activeQuestId?: string;
+  activeEncounterId?: string;
+};
+
+type LegacyStats = PettitStats & {
+  resolvedQuestCount?: number;
+  resolvedEncounterCount?: number;
+};
+
+type LegacyActiveEncounter = ActiveEncounter & {
+  category?: string;
+  affinity?: EncounterAffinity;
+};
 
 const parseJson = <T>(value: string | null | undefined, fallback: T): T => {
   if (!value) {
@@ -35,7 +53,7 @@ export const buildPettitKeys = (subredditName: string) => {
   const prefix = buildKeyPrefix(subredditName);
   return {
     state: `${prefix}:state`,
-    activeQuest: `${prefix}:quest:active`,
+    activeEncounter: `${prefix}:quest:active`,
     voters: `${prefix}:quest:voters`,
     memories: `${prefix}:memories`,
     journals: `${prefix}:journals`,
@@ -55,23 +73,68 @@ const calculateAgeDays = (createdAt: string): number => {
   return Math.max(0, Math.floor((Date.now() - createdTime) / millisecondsPerDay));
 };
 
-export const createQuestInstance = (templateId: string, sequenceNumber: number): ActiveQuest => {
-  const template = getQuestTemplateById(templateId);
-  return createQuestInstanceFromTemplate(template, sequenceNumber);
+const normalizeLandmark = (landmark: PettitLandmark & { sourceQuestTemplateId?: string }): PettitLandmark => {
+  return {
+    ...landmark,
+    sourceEncounterTemplateId: canonicalizeEncounterTemplateId(
+      landmark.sourceEncounterTemplateId ?? landmark.sourceQuestTemplateId ?? 'encounter-cave'
+    ),
+  };
+};
+
+const normalizeState = (storedState: LegacyState): PettitState => {
+  const activeEncounterId = storedState.activeEncounterId ?? storedState.activeQuestId ?? 'encounter-cave-1';
+
+  return {
+    ...storedState,
+    ageDays: calculateAgeDays(storedState.createdAt),
+    inventory: storedState.inventory ?? [],
+    landmarks: (storedState.landmarks ?? []).map((landmark) =>
+      normalizeLandmark(landmark as PettitLandmark & { sourceQuestTemplateId?: string })
+    ),
+    activeEncounterId: activeEncounterId.replace(/^quest-/, 'encounter-'),
+    latestJournalId: storedState.latestJournalId ?? null,
+  };
+};
+
+const normalizeStats = (storedStats: LegacyStats): PettitStats => ({
+  totalVotes: storedStats.totalVotes ?? 0,
+  journalCount: storedStats.journalCount ?? 0,
+  memoryCount: storedStats.memoryCount ?? 0,
+  resolvedEncounterCount: storedStats.resolvedEncounterCount ?? storedStats.resolvedQuestCount ?? 0,
+});
+
+const normalizeActiveEncounter = (storedEncounter: LegacyActiveEncounter): ActiveEncounter => {
+  const template = getEncounterTemplateById(storedEncounter.templateId);
+
+  return {
+    ...storedEncounter,
+    templateId: template.id,
+    title: storedEncounter.title ?? template.title,
+    description: storedEncounter.description ?? template.description,
+    affinity: storedEncounter.affinity ?? template.affinity,
+    season: storedEncounter.season ?? template.season,
+    isRare: storedEncounter.isRare ?? template.isRare,
+    options:
+      storedEncounter.options?.map((option) => ({
+        id: option.id,
+        label: option.label,
+        votes: option.votes ?? 0,
+      })) ?? template.options.map((option) => ({ id: option.id, label: option.label, votes: 0 })),
+  };
+};
+
+export const createEncounterInstance = (templateId: string, sequenceNumber: number): ActiveEncounter => {
+  const template = getEncounterTemplateById(templateId);
+  return createEncounterInstanceFromTemplate(template, sequenceNumber);
 };
 
 export const getOrCreateState = async (subredditName: string): Promise<PettitState> => {
   const keys = buildPettitKeys(subredditName);
-  const storedState = parseJson<PettitState | null>(await redis.get(keys.state), null);
+  const storedState = parseJson<LegacyState | null>(await redis.get(keys.state), null);
 
   if (storedState) {
-    const refreshedState: PettitState = {
-      ...storedState,
-      ageDays: calculateAgeDays(storedState.createdAt),
-      inventory: storedState.inventory ?? [],
-      landmarks: storedState.landmarks ?? [],
-    };
-
+    const refreshedState = normalizeState(storedState);
     await redis.set(keys.state, JSON.stringify(refreshedState));
     return refreshedState;
   }
@@ -86,22 +149,24 @@ export const saveState = async (subredditName: string, state: PettitState): Prom
   await redis.set(keys.state, JSON.stringify(state));
 };
 
-export const getOrCreateActiveQuest = async (subredditName: string): Promise<ActiveQuest> => {
+export const getOrCreateActiveEncounter = async (subredditName: string): Promise<ActiveEncounter> => {
   const keys = buildPettitKeys(subredditName);
-  const storedQuest = parseJson<ActiveQuest | null>(await redis.get(keys.activeQuest), null);
+  const storedEncounter = parseJson<LegacyActiveEncounter | null>(await redis.get(keys.activeEncounter), null);
 
-  if (storedQuest) {
-    return storedQuest;
+  if (storedEncounter) {
+    const normalizedEncounter = normalizeActiveEncounter(storedEncounter);
+    await redis.set(keys.activeEncounter, JSON.stringify(normalizedEncounter));
+    return normalizedEncounter;
   }
 
-  const defaultQuest = createQuestInstance('quest-cave', 1);
-  await redis.set(keys.activeQuest, JSON.stringify(defaultQuest));
-  return defaultQuest;
+  const defaultEncounter = createEncounterInstance('encounter-cave', 1);
+  await redis.set(keys.activeEncounter, JSON.stringify(defaultEncounter));
+  return defaultEncounter;
 };
 
-export const saveActiveQuest = async (subredditName: string, quest: ActiveQuest): Promise<void> => {
+export const saveActiveEncounter = async (subredditName: string, encounter: ActiveEncounter): Promise<void> => {
   const keys = buildPettitKeys(subredditName);
-  await redis.set(keys.activeQuest, JSON.stringify(quest));
+  await redis.set(keys.activeEncounter, JSON.stringify(encounter));
 };
 
 export const getVoterMap = async (subredditName: string): Promise<VoterMap> => {
@@ -150,10 +215,12 @@ export const appendJournal = async (
 
 export const getOrCreateStats = async (subredditName: string): Promise<PettitStats> => {
   const keys = buildPettitKeys(subredditName);
-  const storedStats = parseJson<PettitStats | null>(await redis.get(keys.stats), null);
+  const storedStats = parseJson<LegacyStats | null>(await redis.get(keys.stats), null);
 
   if (storedStats) {
-    return storedStats;
+    const normalizedStats = normalizeStats(storedStats);
+    await redis.set(keys.stats, JSON.stringify(normalizedStats));
+    return normalizedStats;
   }
 
   const defaultStats = createDefaultStats();

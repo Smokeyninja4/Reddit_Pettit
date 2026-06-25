@@ -1,12 +1,12 @@
 import type {
   CanonNameRecord,
+  EncounterTemplate,
   NamingTargetType,
   PendingNamingTarget,
   PettitInventoryItem,
   PettitLandmark,
   PettitNameSubmission,
   PettitState,
-  QuestTemplate,
 } from '../../shared/pettit';
 import { getGiftById } from './pettit-gifts';
 
@@ -14,7 +14,7 @@ type LandmarkDefinition = {
   id: string;
   baseName: string;
   description: string;
-  sourceQuestTemplateId: string;
+  sourceEncounterTemplateId: string;
   referenceLabel: string;
 };
 
@@ -28,28 +28,29 @@ type NamingTarget = {
 
 export type NamingSubmissionMap = Record<string, PettitNameSubmission[]>;
 
-const NAMING_QUEST_PREFIX = 'quest-name:';
+const NAMING_ENCOUNTER_PREFIX = 'encounter-name:';
+const LEGACY_NAMING_QUEST_PREFIX = 'quest-name:';
 
 const LANDMARKS: readonly LandmarkDefinition[] = [
   {
     id: 'mossy-cave',
     baseName: 'Mossy Cave',
     description: 'The little cave behind the moss curtain.',
-    sourceQuestTemplateId: 'quest-cave',
+    sourceEncounterTemplateId: 'encounter-cave',
     referenceLabel: 'the cave',
   },
   {
     id: 'stargazing-hill',
     baseName: 'Stargazing Hill',
     description: 'The quiet hill where Pettit watches the night sky.',
-    sourceQuestTemplateId: 'quest-stars',
+    sourceEncounterTemplateId: 'encounter-stars',
     referenceLabel: 'the hill',
   },
   {
     id: 'traveller-road',
     baseName: 'Traveller Road',
     description: 'The road where strangers and small acts of kindness keep meeting Pettit.',
-    sourceQuestTemplateId: 'quest-traveller',
+    sourceEncounterTemplateId: 'encounter-traveller',
     referenceLabel: 'the road',
   },
 ];
@@ -62,13 +63,41 @@ const sortByDiscovery = (left: NamingTarget, right: NamingTarget): number => {
   return Date.parse(left.discoveredAt) - Date.parse(right.discoveredAt);
 };
 
-const buildNamingQuestId = (
+const buildNamingEncounterId = (
   targetType: NamingTargetType,
   targetId: string,
   candidateNames: readonly string[]
 ): string => {
   const encodedNames = candidateNames.map((candidate) => encodeURIComponent(candidate)).join('~');
-  return `${NAMING_QUEST_PREFIX}${targetType}:${targetId}:${encodedNames}`;
+  return `${NAMING_ENCOUNTER_PREFIX}${targetType}:${targetId}:${encodedNames}`;
+};
+
+const stripNamingPrefix = (templateId: string): string => {
+  if (templateId.startsWith(NAMING_ENCOUNTER_PREFIX)) {
+    return templateId.slice(NAMING_ENCOUNTER_PREFIX.length);
+  }
+
+  if (templateId.startsWith(LEGACY_NAMING_QUEST_PREFIX)) {
+    return templateId.slice(LEGACY_NAMING_QUEST_PREFIX.length);
+  }
+
+  throw new Error(`Unknown naming encounter template: ${templateId}`);
+};
+
+const canonicalizeEncounterTemplateId = (templateId: string): string => {
+  if (templateId === 'quest-cave') {
+    return 'encounter-cave';
+  }
+
+  if (templateId === 'quest-stars') {
+    return 'encounter-stars';
+  }
+
+  if (templateId === 'quest-traveller') {
+    return 'encounter-traveller';
+  }
+
+  return templateId;
 };
 
 export const buildNamingTargetKey = (targetType: NamingTargetType, targetId: string): string => {
@@ -104,7 +133,7 @@ const createLandmarkRecord = (landmarkId: string): PettitLandmark => {
     id: definition.id,
     baseName: definition.baseName,
     description: definition.description,
-    sourceQuestTemplateId: definition.sourceQuestTemplateId,
+    sourceEncounterTemplateId: definition.sourceEncounterTemplateId,
     discoveredAt: new Date().toISOString(),
   };
 };
@@ -206,13 +235,15 @@ export const discoverLandmark = (state: PettitState, landmarkId: string | undefi
   };
 };
 
-export const isNamingQuestTemplateId = (templateId: string): boolean => templateId.startsWith(NAMING_QUEST_PREFIX);
+export const isNamingEncounterTemplateId = (templateId: string): boolean => {
+  return templateId.startsWith(NAMING_ENCOUNTER_PREFIX) || templateId.startsWith(LEGACY_NAMING_QUEST_PREFIX);
+};
 
-export const buildNamingQuestTemplate = (
+export const buildNamingEncounterTemplate = (
   targetType: NamingTargetType,
   targetId: string,
   candidateNames: readonly string[]
-): QuestTemplate => {
+): EncounterTemplate => {
   const target =
     targetType === 'gift'
       ? (() => {
@@ -236,18 +267,17 @@ export const buildNamingQuestTemplate = (
           };
         })();
 
-  const targetLabel = targetType === 'gift' ? target.baseName : `${target.baseName}`;
-  const title = targetType === 'gift' ? `Choose A Name For ${targetLabel}` : `Choose A Name For ${targetLabel}`;
+  const title = `Choose A Name For ${target.baseName}`;
   const description =
     targetType === 'gift'
-      ? `The community has adopted this keepsake. Which name should become part of Pettit's world?`
-      : `This place has become part of Pettit's story. Which name should the community make canon?`;
+      ? "The community has adopted this keepsake. Which name should become part of Pettit's world?"
+      : "This place has become part of Pettit's story. Which name should the community make canon?";
 
   return {
-    id: buildNamingQuestId(targetType, targetId, candidateNames),
+    id: buildNamingEncounterId(targetType, targetId, candidateNames),
     title,
     description,
-    category: 'community',
+    affinity: 'community',
     options: candidateNames.map((candidateName, index) => ({
       id: `name-${index + 1}`,
       label: candidateName,
@@ -277,20 +307,16 @@ export const buildNamingQuestTemplate = (
   };
 };
 
-export const getNamingQuestTemplateById = (templateId: string): QuestTemplate => {
-  if (!isNamingQuestTemplateId(templateId)) {
-    throw new Error(`Unknown naming quest template: ${templateId}`);
+export const getNamingEncounterTemplateById = (templateId: string): EncounterTemplate => {
+  if (!isNamingEncounterTemplateId(templateId)) {
+    throw new Error(`Unknown naming encounter template: ${templateId}`);
   }
 
-  const encoded = templateId.slice(NAMING_QUEST_PREFIX.length);
+  const encoded = stripNamingPrefix(templateId);
   const [targetTypeValue, targetId, encodedNames] = encoded.split(':');
 
-  if (
-    (targetTypeValue !== 'gift' && targetTypeValue !== 'landmark') ||
-    !targetId ||
-    !encodedNames
-  ) {
-    throw new Error(`Malformed naming quest template: ${templateId}`);
+  if ((targetTypeValue !== 'gift' && targetTypeValue !== 'landmark') || !targetId || !encodedNames) {
+    throw new Error(`Malformed naming encounter template: ${templateId}`);
   }
 
   const candidateNames = encodedNames
@@ -298,13 +324,13 @@ export const getNamingQuestTemplateById = (templateId: string): QuestTemplate =>
     .filter(Boolean)
     .map((candidate) => decodeURIComponent(candidate));
 
-  return buildNamingQuestTemplate(targetTypeValue, targetId, candidateNames);
+  return buildNamingEncounterTemplate(targetTypeValue, targetId, candidateNames);
 };
 
-export const selectReadyNamingQuestTemplate = (
+export const selectReadyNamingEncounterTemplate = (
   state: PettitState,
   submissionMap: NamingSubmissionMap
-): QuestTemplate | null => {
+): EncounterTemplate | null => {
   const pendingTargets = getPendingNamingTargets(state, submissionMap)
     .filter((target) => target.submissionCount >= 3)
     .sort((left, right) => {
@@ -326,7 +352,7 @@ export const selectReadyNamingQuestTemplate = (
 
   const targetKey = buildNamingTargetKey(nextTarget.targetType, nextTarget.targetId);
   const candidateNames = (submissionMap[targetKey] ?? []).slice(0, 3).map((submission) => submission.proposedName);
-  return buildNamingQuestTemplate(nextTarget.targetType, nextTarget.targetId, candidateNames);
+  return buildNamingEncounterTemplate(nextTarget.targetType, nextTarget.targetId, candidateNames);
 };
 
 export const submitNameForTarget = (
@@ -438,22 +464,24 @@ export const getLandmarkReference = (state: PettitState, landmarkId: string): st
   return landmark.canonName;
 };
 
-export const personalizeQuestText = (
+export const personalizeEncounterText = (
   state: PettitState,
   templateId: string,
   value: string
 ): string => {
-  if (templateId === 'quest-cave') {
+  const canonicalTemplateId = canonicalizeEncounterTemplateId(templateId);
+
+  if (canonicalTemplateId === 'encounter-cave') {
     const canonName = getLandmarkReference(state, 'mossy-cave');
     return canonName ? value.replaceAll('the cave', canonName).replaceAll('a cave', canonName) : value;
   }
 
-  if (templateId === 'quest-stars') {
+  if (canonicalTemplateId === 'encounter-stars') {
     const canonName = getLandmarkReference(state, 'stargazing-hill');
     return canonName ? `${value} From ${canonName}, everything felt a little closer.` : value;
   }
 
-  if (templateId === 'quest-traveller') {
+  if (canonicalTemplateId === 'encounter-traveller') {
     const canonName = getLandmarkReference(state, 'traveller-road');
     return canonName ? `${value} It happened along ${canonName}.` : value;
   }

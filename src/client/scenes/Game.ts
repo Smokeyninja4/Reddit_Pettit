@@ -888,7 +888,7 @@ export class Game extends Scene {
   }
 
   private syncOptionButtons(): void {
-    const options = this.pettitState?.activeQuest.options ?? [];
+    const options = this.pettitState?.activeEncounter.options ?? [];
 
     while (this.optionButtons.length > options.length) {
       const button = this.optionButtons.pop();
@@ -914,7 +914,7 @@ export class Game extends Scene {
         createdButton.setOrigin(0, 0);
         createdButton.setInteractive({ useHandCursor: true });
         createdButton.on('pointerover', () => {
-          if (!this.pettitState?.activeQuest.hasVoted) {
+          if (!this.pettitState?.activeEncounter.hasVoted) {
             createdButton.setStyle({ backgroundColor: '#468b53' });
           }
         });
@@ -944,7 +944,7 @@ export class Game extends Scene {
       return;
     }
 
-    const { pettit, activeQuest, latestJournal, recentMemories } = this.pettitState;
+    const { pettit, activeEncounter, latestJournal, recentMemories } = this.pettitState;
     this.titleText.setText(pettit.name);
     this.subtitleText.setText('Community Creature');
     this.summaryText.setText(
@@ -958,15 +958,15 @@ export class Game extends Scene {
       'Raised by the community.'
     );
 
-    this.actionTitleText.setText(activeQuest.title);
+    this.actionTitleText.setText(activeEncounter.title);
     this.voteSummaryText.setText(
-      `${activeQuest.description}\n\nVotes: ${activeQuest.totalVotes}${activeQuest.hasVoted ? ' - Your vote is in.' : ' - Pick one action.'}`
+      `${activeEncounter.description}\n\nVotes: ${activeEncounter.totalVotes}${activeEncounter.hasVoted ? ' - Your vote is in.' : ' - Pick one action.'}`
     );
 
     this.topActionBody.setText(
       [
         `${this.formatCount(this.pettitState.communityStats.totalVotes)} Votes`,
-        `${this.formatCount(this.pettitState.communityStats.questsCompleted)} Stories`,
+        `${this.formatCount(this.pettitState.communityStats.encountersCompleted)} Stories`,
         `${this.formatCount(this.pettitState.communityStats.memoriesCreated)} Keepsakes`,
         this.pettitState.pendingNamingTargets.length > 0
           ? `${this.formatCount(this.pettitState.pendingNamingTargets.length)} Names waiting`
@@ -993,7 +993,7 @@ export class Game extends Scene {
           .join('\n\n')
       );
     } else {
-      this.memoryBodyText.setText('No memories yet. The first resolved quest will give Pettit something to remember.');
+      this.memoryBodyText.setText('No memories yet. The first resolved encounter will give Pettit something to remember.');
     }
 
     if (this.pettitState.inventory.length > 0) {
@@ -1065,7 +1065,7 @@ export class Game extends Scene {
 
     const palette = ['#2f6d3a', '#3f67d8', '#7241ba', '#b4533b'];
 
-    this.pettitState.activeQuest.options.forEach((option, index) => {
+    this.pettitState.activeEncounter.options.forEach((option, index) => {
       const button = this.optionButtons[index];
 
       if (!button) {
@@ -1096,14 +1096,14 @@ export class Game extends Scene {
   }
 
   private applyOptionState(button: Phaser.GameObjects.Text, optionId: string): void {
-    const quest = this.pettitState?.activeQuest;
+    const encounter = this.pettitState?.activeEncounter;
 
-    if (!quest) {
+    if (!encounter) {
       return;
     }
 
-    const isSelected = quest.selectedOptionId === optionId;
-    const isLocked = quest.hasVoted;
+    const isSelected = encounter.selectedOptionId === optionId;
+    const isLocked = encounter.hasVoted;
     const baseColor = (button.style.backgroundColor as string | undefined) ?? '#53647a';
 
     if (isSelected) {
@@ -1130,7 +1130,7 @@ export class Game extends Scene {
   }
 
   private async handleVote(optionId: string): Promise<void> {
-    if (this.pettitState?.activeQuest.hasVoted) {
+    if (this.pettitState?.activeEncounter.hasVoted) {
       return;
     }
 
@@ -1150,7 +1150,7 @@ export class Game extends Scene {
         this.statusText.setText('That choice just changed. Refreshing Pettit...');
         this.updateLayout(this.scale.width, this.scale.height);
         await this.loadState();
-        this.statusText.setText('That quest updated before your vote landed. Please choose again.');
+        this.statusText.setText('That encounter updated before your vote landed. Please choose again.');
         this.updateLayout(this.scale.width, this.scale.height);
         return;
       }

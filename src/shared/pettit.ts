@@ -13,7 +13,9 @@ export type MemoryType =
   | 'special'
   | 'gift';
 
-export type QuestCategory = 'explore' | 'learn' | 'social' | 'community';
+export type EncounterAffinity = TraitKey | 'community' | 'rare' | 'seasonal';
+
+export type EncounterSeason = 'spring' | 'summer' | 'autumn' | 'winter';
 
 export type GiftCategory = 'clothing' | 'tools' | 'toys' | 'books' | 'community' | 'funny';
 
@@ -34,7 +36,7 @@ export type PettitLandmark = {
   id: string;
   baseName: string;
   description: string;
-  sourceQuestTemplateId: string;
+  sourceEncounterTemplateId: string;
   discoveredAt: string;
   canonName?: string;
 };
@@ -61,7 +63,7 @@ export type PendingNamingTarget = {
   submissionCount: number;
 };
 
-export type QuestOption = {
+export type EncounterOption = {
   id: string;
   label: string;
   votes: number;
@@ -82,10 +84,10 @@ export type PettitJournalEntry = {
   title: string;
   content: string;
   relatedMemoryIds: string[];
-  relatedQuestId: string;
+  relatedEncounterId: string;
 };
 
-export type QuestOptionOutcome = {
+export type EncounterOptionOutcome = {
   optionId: string;
   resultText: string;
   memoryTitle: string;
@@ -103,29 +105,33 @@ export type QuestOptionOutcome = {
   };
 };
 
-export type QuestTemplate = {
+export type EncounterTemplate = {
   id: string;
   title: string;
   description: string;
-  category: QuestCategory;
+  affinity: EncounterAffinity;
+  season?: EncounterSeason;
+  isRare?: boolean;
   options: ReadonlyArray<{
     id: string;
     label: string;
   }>;
-  outcomes: ReadonlyArray<QuestOptionOutcome>;
+  outcomes: ReadonlyArray<EncounterOptionOutcome>;
 };
 
-export type ActiveQuest = {
+export type ActiveEncounter = {
   id: string;
   templateId: string;
   title: string;
   description: string;
-  category: QuestCategory;
+  affinity: EncounterAffinity;
+  season?: EncounterSeason;
+  isRare?: boolean;
   createdAt: string;
-  options: QuestOption[];
+  options: EncounterOption[];
 };
 
-export type QuestVoteSummary = {
+export type EncounterVoteSummary = {
   totalVotes: number;
   winningOptionId: string | null;
 };
@@ -139,7 +145,7 @@ export type PettitState = {
   traits: PettitTraits;
   inventory: PettitInventoryItem[];
   landmarks: PettitLandmark[];
-  activeQuestId: string;
+  activeEncounterId: string;
   latestJournalId: string | null;
 };
 
@@ -147,7 +153,7 @@ export type PettitStats = {
   totalVotes: number;
   journalCount: number;
   memoryCount: number;
-  resolvedQuestCount: number;
+  resolvedEncounterCount: number;
 };
 
 export type PettitViewModel = {
@@ -161,13 +167,13 @@ export type PettitViewModel = {
   communityStats: {
     ageDays: number;
     totalVotes: number;
-    questsCompleted: number;
+    encountersCompleted: number;
     memoriesCreated: number;
   };
   inventory: PettitInventoryItem[];
   knownNames: CanonNameRecord[];
   pendingNamingTargets: PendingNamingTarget[];
-  activeQuest: ActiveQuest & {
+  activeEncounter: ActiveEncounter & {
     totalVotes: number;
     hasVoted: boolean;
     selectedOptionId: string | null;

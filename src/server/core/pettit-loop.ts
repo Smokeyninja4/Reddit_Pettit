@@ -1,5 +1,8 @@
 import type {
-  ActiveQuest,
+  ActiveEncounter,
+  EncounterOption,
+  EncounterOptionOutcome,
+  EncounterTemplate,
   PendingNamingTarget,
   PettitInventoryItem,
   PettitJournalEntry,
@@ -10,40 +13,40 @@ import type {
   PettitStats,
   PettitTraits,
   PettitViewModel,
-  QuestOption,
-  QuestOptionOutcome,
-  QuestTemplate,
   TraitKey,
 } from '../../shared/pettit';
-import { getGiftById, buildGiftQuestTemplate, selectGiftRoundGiftIds } from './pettit-gifts';
+import { getGiftById, buildGiftEncounterTemplate, selectGiftEncounterIds } from './pettit-gifts';
 import {
   applyCanonName,
   clearNamingTargetSubmissions,
   discoverLandmark,
   getCanonNames,
   getPendingNamingTargets,
-  personalizeQuestText,
-  selectReadyNamingQuestTemplate,
+  personalizeEncounterText,
+  selectReadyNamingEncounterTemplate,
   submitNameForTarget,
 } from './pettit-naming';
 import {
-  createQuestInstanceFromTemplate,
+  canonicalizeEncounterTemplateId,
+  createEncounterInstanceFromTemplate,
+  getEncounterTemplateById,
+  getRareEncounterTemplates,
+  getSeasonalEncounterTemplates,
+  getStandardEncounterTemplates,
   getTopTraits,
-  getQuestTemplateById,
-  getStarterQuestByIndex,
 } from './pettit-seed';
 import {
   appendJournal,
   appendMemory,
   getJournals,
   getMemories,
-  getOrCreateActiveQuest,
+  getNameSubmissions,
+  getOrCreateActiveEncounter,
   getOrCreateState,
   getOrCreateStats,
   getVoterMap,
-  getNameSubmissions,
   resetVoterMap,
-  saveActiveQuest,
+  saveActiveEncounter,
   saveNameSubmissions,
   saveState,
   saveStats,
@@ -53,7 +56,7 @@ import {
 type WorldSnapshot = {
   state: PettitState;
   stats: PettitStats;
-  activeQuest: ActiveQuest;
+  activeEncounter: ActiveEncounter;
   memories: PettitMemory[];
   journals: PettitJournalEntry[];
   selectedOptionId: string | null;
@@ -79,14 +82,14 @@ type ResolveResult = {
   };
 };
 
-const clampTraitValue = (value: number): number => Math.max(0, Math.min(100, value));
-
 type AppliedTraitChange = {
   trait: TraitKey;
   before: number;
   after: number;
   delta: number;
 };
+
+const clampTraitValue = (value: number): number => Math.max(0, Math.min(100, value));
 
 const applyTraitEffects = (
   currentTraits: PettitTraits,
@@ -155,7 +158,7 @@ const createTraitFeedbackSummary = (
 };
 
 const createMemoryRecord = (
-  outcome: QuestOptionOutcome,
+  outcome: EncounterOptionOutcome,
   sequenceNumber: number
 ): PettitMemory => ({
   id: `memory-${sequenceNumber}`,
@@ -168,8 +171,8 @@ const createMemoryRecord = (
 
 const createJournalEntry = (
   state: PettitState,
-  quest: ActiveQuest,
-  outcome: QuestOptionOutcome,
+  encounter: ActiveEncounter,
+  outcome: EncounterOptionOutcome,
   memory: PettitMemory,
   previousMemory: PettitMemory | null,
   sequenceNumber: number
@@ -206,19 +209,19 @@ const createJournalEntry = (
   return {
     id: `journal-${sequenceNumber}`,
     date: new Date().toISOString(),
-    title: quest.title,
+    title: encounter.title,
     content,
     relatedMemoryIds: [memory.id],
-    relatedQuestId: quest.id,
+    relatedEncounterId: encounter.id,
   };
 };
 
-const selectWinningOption = (quest: ActiveQuest): QuestOption => {
-  const template = getQuestTemplateById(quest.templateId);
-  let winningOption: QuestOption | null = null;
+const selectWinningOption = (encounter: ActiveEncounter): EncounterOption => {
+  const template = getEncounterTemplateById(encounter.templateId);
+  let winningOption: EncounterOption | null = null;
 
   for (const templateOption of template.options) {
-    const activeOption = quest.options.find((option) => option.id === templateOption.id);
+    const activeOption = encounter.options.find((option) => option.id === templateOption.id);
 
     if (!activeOption) {
       continue;
@@ -230,13 +233,13 @@ const selectWinningOption = (quest: ActiveQuest): QuestOption => {
   }
 
   if (!winningOption) {
-    throw new Error('Active quest has no vote options');
+    throw new Error('Active encounter has no vote options');
   }
 
   return winningOption;
 };
 
-const getOutcomeForOption = (template: QuestTemplate, optionId: string): QuestOptionOutcome => {
+const getOutcomeForOption = (template: EncounterTemplate, optionId: string): EncounterOptionOutcome => {
   const outcome = template.outcomes.find((candidate) => candidate.optionId === optionId);
 
   if (!outcome) {
@@ -249,7 +252,7 @@ const getOutcomeForOption = (template: QuestTemplate, optionId: string): QuestOp
 const buildViewModel = (snapshot: WorldSnapshot): PettitViewModel => {
   const latestJournal = snapshot.journals.length > 0 ? snapshot.journals[snapshot.journals.length - 1] ?? null : null;
   const recentMemories = snapshot.memories.slice(-3).reverse();
-  const totalVotes = snapshot.activeQuest.options.reduce((sum, option) => sum + option.votes, 0);
+  const totalVotes = snapshot.activeEncounter.options.reduce((sum, option) => sum + option.votes, 0);
 
   return {
     pettit: {
@@ -262,14 +265,14 @@ const buildViewModel = (snapshot: WorldSnapshot): PettitViewModel => {
     communityStats: {
       ageDays: snapshot.state.ageDays,
       totalVotes: snapshot.stats.totalVotes,
-      questsCompleted: snapshot.stats.resolvedQuestCount,
+      encountersCompleted: snapshot.stats.resolvedEncounterCount,
       memoriesCreated: snapshot.stats.memoryCount,
     },
     inventory: snapshot.state.inventory,
     knownNames: getCanonNames(snapshot.state),
     pendingNamingTargets: snapshot.pendingNamingTargets,
-    activeQuest: {
-      ...snapshot.activeQuest,
+    activeEncounter: {
+      ...snapshot.activeEncounter,
       totalVotes,
       hasVoted: snapshot.selectedOptionId !== null,
       selectedOptionId: snapshot.selectedOptionId,
@@ -280,10 +283,10 @@ const buildViewModel = (snapshot: WorldSnapshot): PettitViewModel => {
 };
 
 const loadWorldSnapshot = async (subredditName: string, username: string | null): Promise<WorldSnapshot> => {
-  const [state, stats, activeQuest, memories, journals, voterMap, nameSubmissions] = await Promise.all([
+  const [state, stats, activeEncounter, memories, journals, voterMap, nameSubmissions] = await Promise.all([
     getOrCreateState(subredditName),
     getOrCreateStats(subredditName),
-    getOrCreateActiveQuest(subredditName),
+    getOrCreateActiveEncounter(subredditName),
     getMemories(subredditName),
     getJournals(subredditName),
     getVoterMap(subredditName),
@@ -293,7 +296,7 @@ const loadWorldSnapshot = async (subredditName: string, username: string | null)
   return {
     state,
     stats,
-    activeQuest,
+    activeEncounter,
     memories,
     journals,
     selectedOptionId: username ? voterMap[username] ?? null : null,
@@ -314,29 +317,90 @@ const createInventoryItem = (
     name: gift.name,
     description: gift.description,
     category: gift.category,
-    source: 'Community Gift Vote',
+    source: 'Community Gift Encounter',
     obtainedAt: new Date().toISOString(),
     canonName: existingCanonName,
   };
 };
 
-const selectNextQuestTemplate = (
+const isRareEncounterTurn = (resolvedEncounterCount: number): boolean => {
+  return resolvedEncounterCount > 0 && resolvedEncounterCount % 20 === 0;
+};
+
+const buildWeightedPool = (
+  candidates: readonly EncounterTemplate[],
   state: PettitState,
-  resolvedQuestCount: number,
-  nameSubmissions: Record<string, PettitNameSubmission[]>
-): QuestTemplate => {
-  const namingQuestTemplate = selectReadyNamingQuestTemplate(state, nameSubmissions);
+  currentTemplateId: string
+): EncounterTemplate[] => {
+  const topTraits = getTopTraits(state.traits, 2);
+  const currentTemplate = getEncounterTemplateById(currentTemplateId);
 
-  if (namingQuestTemplate) {
-    return namingQuestTemplate;
+  return candidates.flatMap((template) => {
+    const isCurrentAffinity = template.affinity === currentTemplate.affinity;
+    let weight =
+      template.affinity === topTraits[0]
+        ? 7
+        : template.affinity === topTraits[1]
+          ? 5
+          : template.affinity === 'seasonal'
+            ? 3
+            : 2;
+
+    if (isCurrentAffinity) {
+      weight = Math.max(1, weight - 2);
+    }
+
+    return Array.from({ length: weight }, () => template);
+  });
+};
+
+const pickWeightedEncounter = (
+  candidates: readonly EncounterTemplate[],
+  state: PettitState,
+  resolvedEncounterCount: number,
+  currentTemplateId: string
+): EncounterTemplate => {
+  const canonicalCurrentId = canonicalizeEncounterTemplateId(currentTemplateId);
+  const filteredCandidates = candidates.filter((template) => template.id !== canonicalCurrentId);
+  const safeCandidates = filteredCandidates.length > 0 ? filteredCandidates : [...candidates];
+  const weightedPool = buildWeightedPool(safeCandidates, state, currentTemplateId);
+
+  if (weightedPool.length === 0) {
+    throw new Error('Encounter library is empty');
   }
 
-  if (resolvedQuestCount > 0 && resolvedQuestCount % 3 === 0) {
-    const giftIds = selectGiftRoundGiftIds(state.inventory, 3);
-    return buildGiftQuestTemplate(giftIds);
+  const traitSeed = Object.values(state.traits).reduce((sum, value) => sum + value, 0);
+  const seed = traitSeed + resolvedEncounterCount * 7 + state.ageDays * 3;
+  return weightedPool[seed % weightedPool.length] ?? weightedPool[0]!;
+};
+
+const selectNextEncounterTemplate = (
+  state: PettitState,
+  resolvedEncounterCount: number,
+  nameSubmissions: Record<string, PettitNameSubmission[]>,
+  currentTemplateId: string
+): EncounterTemplate => {
+  const namingEncounterTemplate = selectReadyNamingEncounterTemplate(state, nameSubmissions);
+
+  if (namingEncounterTemplate) {
+    return namingEncounterTemplate;
   }
 
-  return getStarterQuestByIndex(resolvedQuestCount % 3);
+  if (resolvedEncounterCount > 0 && resolvedEncounterCount % 3 === 0) {
+    const giftIds = selectGiftEncounterIds(state.inventory, 3);
+    return buildGiftEncounterTemplate(giftIds);
+  }
+
+  if (isRareEncounterTurn(resolvedEncounterCount)) {
+    return pickWeightedEncounter(getRareEncounterTemplates(), state, resolvedEncounterCount, currentTemplateId);
+  }
+
+  const standardCandidates = [
+    ...getStandardEncounterTemplates(),
+    ...getSeasonalEncounterTemplates(),
+  ];
+
+  return pickWeightedEncounter(standardCandidates, state, resolvedEncounterCount, currentTemplateId);
 };
 
 export const getPettitViewModel = async (
@@ -352,8 +416,8 @@ export const submitVote = async (
   username: string,
   optionId: string
 ): Promise<PettitViewModel> => {
-  const [activeQuest, voterMap, stats, state, memories, journals, nameSubmissions] = await Promise.all([
-    getOrCreateActiveQuest(subredditName),
+  const [activeEncounter, voterMap, stats, state, memories, journals, nameSubmissions] = await Promise.all([
+    getOrCreateActiveEncounter(subredditName),
     getVoterMap(subredditName),
     getOrCreateStats(subredditName),
     getOrCreateState(subredditName),
@@ -366,7 +430,7 @@ export const submitVote = async (
     throw new Error('DUPLICATE_VOTE');
   }
 
-  const nextOptions = activeQuest.options.map((option) =>
+  const nextOptions = activeEncounter.options.map((option) =>
     option.id === optionId ? { ...option, votes: option.votes + 1 } : option
   );
   const optionExists = nextOptions.some((option) => option.id === optionId);
@@ -375,8 +439,8 @@ export const submitVote = async (
     throw new Error('INVALID_OPTION');
   }
 
-  const nextQuest: ActiveQuest = {
-    ...activeQuest,
+  const nextEncounter: ActiveEncounter = {
+    ...activeEncounter,
     options: nextOptions,
   };
   const nextVoterMap = {
@@ -389,7 +453,7 @@ export const submitVote = async (
   };
 
   await Promise.all([
-    saveActiveQuest(subredditName, nextQuest),
+    saveActiveEncounter(subredditName, nextEncounter),
     saveVoterMap(subredditName, nextVoterMap),
     saveStats(subredditName, nextStats),
   ]);
@@ -397,7 +461,7 @@ export const submitVote = async (
   return buildViewModel({
     state,
     stats: nextStats,
-    activeQuest: nextQuest,
+    activeEncounter: nextEncounter,
     memories,
     journals,
     selectedOptionId: optionId,
@@ -441,28 +505,28 @@ export const submitName = async (
     pendingNamingTargets: pendingTargets,
     message:
       target && target.submissionCount >= 3
-        ? `${target.baseName} is ready for a naming vote.`
+        ? `${target.baseName} is ready for an encounter vote.`
         : 'Name submitted. The community is one step closer to making it canon.',
   };
 };
 
 export const resolveVote = async (subredditName: string, username: string | null): Promise<ResolveResult> => {
-  const [state, activeQuest, memories, stats, nameSubmissions] = await Promise.all([
+  const [state, activeEncounter, memories, stats, nameSubmissions] = await Promise.all([
     getOrCreateState(subredditName),
-    getOrCreateActiveQuest(subredditName),
+    getOrCreateActiveEncounter(subredditName),
     getMemories(subredditName),
     getOrCreateStats(subredditName),
     getNameSubmissions(subredditName),
   ]);
 
-  const winningOption = selectWinningOption(activeQuest);
-  const template = getQuestTemplateById(activeQuest.templateId);
+  const winningOption = selectWinningOption(activeEncounter);
+  const template = getEncounterTemplateById(activeEncounter.templateId);
   const outcome = getOutcomeForOption(template, winningOption.id);
   const { nextTraits, appliedChanges } = applyTraitEffects(state.traits, outcome.traitEffects);
   const topTraits = getTopTraits(nextTraits, 2);
   const nextStats: PettitStats = {
     ...stats,
-    resolvedQuestCount: stats.resolvedQuestCount + 1,
+    resolvedEncounterCount: stats.resolvedEncounterCount + 1,
     memoryCount: stats.memoryCount + 1,
     journalCount: stats.journalCount + 1,
   };
@@ -494,31 +558,34 @@ export const resolveVote = async (subredditName: string, username: string | null
     );
   }
 
-  const personalizedOutcome: QuestOptionOutcome = {
+  const personalizedOutcome: EncounterOptionOutcome = {
     ...outcome,
-    resultText: personalizeQuestText(nextStateBeforeJournal, activeQuest.templateId, outcome.resultText),
-    memoryTitle: outcome.memoryTitle,
-    memoryDescription: personalizeQuestText(nextStateBeforeJournal, activeQuest.templateId, outcome.memoryDescription),
+    resultText: personalizeEncounterText(nextStateBeforeJournal, activeEncounter.templateId, outcome.resultText),
+    memoryDescription: personalizeEncounterText(nextStateBeforeJournal, activeEncounter.templateId, outcome.memoryDescription),
   };
   const memory = createMemoryRecord(personalizedOutcome, nextStats.memoryCount);
   const previousMemory = memories.length > 0 ? memories[memories.length - 1] ?? null : null;
   const journal = createJournalEntry(
     nextStateBeforeJournal,
-    activeQuest,
+    activeEncounter,
     personalizedOutcome,
     memory,
     previousMemory,
     nextStats.journalCount
   );
-  const nextQuestTemplate = selectNextQuestTemplate(
+  const nextEncounterTemplate = selectNextEncounterTemplate(
     nextStateBeforeJournal,
-    nextStats.resolvedQuestCount,
-    nextNameSubmissions
+    nextStats.resolvedEncounterCount,
+    nextNameSubmissions,
+    activeEncounter.templateId
   );
-  const nextQuest = createQuestInstanceFromTemplate(nextQuestTemplate, nextStats.resolvedQuestCount + 1);
+  const nextEncounter = createEncounterInstanceFromTemplate(
+    nextEncounterTemplate,
+    nextStats.resolvedEncounterCount + 1
+  );
   const nextState: PettitState = {
     ...nextStateBeforeJournal,
-    activeQuestId: nextQuest.id,
+    activeEncounterId: nextEncounter.id,
     latestJournalId: journal.id,
   };
 
@@ -529,7 +596,7 @@ export const resolveVote = async (subredditName: string, username: string | null
 
   await Promise.all([
     saveState(subredditName, nextState),
-    saveActiveQuest(subredditName, nextQuest),
+    saveActiveEncounter(subredditName, nextEncounter),
     saveStats(subredditName, nextStats),
     saveNameSubmissions(subredditName, nextNameSubmissions),
     resetVoterMap(subredditName),
@@ -539,7 +606,7 @@ export const resolveVote = async (subredditName: string, username: string | null
     state: buildViewModel({
       state: nextState,
       stats: nextStats,
-      activeQuest: nextQuest,
+      activeEncounter: nextEncounter,
       memories: nextMemories,
       journals: nextJournals,
       selectedOptionId: username ? null : null,

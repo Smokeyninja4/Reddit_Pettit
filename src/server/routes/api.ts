@@ -100,7 +100,7 @@ api.post('/vote', async (c) => {
       return c.json<ErrorResponse>(
         {
           status: 'error',
-          message: 'You have already voted on this quest',
+          message: 'You have already voted on this encounter',
         },
         409
       );

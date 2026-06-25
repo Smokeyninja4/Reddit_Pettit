@@ -1,4 +1,4 @@
-import type { GiftCategory, PettitInventoryItem, QuestTemplate, TraitKey } from '../../shared/pettit';
+import type { EncounterTemplate, GiftCategory, PettitInventoryItem, TraitKey } from '../../shared/pettit';
 
 type GiftDefinition = {
   id: string;
@@ -9,7 +9,8 @@ type GiftDefinition = {
   traitEffects: Partial<Record<TraitKey, number>>;
 };
 
-const GIFT_QUEST_PREFIX = 'quest-gift:';
+const GIFT_ENCOUNTER_PREFIX = 'encounter-gift:';
+const LEGACY_GIFT_QUEST_PREFIX = 'quest-gift:';
 
 export const STARTER_GIFTS: readonly GiftDefinition[] = [
   {
@@ -84,15 +85,15 @@ const buildGiftOutcome = (gift: GiftDefinition) => ({
   awardedGiftId: gift.id,
 });
 
-export const buildGiftQuestTemplate = (giftIds: readonly string[]): QuestTemplate => {
+export const buildGiftEncounterTemplate = (giftIds: readonly string[]): EncounterTemplate => {
   const gifts = giftIds.map((giftId) => getGiftById(giftId));
-  const questId = `${GIFT_QUEST_PREFIX}${gifts.map((gift) => gift.id).join('~')}`;
+  const encounterId = `${GIFT_ENCOUNTER_PREFIX}${gifts.map((gift) => gift.id).join('~')}`;
 
   return {
-    id: questId,
+    id: encounterId,
     title: "Choose Pettit's Next Gift",
     description: 'The community is sending Pettit a keepsake. Which gift should become part of its story next?',
-    category: 'community',
+    affinity: 'community',
     options: gifts.map((gift) => ({
       id: gift.id,
       label: gift.name,
@@ -101,25 +102,29 @@ export const buildGiftQuestTemplate = (giftIds: readonly string[]): QuestTemplat
   };
 };
 
-export const isGiftQuestTemplateId = (templateId: string): boolean => templateId.startsWith(GIFT_QUEST_PREFIX);
+export const isGiftEncounterTemplateId = (templateId: string): boolean => {
+  return templateId.startsWith(GIFT_ENCOUNTER_PREFIX) || templateId.startsWith(LEGACY_GIFT_QUEST_PREFIX);
+};
 
-export const getGiftQuestTemplateById = (templateId: string): QuestTemplate => {
-  if (!isGiftQuestTemplateId(templateId)) {
-    throw new Error(`Unknown gift quest template: ${templateId}`);
+export const getGiftEncounterTemplateById = (templateId: string): EncounterTemplate => {
+  if (!isGiftEncounterTemplateId(templateId)) {
+    throw new Error(`Unknown gift encounter template: ${templateId}`);
   }
 
-  const encodedGiftIds = templateId.slice(GIFT_QUEST_PREFIX.length);
+  const encodedGiftIds = templateId.startsWith(GIFT_ENCOUNTER_PREFIX)
+    ? templateId.slice(GIFT_ENCOUNTER_PREFIX.length)
+    : templateId.slice(LEGACY_GIFT_QUEST_PREFIX.length);
   const giftIds = encodedGiftIds.split('~').filter(Boolean);
 
   if (giftIds.length === 0) {
-    throw new Error(`Gift quest template has no gifts: ${templateId}`);
+    throw new Error(`Gift encounter template has no gifts: ${templateId}`);
   }
 
-  return buildGiftQuestTemplate(giftIds);
+  return buildGiftEncounterTemplate(giftIds);
 };
 
-export const selectGiftRoundGiftIds = (inventory: PettitInventoryItem[], optionCount: number): string[] => {
-  const ownedIds = new Set(inventory.map((item) => item.name.toLowerCase().replace(/\s+/g, '-')));
+export const selectGiftEncounterIds = (inventory: PettitInventoryItem[], optionCount: number): string[] => {
+  const ownedIds = new Set(inventory.map((item) => item.giftId));
   const unowned = STARTER_GIFTS.filter((gift) => !ownedIds.has(gift.id));
   const orderedAll = STARTER_GIFTS.slice(inventory.length % STARTER_GIFTS.length).concat(
     STARTER_GIFTS.slice(0, inventory.length % STARTER_GIFTS.length)
