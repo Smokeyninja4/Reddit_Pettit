@@ -1,5 +1,6 @@
 import type {
   ActiveEncounter,
+  ActiveSeasonalEventView,
   EncounterOption,
   EncounterOptionOutcome,
   EncounterTemplate,
@@ -15,7 +16,12 @@ import type {
   PettitViewModel,
   TraitKey,
 } from '../../shared/pettit';
-import { getGiftById, buildGiftEncounterTemplate, selectGiftEncounterIds } from './pettit-gifts';
+import {
+  getGiftById,
+  buildGiftEncounterTemplate,
+  selectGiftEncounterIds,
+  selectPreferredGiftEncounterIds,
+} from './pettit-gifts';
 import { buildHallOfMemoriesDetail, buildHallOfMemoriesView } from './pettit-hall';
 import { createJournalEntry } from './pettit-journal';
 import {
@@ -43,6 +49,13 @@ import {
   getTopTraits,
 } from './pettit-seed';
 import {
+  getSeasonalEncounterModifier,
+  getSeasonalEncounterTemplates as getActiveSeasonalEncounterTemplates,
+  getSeasonalJournalContext,
+  getSeasonalProgressView,
+  syncSeasonalState,
+} from './pettit-seasonal';
+import {
   appendJournal,
   appendMemory,
   getJournals,
@@ -68,6 +81,11 @@ type WorldSnapshot = {
   journals: PettitJournalEntry[];
   selectedOptionId: string | null;
   pendingNamingTargets: PendingNamingTarget[];
+};
+
+type SeasonalSnapshot = {
+  state: PettitState;
+  activeEvent: ActiveSeasonalEventView | null;
 };
 
 type ResolveResult = {
@@ -255,6 +273,7 @@ const buildViewModel = (snapshot: WorldSnapshot): PettitViewModel => {
     recentAchievements,
     achievementCount: snapshot.stats.achievements.length,
     hallOfMemories: buildHallOfMemoriesView(snapshot.memories),
+    seasonal: getSeasonalProgressView(snapshot.state),
   };
 };
 
@@ -329,9 +348,13 @@ const pickRandomEncounter = (
   return safeCandidates[index] ?? safeCandidates[0]!;
 };
 
-const getTraitAffinityWeight = (state: PettitState, affinity: TraitKey): number => {
+const getTraitAffinityWeight = (
+  state: PettitState,
+  affinity: TraitKey,
+  seasonalBoost = 0
+): number => {
   const traitValue = state.traits[affinity];
-  return ENCOUNTER_WEIGHT_FLOOR + Math.round((traitValue * traitValue) / 25);
+  return ENCOUNTER_WEIGHT_FLOOR + seasonalBoost * 10 + Math.round((traitValue * traitValue) / 25);
 };
 
 const pickWeightedStandardEncounter = (
@@ -372,9 +395,10 @@ const pickWeightedStandardEncounter = (
   }
 
   const chosenFamily = (() => {
+    const seasonalModifier = getSeasonalEncounterModifier(state);
     const familyWeights = availableFamilies.map((family) => ({
       family,
-      weight: getTraitAffinityWeight(state, family),
+      weight: getTraitAffinityWeight(state, family, seasonalModifier.affinityBoosts[family] ?? 0),
     }));
     const totalWeight = familyWeights.reduce((sum, entry) => sum + entry.weight, 0);
     let roll = Math.random() * totalWeight;
@@ -400,6 +424,7 @@ const selectNextEncounterTemplate = (
   nameSubmissions: Record<string, PettitNameSubmission[]>,
   currentTemplateId: string
 ): EncounterTemplate => {
+  const seasonalModifier = getSeasonalEncounterModifier(state);
   const namingEncounterTemplate = selectReadyNamingEncounterTemplate(state, nameSubmissions);
 
   if (namingEncounterTemplate) {
@@ -407,12 +432,24 @@ const selectNextEncounterTemplate = (
   }
 
   if (resolvedEncounterCount > 0 && resolvedEncounterCount % 3 === 0) {
-    const giftIds = selectGiftEncounterIds(state.inventory, 3);
+    const giftIds =
+      seasonalModifier.preferredGiftIds.length > 0
+        ? selectPreferredGiftEncounterIds(state.inventory, 3, seasonalModifier.preferredGiftIds)
+        : selectGiftEncounterIds(state.inventory, 3);
     return buildGiftEncounterTemplate(giftIds);
   }
 
-  if (isRareEncounterTurn(resolvedEncounterCount)) {
+  if (
+    isRareEncounterTurn(resolvedEncounterCount) ||
+    (seasonalModifier.rareChanceBonus > 0 && Math.random() < seasonalModifier.rareChanceBonus)
+  ) {
     return pickRandomEncounter(getRareEncounterTemplates(), currentTemplateId);
+  }
+
+  const activeSeasonalCandidates = getActiveSeasonalEncounterTemplates(state);
+
+  if (activeSeasonalCandidates.length > 0 && Math.random() < seasonalModifier.seasonalEncounterChance) {
+    return pickRandomEncounter(activeSeasonalCandidates, currentTemplateId);
   }
 
   const seasonalCandidates = getSeasonalEncounterTemplates();
@@ -424,6 +461,42 @@ const selectNextEncounterTemplate = (
   const standardCandidates = getStandardEncounterTemplates();
 
   return pickWeightedStandardEncounter(standardCandidates, state, currentTemplateId);
+};
+
+const syncSeasonalWorldState = async (subredditName: string): Promise<SeasonalSnapshot> => {
+  const state = await getOrCreateState(subredditName);
+  const result = syncSeasonalState(state);
+
+  if (result.changed) {
+    await saveState(subredditName, result.state);
+  }
+
+  return {
+    state: result.state,
+    activeEvent: result.activeEvent,
+  };
+};
+
+const pickJournalCallbackMemory = (
+  memories: PettitMemory[],
+  state: PettitState
+): PettitMemory | null => {
+  const seasonalContext = getSeasonalJournalContext(state);
+
+  if (seasonalContext?.preferOldMemories) {
+    const olderImportantMemory =
+      [...memories]
+        .reverse()
+        .find((memory) => memory.importance >= 4) ??
+      memories[0] ??
+      null;
+
+    if (olderImportantMemory) {
+      return olderImportantMemory;
+    }
+  }
+
+  return memories.length > 0 ? memories[memories.length - 1] ?? null : null;
 };
 
 const getEncounterVoteTotal = (encounter: ActiveEncounter): number =>
@@ -460,7 +533,7 @@ const processEncounterTransition = async (
   mode: TransitionMode
 ): Promise<ResolveResult> => {
   const [state, activeEncounter, memories, journals, stats, nameSubmissions] = await Promise.all([
-    getOrCreateState(subredditName),
+    syncSeasonalWorldState(subredditName).then((result) => result.state),
     getOrCreateActiveEncounter(subredditName),
     getMemories(subredditName),
     getJournals(subredditName),
@@ -565,7 +638,7 @@ const processEncounterTransition = async (
     personalizedOutcome
   );
   const memory = createMemoryRecord(personalizedOutcome, achievementResult.stats.memoryCount);
-  const previousMemory = memories.length > 0 ? memories[memories.length - 1] ?? null : null;
+  const previousMemory = pickJournalCallbackMemory(memories, nextStateBeforeJournal);
   const journal = createJournalEntry(
     nextStateBeforeJournal,
     activeEncounter,
@@ -573,7 +646,8 @@ const processEncounterTransition = async (
     memory,
     previousMemory,
     achievementResult.stats.journalCount,
-    getAchievementCelebrationLine(achievementResult.unlockedAchievements[0] ?? null)
+    getAchievementCelebrationLine(achievementResult.unlockedAchievements[0] ?? null),
+    getSeasonalJournalContext(nextStateBeforeJournal)
   );
   const nextEncounterTemplate = selectNextEncounterTemplate(
     nextStateBeforeJournal,
@@ -647,7 +721,7 @@ const advanceWorldToCurrentDay = async (subredditName: string): Promise<void> =>
 
 const syncPassiveAchievements = async (subredditName: string): Promise<void> => {
   const [state, stats] = await Promise.all([
-    getOrCreateState(subredditName),
+    syncSeasonalWorldState(subredditName).then((result) => result.state),
     getOrCreateStats(subredditName),
   ]);
   const result = syncAgeAchievements(state, stats);
@@ -662,6 +736,7 @@ export const getPettitViewModel = async (
   username: string | null
 ): Promise<PettitViewModel> => {
   await advanceWorldToCurrentDay(subredditName);
+  await syncSeasonalWorldState(subredditName);
   await syncPassiveAchievements(subredditName);
   const snapshot = await loadWorldSnapshot(subredditName, username);
   return buildViewModel(snapshot);
@@ -673,16 +748,17 @@ export const submitVote = async (
   optionId: string
 ): Promise<PettitViewModel> => {
   await advanceWorldToCurrentDay(subredditName);
+  const seasonalState = await syncSeasonalWorldState(subredditName);
   await syncPassiveAchievements(subredditName);
-  const [activeEncounter, voterMap, stats, state, memories, journals, nameSubmissions] = await Promise.all([
+  const [activeEncounter, voterMap, stats, memories, journals, nameSubmissions] = await Promise.all([
     getOrCreateActiveEncounter(subredditName),
     getVoterMap(subredditName),
     getOrCreateStats(subredditName),
-    getOrCreateState(subredditName),
     getMemories(subredditName),
     getJournals(subredditName),
     getNameSubmissions(subredditName),
   ]);
+  const state = seasonalState.state;
 
   if (voterMap[username]) {
     throw new Error('DUPLICATE_VOTE');
@@ -734,9 +810,10 @@ export const submitName = async (
   proposedName: string
 ): Promise<{ pendingNamingTargets: PendingNamingTarget[]; message: string }> => {
   await advanceWorldToCurrentDay(subredditName);
+  await syncSeasonalWorldState(subredditName);
   await syncPassiveAchievements(subredditName);
   const [state, submissionMap] = await Promise.all([
-    getOrCreateState(subredditName),
+    syncSeasonalWorldState(subredditName).then((result) => result.state),
     getNameSubmissions(subredditName),
   ]);
 
@@ -772,6 +849,7 @@ export const submitName = async (
 
 export const resolveVote = async (subredditName: string, _username: string | null): Promise<ResolveResult> => {
   await advanceWorldToCurrentDay(subredditName);
+  await syncSeasonalWorldState(subredditName);
   await syncPassiveAchievements(subredditName);
   return processEncounterTransition(subredditName, 'manual');
 };

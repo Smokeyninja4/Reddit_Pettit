@@ -23,6 +23,64 @@ export type NamingTargetType = 'gift' | 'landmark';
 
 export type AchievementCategory = 'growth' | 'community' | 'exploration' | 'memory' | 'funny';
 
+export type SeasonalEventKey =
+  | 'pettit-day'
+  | 'longest-night'
+  | 'bloom-day'
+  | 'campfire-night'
+  | 'storykeepers-day'
+  | 'lost-toy-day'
+  | 'rain-appreciation-day'
+  | 'paint-everything-day'
+  | 'silly-socks-day'
+  | 'great-planting-day'
+  | 'day-of-little-things'
+  | 'gift-exchange'
+  | 'mushroom-festival'
+  | 'honey-harvest'
+  | 'wind-festival'
+  | 'pie-festival'
+  | 'mask-festival'
+  | 'wanderers-week'
+  | 'library-week'
+  | 'surprise-day'
+  | 'shooting-star-night'
+  | 'blue-moon-feast'
+  | 'rainbow-bloom'
+  | 'butterfly-migration'
+  | 'crystal-frost'
+  | 'ancient-forest-awakening'
+  | 'comet-night'
+  | 'festival-of-forgotten-names'
+  | 'night-of-a-thousand-lanterns'
+  | 'whispering-woods'
+  | 'constellation-festival';
+
+export type SeasonalEventKind = 'holiday' | 'festival' | 'week' | 'special' | 'legendary';
+
+export type ActiveSeasonalEventView = {
+  key: SeasonalEventKey;
+  title: string;
+  kind: SeasonalEventKind;
+  timingLabel: string;
+  flavorText: string;
+  accentColor: string;
+};
+
+export type SeasonalProgressView = {
+  activeEvent: ActiveSeasonalEventView | null;
+  recentEventKeys: SeasonalEventKey[];
+};
+
+export type PettitSeasonalProgress = {
+  lastSeenEventKeys: SeasonalEventKey[];
+  activeEventKey: SeasonalEventKey | null;
+  surpriseDayYear: Record<string, string>;
+  shootingStarYear: Record<string, string>;
+  legendaryEventYear: Record<string, string | null>;
+  pettitDayGiftGrantedYears: string[];
+};
+
 export type PettitInventoryItem = {
   id: string;
   giftId: string;
@@ -177,6 +235,7 @@ export type PettitState = {
   activeEncounterId: string;
   latestJournalId: string | null;
   dailyCycle: PettitDailyCycle;
+  seasonalProgress: PettitSeasonalProgress;
 };
 
 export type PettitStats = {
@@ -214,4 +273,5 @@ export type PettitViewModel = {
   recentAchievements: PettitAchievement[];
   achievementCount: number;
   hallOfMemories: HallOfMemoriesView;
+  seasonal: SeasonalProgressView;
 };

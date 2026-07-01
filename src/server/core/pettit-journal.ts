@@ -7,6 +7,7 @@ import type {
   TraitKey,
 } from '../../shared/pettit';
 import { getTopTraits } from './pettit-seed';
+import type { SeasonalJournalContext } from './pettit-seasonal';
 import {
   JOURNAL_STYLE_TEMPLATES,
   type JournalContext,
@@ -54,7 +55,8 @@ const isPlayfulEncounter = (outcome: EncounterOptionOutcome): boolean => {
 const buildStyleWeights = (
   state: PettitState,
   outcome: EncounterOptionOutcome,
-  topTraits: readonly TraitKey[]
+  topTraits: readonly TraitKey[],
+  seasonalContext?: SeasonalJournalContext | null
 ): Record<JournalStyleKey, number> => {
   const weights: Record<JournalStyleKey, number> = {
     reflective: 2,
@@ -119,6 +121,42 @@ const buildStyleWeights = (
     weights.childlike += 2;
   }
 
+  if (seasonalContext?.tone === 'reflective') {
+    weights.reflective += 4;
+  }
+
+  if (seasonalContext?.tone === 'birthday' || seasonalContext?.tone === 'intimate') {
+    weights.childlike += 2;
+    weights.reflective += 2;
+  }
+
+  if (seasonalContext?.tone === 'quiet') {
+    weights.reflective += 3;
+    weights.childlike += 1;
+  }
+
+  if (seasonalContext?.tone === 'wishful') {
+    weights.curious += 2;
+    weights.reflective += 2;
+  }
+
+  if (seasonalContext?.tone === 'vibrant') {
+    weights.excited += 2;
+    weights.curious += 2;
+  }
+
+  if (seasonalContext?.tone === 'excited') {
+    weights.excited += 4;
+  }
+
+  if (seasonalContext?.tone === 'funny') {
+    weights.funny += 3;
+  }
+
+  if (seasonalContext?.tone === 'childlike') {
+    weights.childlike += 4;
+  }
+
   return weights;
 };
 
@@ -127,14 +165,16 @@ const selectJournalStyle = (
   encounter: ActiveEncounter,
   outcome: EncounterOptionOutcome,
   sequenceNumber: number,
-  topTraits: readonly TraitKey[]
+  topTraits: readonly TraitKey[],
+  seasonalContext?: SeasonalJournalContext | null
 ): JournalStyleKey => {
-  const weights = buildStyleWeights(state, outcome, topTraits);
+  const weights = buildStyleWeights(state, outcome, topTraits, seasonalContext);
   const seedKey = [
     encounter.templateId,
     outcome.optionId,
     String(sequenceNumber),
     state.mood,
+    seasonalContext?.key ?? 'none',
     ...topTraits,
   ].join('|');
   const weightedPool = JOURNAL_STYLES.flatMap((style) =>
@@ -151,12 +191,13 @@ export const createJournalEntry = (
   memory: PettitMemory,
   previousMemory: PettitMemory | null,
   sequenceNumber: number,
-  celebrationLine?: string | null
+  celebrationLine?: string | null,
+  seasonalContext?: SeasonalJournalContext | null
 ): PettitJournalEntry => {
   const topTraits = getTopTraits(state.traits, 2);
   const leadingTrait = topTraits[0] ?? 'curiosity';
   const trailingTrait = topTraits[1] ?? leadingTrait;
-  const style = selectJournalStyle(state, encounter, outcome, sequenceNumber, topTraits);
+  const style = selectJournalStyle(state, encounter, outcome, sequenceNumber, topTraits, seasonalContext);
   const templates = JOURNAL_STYLE_TEMPLATES[style];
   const context: JournalContext = {
     mood: outcome.mood,
@@ -167,7 +208,7 @@ export const createJournalEntry = (
     previousMemory,
   };
 
-  const opening = renderLineTemplate(
+  let opening = renderLineTemplate(
     templates.openingByMood[context.mood],
     context,
     `${encounter.id}|opening|${style}|${context.mood}`
@@ -195,11 +236,31 @@ export const createJournalEntry = (
     context,
     `${encounter.id}|memory|${style}|${previousMemory?.id ?? 'none'}`
   );
-  const closing = renderLineTemplate(
+  let closing = renderLineTemplate(
     templates.closing,
     context,
     `${encounter.id}|closing|${style}|${sequenceNumber}`
   );
+
+  if (seasonalContext?.key === 'longest-night') {
+    opening = 'Tonight felt deeper than usual, and even the quiet seemed to have something to say.';
+  } else if (seasonalContext?.key === 'storykeepers-day') {
+    opening = 'Today old memories kept stepping closer, as though they wanted to be noticed again.';
+  } else if (seasonalContext?.key === 'shooting-star-night') {
+    opening = 'The sky kept moving above me tonight, and it made every thought feel a little more possible.';
+  } else if (seasonalContext?.key === 'day-of-little-things') {
+    opening = 'Nothing huge happened today, which turned out to be exactly the right kind of day.';
+  } else if (seasonalContext?.key === 'pettit-day') {
+    opening = 'Today felt full in the warmest way, like the whole community had decided to hold me a little closer.';
+  }
+
+  if (seasonalContext?.key === 'surprise-day') {
+    closing = 'I still do not fully understand today, but I am very glad it happened.';
+  } else if (seasonalContext?.key === 'campfire-night') {
+    closing = 'Tonight nobody seemed eager to leave, and I understood why.';
+  } else if (seasonalContext?.key === 'great-planting-day') {
+    closing = 'It felt good to help something small begin.';
+  }
 
   const content = [
     opening,

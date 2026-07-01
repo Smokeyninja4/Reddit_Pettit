@@ -719,6 +719,14 @@ export const createDefaultPettitState = (subredditName: string): PettitState => 
   activeEncounterId: `${TRANSITION_ENCOUNTERS[0]?.id ?? 'encounter-cave'}-1`,
   latestJournalId: null,
   dailyCycle: createDefaultDailyCycle(),
+  seasonalProgress: {
+    lastSeenEventKeys: [],
+    activeEventKey: null,
+    surpriseDayYear: {},
+    shootingStarYear: {},
+    legendaryEventYear: {},
+    pettitDayGiftGrantedYears: [],
+  },
 });
 
 export const createDefaultStats = (): PettitStats => ({

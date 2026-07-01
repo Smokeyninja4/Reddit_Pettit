@@ -9,6 +9,7 @@ import type {
   PettitLandmark,
   PettitMemory,
   PettitNameSubmission,
+  PettitSeasonalProgress,
   PettitState,
   PettitStats,
 } from '../../shared/pettit';
@@ -29,6 +30,7 @@ type LegacyState = PettitState & {
   activeQuestId?: string;
   activeEncounterId?: string;
   dailyCycle?: PettitDailyCycle;
+  seasonalProgress?: Partial<PettitSeasonalProgress>;
 };
 
 type LegacyStats = PettitStats & {
@@ -93,6 +95,17 @@ const normalizeDailyCycle = (dailyCycle?: Partial<PettitDailyCycle>): PettitDail
   };
 };
 
+const normalizeSeasonalProgress = (
+  seasonalProgress?: Partial<PettitSeasonalProgress>
+): PettitSeasonalProgress => ({
+  lastSeenEventKeys: seasonalProgress?.lastSeenEventKeys ?? [],
+  activeEventKey: seasonalProgress?.activeEventKey ?? null,
+  surpriseDayYear: seasonalProgress?.surpriseDayYear ?? {},
+  shootingStarYear: seasonalProgress?.shootingStarYear ?? {},
+  legendaryEventYear: seasonalProgress?.legendaryEventYear ?? {},
+  pettitDayGiftGrantedYears: seasonalProgress?.pettitDayGiftGrantedYears ?? [],
+});
+
 const normalizeLandmark = (landmark: PettitLandmark & { sourceQuestTemplateId?: string }): PettitLandmark => {
   return {
     ...landmark,
@@ -138,6 +151,7 @@ const normalizeState = (storedState: LegacyState): PettitState => {
     activeEncounterId: activeEncounterId.replace(/^quest-/, 'encounter-'),
     latestJournalId: storedState.latestJournalId ?? null,
     dailyCycle: normalizeDailyCycle(storedState.dailyCycle),
+    seasonalProgress: normalizeSeasonalProgress(storedState.seasonalProgress),
   };
 };
 

@@ -79,6 +79,9 @@ export class Game extends Scene {
   private topActionPanel!: Phaser.GameObjects.Rectangle;
   private topActionTitle!: Phaser.GameObjects.Text;
   private topActionBody!: Phaser.GameObjects.Text;
+  private seasonalPanel!: Phaser.GameObjects.Rectangle;
+  private seasonalTitleText!: Phaser.GameObjects.Text;
+  private seasonalBodyText!: Phaser.GameObjects.Text;
   private achievementPanel!: Phaser.GameObjects.Rectangle;
   private achievementTitleText!: Phaser.GameObjects.Text;
   private achievementBodyText!: Phaser.GameObjects.Text;
@@ -223,6 +226,20 @@ export class Game extends Scene {
       color: '#d7e7f0',
       wordWrap: { width: 240 },
       lineSpacing: 8,
+    });
+
+    this.seasonalPanel = this.createPanel(0x1a222b, 0x2b3d49);
+    this.seasonalTitleText = this.add.text(0, 0, 'Seasonal', {
+      fontFamily: 'Georgia',
+      fontSize: '21px',
+      color: '#fff2cf',
+    });
+    this.seasonalBodyText = this.add.text(0, 0, '', {
+      fontFamily: 'Trebuchet MS',
+      fontSize: '14px',
+      color: '#d7e7f0',
+      wordWrap: { width: 240 },
+      lineSpacing: 7,
     });
 
     this.achievementPanel = this.createPanel(0x1a222b, 0x2b3d49);
@@ -552,6 +569,8 @@ export class Game extends Scene {
     this.traitPanelTitle.setFontSize(Math.round(21 * scale));
     this.topActionTitle.setFontSize(Math.round(18 * scale));
     this.topActionBody.setFontSize(Math.round(14 * scale));
+    this.seasonalTitleText.setFontSize(Math.round(18 * scale));
+    this.seasonalBodyText.setFontSize(Math.round(13 * scale));
     this.achievementTitleText.setFontSize(Math.round(18 * scale));
     this.achievementBodyText.setFontSize(Math.round(13 * scale));
     this.journalTitleText.setFontSize(Math.round(27 * scale));
@@ -634,10 +653,12 @@ export class Game extends Scene {
     const creatureHeight = clamp(Math.round(topAreaHeight * 0.4), 188, 236);
     const actionHeight = topAreaHeight - creatureHeight - metrics.gap;
     const traitHeight = clamp(Math.round(topAreaHeight * 0.3), 150, 194);
-    const topActionHeight = clamp(Math.round(topAreaHeight * 0.11), 72, 90);
-    const achievementHeight = clamp(Math.round(topAreaHeight * 0.15), 88, 118);
+    const topActionHeight = clamp(Math.round(topAreaHeight * 0.1), 72, 86);
+    const seasonalHeight = clamp(Math.round(topAreaHeight * 0.13), 84, 110);
+    const achievementHeight = clamp(Math.round(topAreaHeight * 0.13), 86, 108);
     const resolveHeight = clamp(Math.round(topAreaHeight * 0.18), 120, 150);
-    const journalHeight = topAreaHeight - traitHeight - topActionHeight - achievementHeight - resolveHeight - metrics.gap * 4;
+    const journalHeight =
+      topAreaHeight - traitHeight - topActionHeight - seasonalHeight - achievementHeight - resolveHeight - metrics.gap * 5;
     const bottomY = top + topAreaHeight + metrics.gap;
 
     const creatureFrame: PanelFrame = { x: leftX, y: top, width: leftWidth, height: creatureHeight };
@@ -654,17 +675,23 @@ export class Game extends Scene {
       width: rightWidth,
       height: topActionHeight,
     };
-    const journalFrame: PanelFrame = {
-      x: rightX,
-      y: topActionFrame.y + topActionFrame.height + metrics.gap + achievementHeight + metrics.gap,
-      width: rightWidth,
-      height: Math.max(journalHeight, 92),
-    };
-    const achievementFrame: PanelFrame = {
+    const seasonalFrame: PanelFrame = {
       x: rightX,
       y: topActionFrame.y + topActionFrame.height + metrics.gap,
       width: rightWidth,
+      height: seasonalHeight,
+    };
+    const achievementFrame: PanelFrame = {
+      x: rightX,
+      y: seasonalFrame.y + seasonalFrame.height + metrics.gap,
+      width: rightWidth,
       height: achievementHeight,
+    };
+    const journalFrame: PanelFrame = {
+      x: rightX,
+      y: achievementFrame.y + achievementFrame.height + metrics.gap,
+      width: rightWidth,
+      height: Math.max(journalHeight, 92),
     };
     const resolveFrame: PanelFrame = {
       x: rightX,
@@ -705,6 +732,7 @@ export class Game extends Scene {
     this.layoutActionPanel(metrics, actionFrame);
     this.layoutTraitPanel(metrics, traitFrame);
     this.layoutTopActionPanel(metrics, topActionFrame);
+    this.layoutSeasonalPanel(metrics, seasonalFrame);
     this.layoutAchievementPanel(metrics, achievementFrame);
     this.layoutJournalPanel(metrics, journalFrame);
     this.layoutResolveArea(metrics, resolveFrame);
@@ -738,6 +766,26 @@ export class Game extends Scene {
     };
     this.layoutTraitPanel(metrics, traitFrame);
     currentTop += traitHeight + metrics.gap;
+
+    const topActionHeight = 84;
+    const topActionFrame: PanelFrame = {
+      x: contentX,
+      y: currentTop,
+      width: contentWidth,
+      height: topActionHeight,
+    };
+    this.layoutTopActionPanel(metrics, topActionFrame);
+    currentTop += topActionHeight + metrics.gap;
+
+    const seasonalHeight = 96;
+    const seasonalFrame: PanelFrame = {
+      x: contentX,
+      y: currentTop,
+      width: contentWidth,
+      height: seasonalHeight,
+    };
+    this.layoutSeasonalPanel(metrics, seasonalFrame);
+    currentTop += seasonalHeight + metrics.gap;
 
     const actionHeight = metrics.actionButtonHeight * Math.max(this.optionButtons.length, 1) + 110;
     const actionFrame: PanelFrame = {
@@ -798,16 +846,6 @@ export class Game extends Scene {
     };
     this.layoutInventoryPanel(metrics, inventoryFrame);
     currentTop += inventoryHeight + metrics.gap;
-
-    const topActionHeight = 84;
-    const topActionFrame: PanelFrame = {
-      x: contentX,
-      y: currentTop,
-      width: contentWidth,
-      height: topActionHeight,
-    };
-    this.layoutTopActionPanel(metrics, topActionFrame);
-    currentTop += topActionHeight + metrics.gap;
 
     const achievementHeight = 98;
     const achievementFrame: PanelFrame = {
@@ -990,6 +1028,17 @@ export class Game extends Scene {
     this.topActionTitle.setPosition(frame.x + metrics.cardInsetX, frame.y + metrics.cardInsetY);
     this.topActionBody.setPosition(frame.x + metrics.cardInsetX, this.topActionTitle.y + this.topActionTitle.height + 6);
     this.topActionBody.setWordWrapWidth(frame.width - metrics.cardInsetX * 2);
+  }
+
+  private layoutSeasonalPanel(metrics: LayoutMetrics, frame: PanelFrame): void {
+    this.seasonalPanel.setPosition(frame.x, frame.y);
+    this.seasonalPanel.setSize(frame.width, frame.height);
+    this.seasonalTitleText.setPosition(frame.x + metrics.cardInsetX, frame.y + metrics.cardInsetY);
+    this.seasonalBodyText.setPosition(
+      frame.x + metrics.cardInsetX,
+      this.seasonalTitleText.y + this.seasonalTitleText.height + 6
+    );
+    this.seasonalBodyText.setWordWrapWidth(frame.width - metrics.cardInsetX * 2);
   }
 
   private layoutAchievementPanel(metrics: LayoutMetrics, frame: PanelFrame): void {
@@ -1241,6 +1290,17 @@ export class Game extends Scene {
           : 'No names waiting',
       ].join('\n')
     );
+
+    if (this.pettitState.seasonal.activeEvent) {
+      const seasonal = this.pettitState.seasonal.activeEvent;
+      this.seasonalTitleText.setText(seasonal.title);
+      this.seasonalBodyText.setText(`${seasonal.timingLabel}\n${seasonal.flavorText}`);
+      this.applySeasonalAccent(seasonal.accentColor);
+    } else {
+      this.seasonalTitleText.setText('Seasonal');
+      this.seasonalBodyText.setText('No special holiday is active right now. Pettit is moving through an ordinary day.');
+      this.applySeasonalAccent(null);
+    }
 
     if (this.pettitState.recentAchievements.length > 0) {
       this.achievementBodyText.setText(
@@ -1679,6 +1739,29 @@ export class Game extends Scene {
 
   private formatMoodBadge(mood: PettitViewModel['pettit']['mood']): string {
     return `${this.capitalize(mood)} Mood`;
+  }
+
+  private parseHexColor(value: string | null): number {
+    if (!value) {
+      return 0x324759;
+    }
+
+    return Number.parseInt(value.replace('#', ''), 16);
+  }
+
+  private applySeasonalAccent(accentColor: string | null): void {
+    const accent = this.parseHexColor(accentColor);
+
+    if (!accentColor) {
+      this.rootPanel.setStrokeStyle(2, 0x263846, 0.48);
+      this.creatureArtFrame.setFillStyle(0x223243, 0.96);
+      this.seasonalPanel.setStrokeStyle(1, 0x2b3d49, 0.42);
+      return;
+    }
+
+    this.rootPanel.setStrokeStyle(2, accent, 0.22);
+    this.creatureArtFrame.setFillStyle(accent, 0.16);
+    this.seasonalPanel.setStrokeStyle(1, accent, 0.32);
   }
 
   private applyMoodBadgeStyle(mood: PettitViewModel['pettit']['mood']): void {

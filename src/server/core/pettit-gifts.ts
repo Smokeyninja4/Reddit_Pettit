@@ -7,6 +7,7 @@ type GiftDefinition = {
   category: GiftCategory;
   moodLine: string;
   traitEffects: Partial<Record<TraitKey, number>>;
+  seasonalOnly?: boolean;
 };
 
 const GIFT_ENCOUNTER_PREFIX = 'encounter-gift:';
@@ -94,6 +95,24 @@ const GIFT_LIBRARY: readonly GiftDefinition[] = [
     traitEffects: { courage: 1, chaos: 1 },
   },
   {
+    id: 'birthday-hat',
+    name: 'Birthday Hat',
+    description: 'A tiny party hat that makes even ordinary moments feel a little celebratory.',
+    category: 'clothing',
+    moodLine: 'Pettit wore the birthday hat with very serious joy, which somehow made it even sweeter.',
+    traitEffects: { trust: 1, chaos: 1 },
+    seasonalOnly: true,
+  },
+  {
+    id: 'flower-crown',
+    name: 'Flower Crown',
+    description: 'A soft crown of fresh flowers that makes the whole day feel gentler.',
+    category: 'clothing',
+    moodLine: 'Pettit tucked itself beneath the flower crown and looked wonderfully pleased with the whole arrangement.',
+    traitEffects: { curiosity: 1, trust: 1 },
+    seasonalOnly: true,
+  },
+  {
     id: 'small-backpack',
     name: 'Small Backpack',
     description: 'A sturdy little backpack for carrying future discoveries.',
@@ -134,6 +153,51 @@ const GIFT_LIBRARY: readonly GiftDefinition[] = [
     traitEffects: { curiosity: 1 },
   },
   {
+    id: 'paintbrush',
+    name: 'Paintbrush',
+    description: 'A little paintbrush for bright ideas, careful dabs, and unnecessary creativity.',
+    category: 'tools',
+    moodLine: 'Pettit held the paintbrush like it had just been trusted with an important secret.',
+    traitEffects: { curiosity: 1, chaos: 1 },
+    seasonalOnly: true,
+  },
+  {
+    id: 'easel',
+    name: 'Easel',
+    description: 'A tiny easel for turning small moments into something worth looking at twice.',
+    category: 'tools',
+    moodLine: 'Pettit kept stepping back from the easel as though admiring a masterpiece it had not made yet.',
+    traitEffects: { curiosity: 1, trust: 1 },
+    seasonalOnly: true,
+  },
+  {
+    id: 'palette',
+    name: 'Palette',
+    description: 'A bright little palette that makes color feel like an invitation.',
+    category: 'tools',
+    moodLine: 'Pettit stared at the palette with a look that suggested every color deserved a turn.',
+    traitEffects: { curiosity: 1, chaos: 1 },
+    seasonalOnly: true,
+  },
+  {
+    id: 'paper-windmill',
+    name: 'Paper Windmill',
+    description: 'A cheerful little windmill that seems happiest when the day refuses to stand still.',
+    category: 'tools',
+    moodLine: 'Pettit watched the paper windmill spin and immediately started trusting the breeze a little more.',
+    traitEffects: { curiosity: 1, courage: 1 },
+    seasonalOnly: true,
+  },
+  {
+    id: 'honey-jar',
+    name: 'Honey Jar',
+    description: 'A tiny jar of golden honey that feels like warmth you can carry around.',
+    category: 'tools',
+    moodLine: 'Pettit cradled the honey jar carefully, as though sweetness deserved proper respect.',
+    traitEffects: { trust: 1 },
+    seasonalOnly: true,
+  },
+  {
     id: 'teddy-bear',
     name: 'Teddy Bear',
     description: 'A worn little teddy bear that feels like comfort made visible.',
@@ -172,6 +236,24 @@ const GIFT_LIBRARY: readonly GiftDefinition[] = [
     category: 'toys',
     moodLine: 'Pettit ran in circles with the kite string until the whole field felt more alive.',
     traitEffects: { curiosity: 1, chaos: 1 },
+  },
+  {
+    id: 'toy-robot',
+    name: 'Toy Robot',
+    description: 'A clunky little toy robot that feels equal parts adorable and suspiciously determined.',
+    category: 'toys',
+    moodLine: 'Pettit set the toy robot down, watched it wobble once, and decided they understood each other immediately.',
+    traitEffects: { curiosity: 1, chaos: 1 },
+    seasonalOnly: true,
+  },
+  {
+    id: 'wooden-horse',
+    name: 'Wooden Horse',
+    description: 'A tiny carved wooden horse that makes even stillness feel like travel.',
+    category: 'toys',
+    moodLine: 'Pettit held the wooden horse in both paws and looked ready to invent a whole journey around it.',
+    traitEffects: { trust: 1, courage: 1 },
+    seasonalOnly: true,
   },
   {
     id: 'sleeping-bag',
@@ -429,9 +511,11 @@ export const getGiftEncounterTemplateById = (templateId: string): EncounterTempl
 
 export const selectGiftEncounterIds = (inventory: PettitInventoryItem[], optionCount: number): string[] => {
   const ownedCanonicalIds = new Set(inventory.map((item) => canonicalizeGiftId(item.giftId)));
-  const unowned = GIFT_LIBRARY.filter((gift) => !ownedCanonicalIds.has(gift.id));
+  const unowned = GIFT_LIBRARY.filter((gift) => !ownedCanonicalIds.has(gift.id) && !gift.seasonalOnly);
   const offset = inventory.length % GIFT_LIBRARY.length;
-  const orderedAll = GIFT_LIBRARY.slice(offset).concat(GIFT_LIBRARY.slice(0, offset));
+  const orderedAll = GIFT_LIBRARY.filter((gift) => !gift.seasonalOnly)
+    .slice(offset)
+    .concat(GIFT_LIBRARY.filter((gift) => !gift.seasonalOnly).slice(0, offset));
   const selected: string[] = [];
 
   for (const gift of unowned) {
@@ -451,6 +535,42 @@ export const selectGiftEncounterIds = (inventory: PettitInventoryItem[], optionC
       selected.push(gift.id);
     }
   }
+
+  return selected;
+};
+
+export const selectPreferredGiftEncounterIds = (
+  inventory: PettitInventoryItem[],
+  optionCount: number,
+  preferredGiftIds: readonly string[]
+): string[] => {
+  const ownedCanonicalIds = new Set(inventory.map((item) => canonicalizeGiftId(item.giftId)));
+  const selected: string[] = [];
+
+  preferredGiftIds.forEach((giftId) => {
+    const canonicalId = canonicalizeGiftId(giftId);
+
+    if (
+      selected.length < optionCount &&
+      !ownedCanonicalIds.has(canonicalId) &&
+      CANONICAL_GIFT_MAP.has(canonicalId) &&
+      !selected.includes(canonicalId)
+    ) {
+      selected.push(canonicalId);
+    }
+  });
+
+  if (selected.length >= optionCount) {
+    return selected;
+  }
+
+  const fallback = selectGiftEncounterIds(inventory, optionCount);
+
+  fallback.forEach((giftId) => {
+    if (selected.length < optionCount && !selected.includes(giftId)) {
+      selected.push(giftId);
+    }
+  });
 
   return selected;
 };
