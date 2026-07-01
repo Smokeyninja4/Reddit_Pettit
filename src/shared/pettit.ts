@@ -107,6 +107,29 @@ export type PettitNameSubmission = {
   submittedAt: string;
 };
 
+export type PettitGiftIdeaSubmission = {
+  username: string;
+  name: string;
+  description: string;
+  category: GiftCategory;
+  submittedAt: string;
+};
+
+export type PendingCommunityGiftBallot = {
+  submissionCount: number;
+  isReady: boolean;
+  submissions: Array<{
+    name: string;
+    category: GiftCategory;
+  }>;
+};
+
+export type RecentCommunityGiftSummary = {
+  name: string;
+  category: GiftCategory;
+  obtainedAt: string;
+};
+
 export type CanonNameRecord = {
   targetType: NamingTargetType;
   targetId: string;
@@ -274,4 +297,8 @@ export type PettitViewModel = {
   achievementCount: number;
   hallOfMemories: HallOfMemoriesView;
   seasonal: SeasonalProgressView;
+  communityContributions: {
+    pendingGiftBallot: PendingCommunityGiftBallot | null;
+    recentCommunityGifts: RecentCommunityGiftSummary[];
+  };
 };

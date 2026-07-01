@@ -4,6 +4,7 @@ import type {
   EncounterOption,
   EncounterOptionOutcome,
   EncounterTemplate,
+  PettitGiftIdeaSubmission,
   PendingNamingTarget,
   PettitAchievement,
   PettitInventoryItem,
@@ -17,8 +18,17 @@ import type {
   TraitKey,
 } from '../../shared/pettit';
 import {
+  buildPendingCommunityGiftBallot,
+  clearGiftIdeaSubmissions,
+  getRecentCommunityGiftSummaries,
+  isCommunityGiftEncounterTemplateId,
+  selectReadyCommunityGiftEncounterTemplate,
+  submitGiftIdea as submitCommunityGiftIdea,
+} from './pettit-contributions';
+import {
   getGiftById,
   buildGiftEncounterTemplate,
+  isCommunityGiftId,
   selectGiftEncounterIds,
   selectPreferredGiftEncounterIds,
 } from './pettit-gifts';
@@ -58,6 +68,7 @@ import {
 import {
   appendJournal,
   appendMemory,
+  getGiftIdeaSubmissions,
   getJournals,
   getMemories,
   getNameSubmissions,
@@ -67,6 +78,7 @@ import {
   getVoterMap,
   resetVoterMap,
   saveActiveEncounter,
+  saveGiftIdeaSubmissions,
   saveNameSubmissions,
   saveState,
   saveStats,
@@ -81,6 +93,7 @@ type WorldSnapshot = {
   journals: PettitJournalEntry[];
   selectedOptionId: string | null;
   pendingNamingTargets: PendingNamingTarget[];
+  giftIdeaSubmissions: PettitGiftIdeaSubmission[];
 };
 
 type SeasonalSnapshot = {
@@ -274,11 +287,15 @@ const buildViewModel = (snapshot: WorldSnapshot): PettitViewModel => {
     achievementCount: snapshot.stats.achievements.length,
     hallOfMemories: buildHallOfMemoriesView(snapshot.memories),
     seasonal: getSeasonalProgressView(snapshot.state),
+    communityContributions: {
+      pendingGiftBallot: buildPendingCommunityGiftBallot(snapshot.giftIdeaSubmissions),
+      recentCommunityGifts: getRecentCommunityGiftSummaries(snapshot.state.inventory),
+    },
   };
 };
 
 const loadWorldSnapshot = async (subredditName: string, username: string | null): Promise<WorldSnapshot> => {
-  const [state, stats, activeEncounter, memories, journals, voterMap, nameSubmissions] = await Promise.all([
+  const [state, stats, activeEncounter, memories, journals, voterMap, nameSubmissions, giftIdeaSubmissions] = await Promise.all([
     getOrCreateState(subredditName),
     getOrCreateStats(subredditName),
     getOrCreateActiveEncounter(subredditName),
@@ -286,6 +303,7 @@ const loadWorldSnapshot = async (subredditName: string, username: string | null)
     getJournals(subredditName),
     getVoterMap(subredditName),
     getNameSubmissions(subredditName),
+    getGiftIdeaSubmissions(subredditName),
   ]);
 
   return {
@@ -296,6 +314,7 @@ const loadWorldSnapshot = async (subredditName: string, username: string | null)
     journals,
     selectedOptionId: username ? voterMap[username] ?? null : null,
     pendingNamingTargets: getPendingNamingTargets(state, nameSubmissions),
+    giftIdeaSubmissions,
   };
 };
 
@@ -312,7 +331,7 @@ const createInventoryItem = (
     name: gift.name,
     description: gift.description,
     category: gift.category,
-    source: 'Community Gift Encounter',
+    source: isCommunityGiftId(giftId) ? 'Community Contribution' : 'Community Gift Encounter',
     obtainedAt: new Date().toISOString(),
     canonName: existingCanonName,
   };
@@ -422,6 +441,7 @@ const selectNextEncounterTemplate = (
   state: PettitState,
   resolvedEncounterCount: number,
   nameSubmissions: Record<string, PettitNameSubmission[]>,
+  giftIdeaSubmissions: PettitGiftIdeaSubmission[],
   currentTemplateId: string
 ): EncounterTemplate => {
   const seasonalModifier = getSeasonalEncounterModifier(state);
@@ -429,6 +449,12 @@ const selectNextEncounterTemplate = (
 
   if (namingEncounterTemplate) {
     return namingEncounterTemplate;
+  }
+
+  const communityGiftEncounterTemplate = selectReadyCommunityGiftEncounterTemplate(giftIdeaSubmissions);
+
+  if (communityGiftEncounterTemplate) {
+    return communityGiftEncounterTemplate;
   }
 
   if (resolvedEncounterCount > 0 && resolvedEncounterCount % 3 === 0) {
@@ -532,13 +558,14 @@ const processEncounterTransition = async (
   subredditName: string,
   mode: TransitionMode
 ): Promise<ResolveResult> => {
-  const [state, activeEncounter, memories, journals, stats, nameSubmissions] = await Promise.all([
+  const [state, activeEncounter, memories, journals, stats, nameSubmissions, giftIdeaSubmissions] = await Promise.all([
     syncSeasonalWorldState(subredditName).then((result) => result.state),
     getOrCreateActiveEncounter(subredditName),
     getMemories(subredditName),
     getJournals(subredditName),
     getOrCreateStats(subredditName),
     getNameSubmissions(subredditName),
+    getGiftIdeaSubmissions(subredditName),
   ]);
 
   const totalVotes = getEncounterVoteTotal(activeEncounter);
@@ -548,6 +575,7 @@ const processEncounterTransition = async (
       state,
       stats.resolvedEncounterCount,
       nameSubmissions,
+      giftIdeaSubmissions,
       activeEncounter.templateId
     );
     const nextEncounter = createEncounterInstanceFromTemplate(
@@ -575,6 +603,7 @@ const processEncounterTransition = async (
         journals,
         selectedOptionId: null,
         pendingNamingTargets: getPendingNamingTargets(nextState, nameSubmissions),
+        giftIdeaSubmissions,
       }),
       outcome: 'advanced',
       resolution: {
@@ -611,6 +640,7 @@ const processEncounterTransition = async (
   nextStateBeforeJournal = discoverLandmark(nextStateBeforeJournal, outcome.discoveredLandmarkId);
 
   let nextNameSubmissions = nameSubmissions;
+  let nextGiftIdeaSubmissions = giftIdeaSubmissions;
 
   if (outcome.namingTarget) {
     nextStateBeforeJournal = applyCanonName(
@@ -624,6 +654,10 @@ const processEncounterTransition = async (
       outcome.namingTarget.type,
       outcome.namingTarget.targetId
     );
+  }
+
+  if (isCommunityGiftEncounterTemplateId(activeEncounter.templateId)) {
+    nextGiftIdeaSubmissions = clearGiftIdeaSubmissions();
   }
 
   const personalizedOutcome: EncounterOptionOutcome = {
@@ -653,6 +687,7 @@ const processEncounterTransition = async (
     nextStateBeforeJournal,
     achievementResult.stats.resolvedEncounterCount,
     nextNameSubmissions,
+    nextGiftIdeaSubmissions,
     activeEncounter.templateId
   );
   const nextEncounter = createEncounterInstanceFromTemplate(
@@ -675,6 +710,7 @@ const processEncounterTransition = async (
     saveState(subredditName, nextState),
     saveActiveEncounter(subredditName, nextEncounter),
     saveStats(subredditName, achievementResult.stats),
+    saveGiftIdeaSubmissions(subredditName, nextGiftIdeaSubmissions),
     saveNameSubmissions(subredditName, nextNameSubmissions),
     resetVoterMap(subredditName),
   ]);
@@ -688,6 +724,7 @@ const processEncounterTransition = async (
       journals: nextJournals,
       selectedOptionId: null,
       pendingNamingTargets: getPendingNamingTargets(nextState, nextNameSubmissions),
+      giftIdeaSubmissions: nextGiftIdeaSubmissions,
     }),
     outcome: 'resolved',
     resolution: {
@@ -750,13 +787,14 @@ export const submitVote = async (
   await advanceWorldToCurrentDay(subredditName);
   const seasonalState = await syncSeasonalWorldState(subredditName);
   await syncPassiveAchievements(subredditName);
-  const [activeEncounter, voterMap, stats, memories, journals, nameSubmissions] = await Promise.all([
+  const [activeEncounter, voterMap, stats, memories, journals, nameSubmissions, giftIdeaSubmissions] = await Promise.all([
     getOrCreateActiveEncounter(subredditName),
     getVoterMap(subredditName),
     getOrCreateStats(subredditName),
     getMemories(subredditName),
     getJournals(subredditName),
     getNameSubmissions(subredditName),
+    getGiftIdeaSubmissions(subredditName),
   ]);
   const state = seasonalState.state;
 
@@ -800,6 +838,7 @@ export const submitVote = async (
     journals,
     selectedOptionId: optionId,
     pendingNamingTargets: getPendingNamingTargets(state, nameSubmissions),
+    giftIdeaSubmissions,
   });
 };
 
@@ -844,6 +883,35 @@ export const submitName = async (
       target && target.submissionCount >= 3
         ? `${target.baseName} is ready for an encounter vote.`
         : 'Name submitted. The community is one step closer to making it canon.',
+  };
+};
+
+export const submitGiftIdea = async (
+  subredditName: string,
+  username: string,
+  name: string,
+  description: string,
+  category: PettitGiftIdeaSubmission['category']
+): Promise<{ pendingGiftBallot: ReturnType<typeof buildPendingCommunityGiftBallot>; message: string }> => {
+  await advanceWorldToCurrentDay(subredditName);
+  await syncSeasonalWorldState(subredditName);
+  await syncPassiveAchievements(subredditName);
+  const [state, submissions] = await Promise.all([
+    syncSeasonalWorldState(subredditName).then((result) => result.state),
+    getGiftIdeaSubmissions(subredditName),
+  ]);
+
+  const nextSubmissions = submitCommunityGiftIdea(state, submissions, username, name, description, category);
+  await saveGiftIdeaSubmissions(subredditName, nextSubmissions);
+
+  const pendingGiftBallot = buildPendingCommunityGiftBallot(nextSubmissions);
+
+  return {
+    pendingGiftBallot,
+    message:
+      nextSubmissions.length >= 3
+        ? 'That community gift ballot is ready for an encounter vote.'
+        : 'Gift idea submitted. The community is shaping Pettit together.',
   };
 };
 

@@ -1,5 +1,29 @@
 # Pettit Release Notes
 
+## v0.15
+
+- Seasonal progression
+- Pettit-based fictional holidays and events
+- Seasonal dashboard and calendar-driven story shaping
+
+## v0.14
+
+- Hall of Memories
+- Highlighted memory archive
+- In-dashboard memory history browsing
+
+## v0.13
+
+- Achievements and milestones
+- Shared long-term progression celebrations
+- Milestones dashboard card
+
+## v0.12
+
+- Automated daily resolve
+- UTC-based daily encounter advancement
+- Self-healing catch-up for missed days
+
 ## v0.11
 
 - Weighted encounter selection

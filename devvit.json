@@ -31,11 +31,18 @@
         "description": "Help name Pettit's keepsakes and places",
         "location": "subreddit",
         "endpoint": "/internal/menu/name-form"
+      },
+      {
+        "label": "Submit a community gift",
+        "description": "Propose a new keepsake for Pettit",
+        "location": "subreddit",
+        "endpoint": "/internal/menu/gift-form"
       }
     ]
   },
   "forms": {
-    "submitNameForm": "/internal/form/name-submit"
+    "submitNameForm": "/internal/form/name-submit",
+    "submitGiftIdeaForm": "/internal/form/gift-submit"
   },
   "scheduler": {
     "tasks": {

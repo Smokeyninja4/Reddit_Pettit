@@ -1285,6 +1285,11 @@ export class Game extends Scene {
         `${this.formatCount(this.pettitState.communityStats.totalVotes)} Votes`,
         `${this.formatCount(this.pettitState.communityStats.encountersCompleted)} Stories`,
         `${this.formatCount(this.pettitState.communityStats.memoriesCreated)} Keepsakes`,
+        this.pettitState.communityContributions.pendingGiftBallot
+          ? this.pettitState.communityContributions.pendingGiftBallot.isReady
+            ? 'Gift ballot ready'
+            : `${this.pettitState.communityContributions.pendingGiftBallot.submissionCount}/3 Gift ideas`
+          : 'No gift ballot yet',
         this.pettitState.pendingNamingTargets.length > 0
           ? `${this.formatCount(this.pettitState.pendingNamingTargets.length)} Names waiting`
           : 'No names waiting',
@@ -1353,7 +1358,7 @@ export class Game extends Scene {
           .map((item) =>
             item.canonName
               ? `${item.canonName}\n${item.name} - ${item.description}`
-              : `${item.name}\n${this.formatGiftCategory(item.category)} - ${item.description}`
+              : `${item.name}\n${item.source === 'Community Contribution' ? 'Community Gift Idea' : this.formatGiftCategory(item.category)} - ${item.description}`
           )
           .join('\n\n')
       );

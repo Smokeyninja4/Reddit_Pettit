@@ -9,6 +9,10 @@ import type {
   PettitTraits,
   TraitKey,
 } from '../../shared/pettit';
+import {
+  getCommunityGiftEncounterTemplateById,
+  isCommunityGiftEncounterTemplateId,
+} from './pettit-contributions';
 import { getGiftEncounterTemplateById, isGiftEncounterTemplateId } from './pettit-gifts';
 import { getNamingEncounterTemplateById, isNamingEncounterTemplateId } from './pettit-naming';
 
@@ -768,6 +772,10 @@ export const getCurrentSeason = (date = new Date()): EncounterSeason => {
 export const getEncounterTemplateById = (templateId: string): EncounterTemplate => {
   if (isNamingEncounterTemplateId(templateId)) {
     return getNamingEncounterTemplateById(templateId);
+  }
+
+  if (isCommunityGiftEncounterTemplateId(templateId)) {
+    return getCommunityGiftEncounterTemplateById(templateId);
   }
 
   if (isGiftEncounterTemplateId(templateId)) {

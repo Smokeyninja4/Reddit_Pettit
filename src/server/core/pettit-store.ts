@@ -3,6 +3,7 @@ import type {
   ActiveEncounter,
   EncounterAffinity,
   PettitDailyCycle,
+  PettitGiftIdeaSubmission,
   PettitAchievement,
   PettitJournalEntry,
   PettitInventoryItem,
@@ -25,6 +26,7 @@ import { getGiftById, resolveInventoryGiftId } from './pettit-gifts';
 
 type VoterMap = Record<string, string>;
 type NamingSubmissionMap = Record<string, PettitNameSubmission[]>;
+type GiftIdeaSubmissionList = PettitGiftIdeaSubmission[];
 
 type LegacyState = PettitState & {
   activeQuestId?: string;
@@ -67,6 +69,7 @@ export const buildPettitKeys = (subredditName: string) => {
     journals: `${prefix}:journals`,
     stats: `${prefix}:stats`,
     namingSubmissions: `${prefix}:naming:submissions`,
+    giftIdeaSubmissions: `${prefix}:gift-ideas`,
   };
 };
 
@@ -303,4 +306,17 @@ export const saveNameSubmissions = async (
 ): Promise<void> => {
   const keys = buildPettitKeys(subredditName);
   await redis.set(keys.namingSubmissions, JSON.stringify(submissionMap));
+};
+
+export const getGiftIdeaSubmissions = async (subredditName: string): Promise<GiftIdeaSubmissionList> => {
+  const keys = buildPettitKeys(subredditName);
+  return parseJson<GiftIdeaSubmissionList>(await redis.get(keys.giftIdeaSubmissions), []);
+};
+
+export const saveGiftIdeaSubmissions = async (
+  subredditName: string,
+  submissions: GiftIdeaSubmissionList
+): Promise<void> => {
+  const keys = buildPettitKeys(subredditName);
+  await redis.set(keys.giftIdeaSubmissions, JSON.stringify(submissions));
 };

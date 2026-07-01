@@ -1,6 +1,6 @@
 import type { EncounterTemplate, GiftCategory, PettitInventoryItem, TraitKey } from '../../shared/pettit';
 
-type GiftDefinition = {
+export type GiftDefinition = {
   id: string;
   name: string;
   description: string;
@@ -12,6 +12,7 @@ type GiftDefinition = {
 
 const GIFT_ENCOUNTER_PREFIX = 'encounter-gift:';
 const LEGACY_GIFT_QUEST_PREFIX = 'quest-gift:';
+const COMMUNITY_GIFT_PREFIX = 'community-gift:';
 
 const GIFT_LIBRARY: readonly GiftDefinition[] = [
   {
@@ -412,9 +413,65 @@ const GIFT_NAME_INDEX = new Map<string, string>(
 
 export const canonicalizeGiftId = (giftId: string): string => LEGACY_GIFT_ALIASES[giftId] ?? giftId;
 
+const encodePayload = (value: string): string =>
+  Buffer.from(value, 'utf8')
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '');
+
+const decodePayload = (value: string): string => {
+  const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
+  const padding = normalized.length % 4 === 0 ? '' : '='.repeat(4 - (normalized.length % 4));
+  return Buffer.from(`${normalized}${padding}`, 'base64').toString('utf8');
+};
+
+export const isCommunityGiftId = (giftId: string | null | undefined): giftId is string =>
+  Boolean(giftId?.startsWith(COMMUNITY_GIFT_PREFIX));
+
+export const buildCommunityGiftDefinition = (gift: Omit<GiftDefinition, 'id'>): GiftDefinition => {
+  const payload = JSON.stringify({
+    name: gift.name,
+    description: gift.description,
+    category: gift.category,
+    moodLine: gift.moodLine,
+    traitEffects: gift.traitEffects,
+  });
+
+  return {
+    ...gift,
+    id: `${COMMUNITY_GIFT_PREFIX}${encodePayload(payload)}`,
+  };
+};
+
+export const encodeCommunityGiftId = (gift: Omit<GiftDefinition, 'id' | 'seasonalOnly'>): string =>
+  buildCommunityGiftDefinition(gift).id;
+
+const parseCommunityGiftDefinition = (giftId: string): GiftDefinition => {
+  const encodedPayload = giftId.slice(COMMUNITY_GIFT_PREFIX.length);
+
+  try {
+    const parsed = JSON.parse(decodePayload(encodedPayload)) as Omit<GiftDefinition, 'id'>;
+    return {
+      id: giftId,
+      name: parsed.name,
+      description: parsed.description,
+      category: parsed.category,
+      moodLine: parsed.moodLine,
+      traitEffects: parsed.traitEffects,
+    };
+  } catch {
+    throw new Error(`Unknown gift: ${giftId}`);
+  }
+};
+
 export const inferGiftId = (value: string | null | undefined): string | null => {
   if (!value) {
     return null;
+  }
+
+  if (typeof value === 'string' && value.startsWith(COMMUNITY_GIFT_PREFIX)) {
+    return value;
   }
 
   const normalized = value.trim().toLowerCase();
@@ -443,6 +500,10 @@ export const resolveInventoryGiftId = (item: Partial<PettitInventoryItem>): stri
 };
 
 export const getGiftById = (giftId: string): GiftDefinition => {
+  if (isCommunityGiftId(giftId)) {
+    return parseCommunityGiftDefinition(giftId);
+  }
+
   const canonicalId = canonicalizeGiftId(giftId);
   const canonicalGift = CANONICAL_GIFT_MAP.get(canonicalId);
 
