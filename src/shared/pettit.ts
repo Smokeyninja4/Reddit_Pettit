@@ -98,6 +98,18 @@ export type PettitAchievement = {
   unlockedAt: string;
 };
 
+export type HallOfMemoriesView = {
+  highlighted: PettitMemory[];
+  recentArchive: PettitMemory[];
+  highlightedCount: number;
+};
+
+export type HallOfMemoriesDetailView = {
+  highlighted: PettitMemory[];
+  archive: PettitMemory[];
+  highlightedCount: number;
+};
+
 export type EncounterOptionOutcome = {
   optionId: string;
   resultText: string;
@@ -201,4 +213,5 @@ export type PettitViewModel = {
   recentMemories: PettitMemory[];
   recentAchievements: PettitAchievement[];
   achievementCount: number;
+  hallOfMemories: HallOfMemoriesView;
 };

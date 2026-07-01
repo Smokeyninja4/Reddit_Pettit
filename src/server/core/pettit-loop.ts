@@ -16,6 +16,7 @@ import type {
   TraitKey,
 } from '../../shared/pettit';
 import { getGiftById, buildGiftEncounterTemplate, selectGiftEncounterIds } from './pettit-gifts';
+import { buildHallOfMemoriesDetail, buildHallOfMemoriesView } from './pettit-hall';
 import { createJournalEntry } from './pettit-journal';
 import {
   evaluateResolvedAchievements,
@@ -253,6 +254,7 @@ const buildViewModel = (snapshot: WorldSnapshot): PettitViewModel => {
     recentMemories,
     recentAchievements,
     achievementCount: snapshot.stats.achievements.length,
+    hallOfMemories: buildHallOfMemoriesView(snapshot.memories),
   };
 };
 
@@ -777,4 +779,11 @@ export const resolveVote = async (subredditName: string, _username: string | nul
 export const processScheduledDailyResolve = async (subredditName: string): Promise<void> => {
   await advanceWorldToCurrentDay(subredditName);
   await syncPassiveAchievements(subredditName);
+};
+
+export const getHallOfMemoriesDetail = async (subredditName: string) => {
+  await advanceWorldToCurrentDay(subredditName);
+  await syncPassiveAchievements(subredditName);
+  const memories = await getMemories(subredditName);
+  return buildHallOfMemoriesDetail(memories);
 };

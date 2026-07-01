@@ -1,8 +1,19 @@
-import type { PendingNamingTarget, PettitAchievement, PettitViewModel, TraitKey } from './pettit';
+import type {
+  HallOfMemoriesDetailView,
+  PendingNamingTarget,
+  PettitAchievement,
+  PettitViewModel,
+  TraitKey,
+} from './pettit';
 
 export type GetPettitStateResponse = {
   type: 'state';
   state: PettitViewModel;
+};
+
+export type GetMemoriesResponse = {
+  type: 'memories';
+  hallOfMemories: HallOfMemoriesDetailView;
 };
 
 export type SubmitVoteRequest = {

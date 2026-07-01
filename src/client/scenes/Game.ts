@@ -1,7 +1,7 @@
 import { Scene } from 'phaser';
 import * as Phaser from 'phaser';
-import { fetchPettitState, resolvePettitVote, submitPettitVote } from '../pettitApi';
-import type { PettitViewModel, TraitKey } from '../../shared/pettit';
+import { fetchPettitMemories, fetchPettitState, resolvePettitVote, submitPettitVote } from '../pettitApi';
+import type { HallOfMemoriesDetailView, PettitMemory, PettitViewModel, TraitKey } from '../../shared/pettit';
 import type { ResolveVoteResponse } from '../../shared/api';
 
 const VIEWPORT_REFRESH_EVENT = 'devvit:viewport-refresh';
@@ -89,6 +89,10 @@ export class Game extends Scene {
   private memoryPanel!: Phaser.GameObjects.Rectangle;
   private memoryTitleText!: Phaser.GameObjects.Text;
   private memoryBodyText!: Phaser.GameObjects.Text;
+  private hallPanel!: Phaser.GameObjects.Rectangle;
+  private hallTitleText!: Phaser.GameObjects.Text;
+  private hallBodyText!: Phaser.GameObjects.Text;
+  private hallButton!: Phaser.GameObjects.Text;
   private namesPanel!: Phaser.GameObjects.Rectangle;
   private namesTitleText!: Phaser.GameObjects.Text;
   private namesBodyText!: Phaser.GameObjects.Text;
@@ -98,10 +102,24 @@ export class Game extends Scene {
   private statusText!: Phaser.GameObjects.Text;
   private traitFeedbackText!: Phaser.GameObjects.Text;
   private resolveButton!: Phaser.GameObjects.Text;
+  private hallOverlayBackdrop!: Phaser.GameObjects.Rectangle;
+  private hallOverlayPanel!: Phaser.GameObjects.Rectangle;
+  private hallOverlayTitleText!: Phaser.GameObjects.Text;
+  private hallOverlayCloseButton!: Phaser.GameObjects.Text;
+  private hallOverlayHighlightedTitleText!: Phaser.GameObjects.Text;
+  private hallOverlayHighlightedBodyText!: Phaser.GameObjects.Text;
+  private hallOverlayArchiveTitleText!: Phaser.GameObjects.Text;
+  private hallOverlayArchiveBodyText!: Phaser.GameObjects.Text;
+  private hallOverlayPageText!: Phaser.GameObjects.Text;
+  private hallOverlayPrevButton!: Phaser.GameObjects.Text;
+  private hallOverlayNextButton!: Phaser.GameObjects.Text;
   private optionButtons: Phaser.GameObjects.Text[] = [];
   private traitBars: Record<TraitKey, TraitBarVisual> | null = null;
   private pettitState: PettitViewModel | null = null;
   private latestTraitFeedback: ResolveVoteResponse['traitFeedback'] | null = null;
+  private hallDetail: HallOfMemoriesDetailView | null = null;
+  private hallArchivePage = 0;
+  private hallOverlayVisible = false;
   private readonly handleScaleResize = (gameSize: Phaser.Structs.Size): void => {
     this.updateLayout(gameSize.width, gameSize.height);
   };
@@ -250,6 +268,34 @@ export class Game extends Scene {
       wordWrap: { width: 240 },
       lineSpacing: 8,
     });
+    this.hallPanel = this.createPanel(0x18212a, 0x2b3c48);
+    this.hallTitleText = this.add.text(0, 0, 'Hall of Memories', {
+      fontFamily: 'Georgia',
+      fontSize: '21px',
+      color: '#f2ead7',
+    });
+    this.hallBodyText = this.add.text(0, 0, '', {
+      fontFamily: 'Trebuchet MS',
+      fontSize: '13px',
+      color: '#d7e7f0',
+      wordWrap: { width: 220 },
+      lineSpacing: 6,
+    });
+    this.hallButton = this.add
+      .text(0, 0, 'View full hall', {
+        fontFamily: 'Trebuchet MS',
+        fontSize: '14px',
+        color: '#13202a',
+        backgroundColor: '#9ed2c7',
+        padding: { x: 14, y: 8 },
+      })
+      .setOrigin(0, 0)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => {
+        void this.openHallOverlay();
+      })
+      .on('pointerover', () => this.hallButton.setStyle({ backgroundColor: '#b8e3da' }))
+      .on('pointerout', () => this.hallButton.setStyle({ backgroundColor: '#9ed2c7' }));
     this.namesPanel = this.createPanel(0x18212a, 0x2b3c48);
     this.namesTitleText = this.add.text(0, 0, 'Community Names', {
       fontFamily: 'Georgia',
@@ -309,6 +355,89 @@ export class Game extends Scene {
       })
       .on('pointerover', () => this.resolveButton.setStyle({ backgroundColor: '#ffd980' }))
       .on('pointerout', () => this.resolveButton.setStyle({ backgroundColor: '#f6c453' }));
+
+    this.hallOverlayBackdrop = this.add
+      .rectangle(0, 0, 100, 100, 0x081017, 0.78)
+      .setOrigin(0)
+      .setDepth(40)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => this.closeHallOverlay());
+    this.hallOverlayPanel = this.add
+      .rectangle(0, 0, 100, 100, 0x111a22, 0.98)
+      .setOrigin(0)
+      .setStrokeStyle(1, 0x314554, 0.5)
+      .setDepth(41);
+    this.hallOverlayTitleText = this.add.text(0, 0, 'Hall of Memories', {
+      fontFamily: 'Georgia',
+      fontSize: '28px',
+      color: '#fff1d2',
+    }).setDepth(42);
+    this.hallOverlayCloseButton = this.add
+      .text(0, 0, 'Close', {
+        fontFamily: 'Trebuchet MS',
+        fontSize: '15px',
+        color: '#13202a',
+        backgroundColor: '#f6c453',
+        padding: { x: 14, y: 8 },
+      })
+      .setOrigin(1, 0)
+      .setDepth(42)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => this.closeHallOverlay());
+    this.hallOverlayHighlightedTitleText = this.add.text(0, 0, 'Highlighted', {
+      fontFamily: 'Georgia',
+      fontSize: '20px',
+      color: '#ffe7a8',
+    }).setDepth(42);
+    this.hallOverlayHighlightedBodyText = this.add.text(0, 0, '', {
+      fontFamily: 'Trebuchet MS',
+      fontSize: '15px',
+      color: '#d7e7f0',
+      wordWrap: { width: 520 },
+      lineSpacing: 7,
+    }).setDepth(42);
+    this.hallOverlayArchiveTitleText = this.add.text(0, 0, 'Archive', {
+      fontFamily: 'Georgia',
+      fontSize: '20px',
+      color: '#dff3ea',
+    }).setDepth(42);
+    this.hallOverlayArchiveBodyText = this.add.text(0, 0, '', {
+      fontFamily: 'Trebuchet MS',
+      fontSize: '14px',
+      color: '#d7e7f0',
+      wordWrap: { width: 520 },
+      lineSpacing: 6,
+    }).setDepth(42);
+    this.hallOverlayPageText = this.add.text(0, 0, '', {
+      fontFamily: 'Trebuchet MS',
+      fontSize: '13px',
+      color: '#a9bac7',
+    }).setDepth(42);
+    this.hallOverlayPrevButton = this.add
+      .text(0, 0, 'Previous', {
+        fontFamily: 'Trebuchet MS',
+        fontSize: '14px',
+        color: '#13202a',
+        backgroundColor: '#91b2d9',
+        padding: { x: 12, y: 7 },
+      })
+      .setOrigin(0, 0)
+      .setDepth(42)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => this.changeHallArchivePage(-1));
+    this.hallOverlayNextButton = this.add
+      .text(0, 0, 'Next', {
+        fontFamily: 'Trebuchet MS',
+        fontSize: '14px',
+        color: '#13202a',
+        backgroundColor: '#91b2d9',
+        padding: { x: 12, y: 7 },
+      })
+      .setOrigin(1, 0)
+      .setDepth(42)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => this.changeHallArchivePage(1));
+    this.setHallOverlayVisible(false);
 
     this.createTraitBars();
 
@@ -429,6 +558,9 @@ export class Game extends Scene {
     this.journalBodyText.setFontSize(Math.round(17 * scale));
     this.memoryTitleText.setFontSize(Math.round(21 * scale));
     this.memoryBodyText.setFontSize(Math.round(14 * scale));
+    this.hallTitleText.setFontSize(Math.round(18 * scale));
+    this.hallBodyText.setFontSize(Math.round(12 * scale));
+    this.hallButton.setFontSize(Math.round(13 * scale));
     this.namesTitleText.setFontSize(Math.round(19 * scale));
     this.namesBodyText.setFontSize(Math.round(13 * scale));
     this.inventoryTitleText.setFontSize(Math.round(19 * scale));
@@ -436,6 +568,15 @@ export class Game extends Scene {
     this.statusText.setFontSize(Math.round(14 * scale));
     this.traitFeedbackText.setFontSize(Math.round(13 * scale));
     this.resolveButton.setFontSize(Math.round(17 * scale));
+    this.hallOverlayTitleText.setFontSize(Math.round(26 * scale));
+    this.hallOverlayCloseButton.setFontSize(Math.round(14 * scale));
+    this.hallOverlayHighlightedTitleText.setFontSize(Math.round(18 * scale));
+    this.hallOverlayHighlightedBodyText.setFontSize(Math.round(14 * scale));
+    this.hallOverlayArchiveTitleText.setFontSize(Math.round(18 * scale));
+    this.hallOverlayArchiveBodyText.setFontSize(Math.round(13 * scale));
+    this.hallOverlayPageText.setFontSize(Math.round(13 * scale));
+    this.hallOverlayPrevButton.setFontSize(Math.round(13 * scale));
+    this.hallOverlayNextButton.setFontSize(Math.round(13 * scale));
 
     this.optionButtons.forEach((button) => {
       button.setFontSize(Math.round(18 * scale));
@@ -461,6 +602,7 @@ export class Game extends Scene {
     const metrics = this.getLayoutMetrics(width, height);
     this.updateTextStyles(metrics);
     this.layoutDashboard(metrics);
+    this.layoutHallOverlay(metrics);
   }
 
   private layoutDashboard(metrics: LayoutMetrics): void {
@@ -531,16 +673,23 @@ export class Game extends Scene {
       height: resolveHeight,
     };
     const bottomWidth = leftWidth + metrics.gap + rightWidth;
-    const namesWidth = clamp(Math.round(bottomWidth * 0.2), 200, 240);
-    const inventoryWidth = clamp(Math.round(bottomWidth * 0.24), 220, 280);
+    const hallWidth = clamp(Math.round(bottomWidth * 0.22), 210, 250);
+    const namesWidth = clamp(Math.round(bottomWidth * 0.18), 180, 220);
+    const inventoryWidth = clamp(Math.round(bottomWidth * 0.2), 190, 250);
     const memoryFrame: PanelFrame = {
       x: leftX,
       y: bottomY,
-      width: bottomWidth - namesWidth - inventoryWidth - metrics.gap * 2,
+      width: bottomWidth - hallWidth - namesWidth - inventoryWidth - metrics.gap * 3,
+      height: memoryHeight,
+    };
+    const hallFrame: PanelFrame = {
+      x: memoryFrame.x + memoryFrame.width + metrics.gap,
+      y: bottomY,
+      width: hallWidth,
       height: memoryHeight,
     };
     const namesFrame: PanelFrame = {
-      x: memoryFrame.x + memoryFrame.width + metrics.gap,
+      x: hallFrame.x + hallFrame.width + metrics.gap,
       y: bottomY,
       width: namesWidth,
       height: memoryHeight,
@@ -560,6 +709,7 @@ export class Game extends Scene {
     this.layoutJournalPanel(metrics, journalFrame);
     this.layoutResolveArea(metrics, resolveFrame);
     this.layoutMemoryPanel(metrics, memoryFrame);
+    this.layoutHallPanel(metrics, hallFrame);
     this.layoutNamesPanel(metrics, namesFrame);
     this.layoutInventoryPanel(metrics, inventoryFrame);
   }
@@ -618,6 +768,16 @@ export class Game extends Scene {
     };
     this.layoutMemoryPanel(metrics, memoryFrame);
     currentTop += memoryHeight + metrics.gap;
+
+    const hallHeight = Math.round(metrics.frameHeight * 0.14);
+    const hallFrame: PanelFrame = {
+      x: contentX,
+      y: currentTop,
+      width: contentWidth,
+      height: hallHeight,
+    };
+    this.layoutHallPanel(metrics, hallFrame);
+    currentTop += hallHeight + metrics.gap;
 
     const namesHeight = Math.round(metrics.frameHeight * 0.11);
     const namesFrame: PanelFrame = {
@@ -870,6 +1030,22 @@ export class Game extends Scene {
     this.memoryBodyText.setWordWrapWidth(innerWidth);
   }
 
+  private layoutHallPanel(metrics: LayoutMetrics, frame: PanelFrame): void {
+    this.hallPanel.setPosition(frame.x, frame.y);
+    this.hallPanel.setSize(frame.width, frame.height);
+
+    const innerX = frame.x + metrics.cardInsetX;
+    const innerY = frame.y + metrics.cardInsetY;
+    const innerWidth = frame.width - metrics.cardInsetX * 2;
+
+    this.hallTitleText.setPosition(innerX, innerY);
+    this.hallBodyText.setPosition(innerX, innerY + this.hallTitleText.height + 10);
+    this.hallBodyText.setWordWrapWidth(innerWidth);
+    this.hallButton.setPosition(innerX, frame.y + frame.height - this.hallButton.height - metrics.cardInsetY);
+    this.hallButton.setFixedSize(Math.min(innerWidth, 150), this.hallButton.height);
+    this.hallButton.setAlign('center');
+  }
+
   private layoutInventoryPanel(metrics: LayoutMetrics, frame: PanelFrame): void {
     this.inventoryPanel.setPosition(frame.x, frame.y);
     this.inventoryPanel.setSize(frame.width, frame.height);
@@ -920,11 +1096,55 @@ export class Game extends Scene {
     this.resolveButton.setAlign('center');
   }
 
+  private layoutHallOverlay(metrics: LayoutMetrics): void {
+    this.hallOverlayBackdrop.setPosition(0, 0);
+    this.hallOverlayBackdrop.setSize(metrics.width, metrics.height);
+
+    const panelWidth = Math.min(metrics.width - metrics.padding * 2, metrics.mode === 'dashboard' ? 860 : 720);
+    const panelHeight = Math.min(metrics.height - metrics.padding * 2, metrics.mode === 'dashboard' ? 720 : 780);
+    const panelX = (metrics.width - panelWidth) / 2;
+    const panelY = (metrics.height - panelHeight) / 2;
+    const innerX = panelX + metrics.cardInsetX;
+    const innerY = panelY + metrics.cardInsetY;
+    const innerWidth = panelWidth - metrics.cardInsetX * 2;
+
+    this.hallOverlayPanel.setPosition(panelX, panelY);
+    this.hallOverlayPanel.setSize(panelWidth, panelHeight);
+    this.hallOverlayTitleText.setPosition(innerX, innerY);
+    this.hallOverlayCloseButton.setPosition(panelX + panelWidth - metrics.cardInsetX, innerY);
+    this.hallOverlayHighlightedTitleText.setPosition(innerX, innerY + this.hallOverlayTitleText.height + 18);
+    this.hallOverlayHighlightedBodyText.setPosition(
+      innerX,
+      this.hallOverlayHighlightedTitleText.y + this.hallOverlayHighlightedTitleText.height + 10
+    );
+    this.hallOverlayHighlightedBodyText.setWordWrapWidth(innerWidth);
+    this.hallOverlayArchiveTitleText.setPosition(
+      innerX,
+      this.hallOverlayHighlightedBodyText.y + this.hallOverlayHighlightedBodyText.height + 22
+    );
+    this.hallOverlayArchiveBodyText.setPosition(
+      innerX,
+      this.hallOverlayArchiveTitleText.y + this.hallOverlayArchiveTitleText.height + 10
+    );
+    this.hallOverlayArchiveBodyText.setWordWrapWidth(innerWidth);
+    this.hallOverlayPageText.setPosition(
+      innerX,
+      panelY + panelHeight - this.hallOverlayPageText.height - metrics.cardInsetY
+    );
+    this.hallOverlayPrevButton.setPosition(innerX, this.hallOverlayPageText.y - this.hallOverlayPrevButton.height - 10);
+    this.hallOverlayNextButton.setPosition(
+      panelX + panelWidth - metrics.cardInsetX,
+      this.hallOverlayPrevButton.y
+    );
+  }
+
   private async loadState(): Promise<void> {
     try {
       const response = await fetchPettitState();
       this.pettitState = response.state;
       this.latestTraitFeedback = null;
+      this.hallDetail = null;
+      this.hallArchivePage = 0;
       this.statusText.setText('The community is deciding what Pettit should do next.');
       this.syncOptionButtons();
       this.renderState();
@@ -1054,6 +1274,17 @@ export class Game extends Scene {
       this.memoryBodyText.setText('No memories yet. The first resolved encounter will give Pettit something to remember.');
     }
 
+    if (this.pettitState.hallOfMemories.highlighted.length > 0) {
+      this.hallBodyText.setText(
+        this.pettitState.hallOfMemories.highlighted
+          .slice(0, 3)
+          .map((memory) => this.formatHallPreview(memory))
+          .join('\n\n')
+      );
+    } else {
+      this.hallBodyText.setText('Pettit has not built up a hall of highlighted memories yet.');
+    }
+
     if (this.pettitState.inventory.length > 0) {
       this.inventoryBodyText.setText(
         this.pettitState.inventory
@@ -1088,6 +1319,7 @@ export class Game extends Scene {
       this.namesBodyText.setText('Canon names will appear here once the community starts naming gifts and places.');
     }
 
+    this.renderHallOverlayContent();
     this.updateLayout(this.scale.width, this.scale.height);
   }
 
@@ -1151,6 +1383,121 @@ export class Game extends Scene {
 
     const text = [this.latestTraitFeedback.summary, ...changeLines].join('\n');
     this.traitFeedbackText.setText(text);
+  }
+
+  private setHallOverlayVisible(visible: boolean): void {
+    this.hallOverlayVisible = visible;
+    const objects: Array<Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Visible> = [
+      this.hallOverlayBackdrop,
+      this.hallOverlayPanel,
+      this.hallOverlayTitleText,
+      this.hallOverlayCloseButton,
+      this.hallOverlayHighlightedTitleText,
+      this.hallOverlayHighlightedBodyText,
+      this.hallOverlayArchiveTitleText,
+      this.hallOverlayArchiveBodyText,
+      this.hallOverlayPageText,
+      this.hallOverlayPrevButton,
+      this.hallOverlayNextButton,
+    ];
+
+    objects.forEach((object) => {
+      object.setVisible(visible);
+    });
+  }
+
+  private async openHallOverlay(): Promise<void> {
+    this.setHallOverlayVisible(true);
+    this.renderHallOverlayContent();
+    this.updateLayout(this.scale.width, this.scale.height);
+
+    if (this.hallDetail) {
+      return;
+    }
+
+    try {
+      const response = await fetchPettitMemories();
+      this.hallDetail = response.hallOfMemories;
+      this.hallArchivePage = 0;
+    } catch (error) {
+      console.error('Failed to load Hall of Memories:', error);
+      this.hallDetail = {
+        highlighted: [],
+        archive: [],
+        highlightedCount: 0,
+      };
+      this.hallOverlayArchiveBodyText.setText(
+        error instanceof Error ? error.message : 'Unable to load Hall of Memories.'
+      );
+    }
+
+    this.renderHallOverlayContent();
+    this.updateLayout(this.scale.width, this.scale.height);
+  }
+
+  private closeHallOverlay(): void {
+    this.setHallOverlayVisible(false);
+  }
+
+  private changeHallArchivePage(delta: number): void {
+    if (!this.hallDetail) {
+      return;
+    }
+
+    const pageCount = this.getHallArchivePageCount(this.hallDetail);
+    this.hallArchivePage = clamp(this.hallArchivePage + delta, 0, pageCount - 1);
+    this.renderHallOverlayContent();
+    this.updateLayout(this.scale.width, this.scale.height);
+  }
+
+  private getHallArchivePageCount(hall: HallOfMemoriesDetailView): number {
+    return Math.max(1, Math.ceil(hall.archive.length / 12));
+  }
+
+  private renderHallOverlayContent(): void {
+    if (!this.hallOverlayVisible) {
+      return;
+    }
+
+    if (!this.hallDetail) {
+      this.hallOverlayHighlightedBodyText.setText('Loading highlighted memories...');
+      this.hallOverlayArchiveBodyText.setText('Loading Pettit history...');
+      this.hallOverlayPageText.setText('');
+      this.hallOverlayPrevButton.disableInteractive().setAlpha(0.45);
+      this.hallOverlayNextButton.disableInteractive().setAlpha(0.45);
+      return;
+    }
+
+    const highlighted = this.hallDetail.highlighted.slice(0, 6);
+    const archiveStart = this.hallArchivePage * 12;
+    const archivePage = this.hallDetail.archive.slice(archiveStart, archiveStart + 12);
+    const pageCount = this.getHallArchivePageCount(this.hallDetail);
+
+    this.hallOverlayHighlightedBodyText.setText(
+      highlighted.length > 0
+        ? highlighted.map((memory) => this.formatHallDetailLine(memory, 58)).join('\n')
+        : 'No highlighted memories yet. Pettit is still building a story worth displaying here.'
+    );
+    this.hallOverlayArchiveBodyText.setText(
+      archivePage.length > 0
+        ? archivePage.map((memory) => this.formatHallDetailLine(memory, 52)).join('\n')
+        : 'No archive memories yet.'
+    );
+    this.hallOverlayPageText.setText(
+      pageCount > 1 ? `Archive page ${this.hallArchivePage + 1} of ${pageCount}` : 'Full archive'
+    );
+
+    if (this.hallArchivePage > 0) {
+      this.hallOverlayPrevButton.setInteractive({ useHandCursor: true }).setAlpha(1);
+    } else {
+      this.hallOverlayPrevButton.disableInteractive().setAlpha(0.45);
+    }
+
+    if (this.hallArchivePage < pageCount - 1) {
+      this.hallOverlayNextButton.setInteractive({ useHandCursor: true }).setAlpha(1);
+    } else {
+      this.hallOverlayNextButton.disableInteractive().setAlpha(0.45);
+    }
   }
 
   private applyOptionState(button: Phaser.GameObjects.Text, optionId: string): void {
@@ -1225,6 +1572,8 @@ export class Game extends Scene {
       const response = await resolvePettitVote();
       this.pettitState = response.state;
       this.latestTraitFeedback = response.traitFeedback;
+      this.hallDetail = null;
+      this.hallArchivePage = 0;
       this.statusText.setText(
         response.unlockedAchievements.length > 0
           ? `Milestone unlocked: ${response.unlockedAchievements[0]?.title}.`
@@ -1280,6 +1629,30 @@ export class Game extends Scene {
     const normalized = title.trim();
     const compactTitle = normalized.length > 34 ? `${normalized.slice(0, 34).trimEnd()}...` : normalized;
     return `${this.getMemoryIcon(normalized)} ${compactTitle}`;
+  }
+
+  private formatHallPreview(memory: PettitMemory): string {
+    return `${this.getMemoryIcon(memory.title)} ${this.truncateText(memory.title, 26)}\n${this.truncateText(
+      memory.description,
+      42
+    )}`;
+  }
+
+  private formatHallDetailLine(memory: PettitMemory, maxLength: number): string {
+    return `${this.getMemoryIcon(memory.title)} ${this.truncateText(memory.title, 28)} - ${this.truncateText(
+      memory.description,
+      maxLength
+    )}`;
+  }
+
+  private truncateText(value: string, maxLength: number): string {
+    const normalized = value.replace(/\s+/g, ' ').trim();
+
+    if (normalized.length <= maxLength) {
+      return normalized;
+    }
+
+    return `${normalized.slice(0, maxLength).trimEnd()}...`;
   }
 
   private getMemoryIcon(title: string): string {

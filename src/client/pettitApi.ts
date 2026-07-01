@@ -1,5 +1,6 @@
 import type {
   ErrorResponse,
+  GetMemoriesResponse,
   GetPettitStateResponse,
   ResolveVoteResponse,
   SubmitVoteRequest,
@@ -20,6 +21,11 @@ const readJson = async <T>(response: Response): Promise<T> => {
 export const fetchPettitState = async (): Promise<GetPettitStateResponse> => {
   const response = await fetch('/api/state');
   return readJson<GetPettitStateResponse>(response);
+};
+
+export const fetchPettitMemories = async (): Promise<GetMemoriesResponse> => {
+  const response = await fetch('/api/memories');
+  return readJson<GetMemoriesResponse>(response);
 };
 
 export const submitPettitVote = async (

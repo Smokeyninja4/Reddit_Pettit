@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { context, reddit } from '@devvit/web/server';
 import type {
   ErrorResponse,
+  GetMemoriesResponse,
   GetPettitStateResponse,
   ResolveVoteResponse,
   SubmitNameRequest,
@@ -10,6 +11,7 @@ import type {
   SubmitVoteResponse,
 } from '../../shared/api';
 import {
+  getHallOfMemoriesDetail,
   getPettitViewModel,
   resolveVote,
   submitName,
@@ -44,6 +46,38 @@ api.get('/state', async (c) => {
       {
         status: 'error',
         message: error instanceof Error ? error.message : 'Failed to load Pettit state',
+      },
+      500
+    );
+  }
+});
+
+api.get('/memories', async (c) => {
+  const subredditName = context.subredditName;
+
+  try {
+    if (!subredditName) {
+      return c.json<ErrorResponse>(
+        {
+          status: 'error',
+          message: 'subredditName is required but missing from context',
+        },
+        400
+      );
+    }
+
+    const hallOfMemories = await getHallOfMemoriesDetail(subredditName);
+
+    return c.json<GetMemoriesResponse>({
+      type: 'memories',
+      hallOfMemories,
+    });
+  } catch (error) {
+    console.error('API Memories Error:', error);
+    return c.json<ErrorResponse>(
+      {
+        status: 'error',
+        message: error instanceof Error ? error.message : 'Failed to load Hall of Memories',
       },
       500
     );
