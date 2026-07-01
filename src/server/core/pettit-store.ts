@@ -2,6 +2,7 @@ import { redis } from '@devvit/web/server';
 import type {
   ActiveEncounter,
   EncounterAffinity,
+  PettitDailyCycle,
   PettitJournalEntry,
   PettitInventoryItem,
   PettitLandmark,
@@ -12,6 +13,7 @@ import type {
 } from '../../shared/pettit';
 import {
   canonicalizeEncounterTemplateId,
+  createDefaultDailyCycle,
   createDefaultPettitState,
   createDefaultStats,
   createEncounterInstanceFromTemplate,
@@ -25,6 +27,7 @@ type NamingSubmissionMap = Record<string, PettitNameSubmission[]>;
 type LegacyState = PettitState & {
   activeQuestId?: string;
   activeEncounterId?: string;
+  dailyCycle?: PettitDailyCycle;
 };
 
 type LegacyStats = PettitStats & {
@@ -75,6 +78,20 @@ const calculateAgeDays = (createdAt: string): number => {
   return Math.max(0, Math.floor((Date.now() - createdTime) / millisecondsPerDay));
 };
 
+const normalizeDailyCycle = (dailyCycle?: Partial<PettitDailyCycle>): PettitDailyCycle => {
+  const fallback = createDefaultDailyCycle();
+
+  if (!dailyCycle?.currentDayKey || !dailyCycle?.nextResolveAt || !dailyCycle?.lastProcessedDayKey) {
+    return fallback;
+  }
+
+  return {
+    currentDayKey: dailyCycle.currentDayKey,
+    nextResolveAt: dailyCycle.nextResolveAt,
+    lastProcessedDayKey: dailyCycle.lastProcessedDayKey,
+  };
+};
+
 const normalizeLandmark = (landmark: PettitLandmark & { sourceQuestTemplateId?: string }): PettitLandmark => {
   return {
     ...landmark,
@@ -119,6 +136,7 @@ const normalizeState = (storedState: LegacyState): PettitState => {
     ),
     activeEncounterId: activeEncounterId.replace(/^quest-/, 'encounter-'),
     latestJournalId: storedState.latestJournalId ?? null,
+    dailyCycle: normalizeDailyCycle(storedState.dailyCycle),
   };
 };
 

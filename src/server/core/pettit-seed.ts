@@ -3,6 +3,7 @@ import type {
   EncounterAffinity,
   EncounterSeason,
   EncounterTemplate,
+  PettitDailyCycle,
   PettitState,
   PettitStats,
   PettitTraits,
@@ -692,6 +693,20 @@ const ENCOUNTER_TEMPLATE_MAP = new Map<string, EncounterTemplate>(
   ALL_ENCOUNTER_TEMPLATES.map((template) => [template.id, template])
 );
 
+const getUtcDayKey = (date: Date): string => date.toISOString().slice(0, 10);
+
+const getNextUtcMidnight = (date: Date): string => {
+  const next = new Date(date);
+  next.setUTCHours(24, 0, 0, 0);
+  return next.toISOString();
+};
+
+export const createDefaultDailyCycle = (date: Date = new Date()): PettitDailyCycle => ({
+  currentDayKey: getUtcDayKey(date),
+  nextResolveAt: getNextUtcMidnight(date),
+  lastProcessedDayKey: getUtcDayKey(date),
+});
+
 export const createDefaultPettitState = (subredditName: string): PettitState => ({
   id: `pettit-${subredditName}`,
   name: 'Pettit',
@@ -703,6 +718,7 @@ export const createDefaultPettitState = (subredditName: string): PettitState => 
   landmarks: [],
   activeEncounterId: `${TRANSITION_ENCOUNTERS[0]?.id ?? 'encounter-cave'}-1`,
   latestJournalId: null,
+  dailyCycle: createDefaultDailyCycle(),
 });
 
 export const createDefaultStats = (): PettitStats => ({

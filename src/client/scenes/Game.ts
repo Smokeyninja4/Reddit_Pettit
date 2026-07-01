@@ -1167,11 +1167,17 @@ export class Game extends Scene {
       const response = await resolvePettitVote();
       this.pettitState = response.state;
       this.latestTraitFeedback = response.traitFeedback;
-      this.statusText.setText(`Resolved with "${this.humanizeOptionId(response.resolution.winningOptionId)}".`);
+      this.statusText.setText(
+        response.outcome === 'advanced'
+          ? 'No votes came in, so Pettit moved on to a fresh encounter.'
+          : `Resolved with "${this.humanizeOptionId(response.resolution.winningOptionId ?? '')}".`
+      );
       this.syncOptionButtons();
       this.renderState();
-      this.flashPanel(this.journalPanel, 0xd89a48);
-      this.flashPanel(this.memoryPanel, 0x63c19d);
+      if (response.outcome === 'resolved') {
+        this.flashPanel(this.journalPanel, 0xd89a48);
+        this.flashPanel(this.memoryPanel, 0x63c19d);
+      }
     } catch (error) {
       console.error('Failed to resolve vote:', error);
       this.statusText.setText(error instanceof Error ? error.message : 'Failed to resolve vote.');

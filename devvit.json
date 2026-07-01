@@ -37,6 +37,14 @@
   "forms": {
     "submitNameForm": "/internal/form/name-submit"
   },
+  "scheduler": {
+    "tasks": {
+      "dailyResolve": {
+        "endpoint": "/internal/scheduler/daily-resolve",
+        "cron": "0 0 * * *"
+      }
+    }
+  },
   "triggers": {
     "onAppInstall": "/internal/triggers/on-app-install"
   },

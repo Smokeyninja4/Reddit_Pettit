@@ -136,6 +136,12 @@ export type EncounterVoteSummary = {
   winningOptionId: string | null;
 };
 
+export type PettitDailyCycle = {
+  currentDayKey: string;
+  nextResolveAt: string;
+  lastProcessedDayKey: string;
+};
+
 export type PettitState = {
   id: string;
   name: string;
@@ -147,6 +153,7 @@ export type PettitState = {
   landmarks: PettitLandmark[];
   activeEncounterId: string;
   latestJournalId: string | null;
+  dailyCycle: PettitDailyCycle;
 };
 
 export type PettitStats = {

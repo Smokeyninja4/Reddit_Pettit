@@ -28,10 +28,11 @@ export type SubmitNameResponse = {
 export type ResolveVoteResponse = {
   type: 'vote-resolved';
   state: PettitViewModel;
+  outcome: 'resolved' | 'advanced';
   resolution: {
-    winningOptionId: string;
-    memoryId: string;
-    journalId: string;
+    winningOptionId: string | null;
+    memoryId: string | null;
+    journalId: string | null;
   };
   traitFeedback: {
     appliedChanges: Array<{

@@ -65,10 +65,11 @@ type WorldSnapshot = {
 
 type ResolveResult = {
   state: PettitViewModel;
+  outcome: 'resolved' | 'advanced';
   resolution: {
-    winningOptionId: string;
-    memoryId: string;
-    journalId: string;
+    winningOptionId: string | null;
+    memoryId: string | null;
+    journalId: string | null;
   };
   traitFeedback: {
     appliedChanges: Array<{
@@ -82,6 +83,8 @@ type ResolveResult = {
   };
 };
 
+type TransitionMode = 'boundary' | 'manual';
+
 type AppliedTraitChange = {
   trait: TraitKey;
   before: number;
@@ -90,6 +93,14 @@ type AppliedTraitChange = {
 };
 
 const clampTraitValue = (value: number): number => Math.max(0, Math.min(100, value));
+
+const getUtcDayKey = (date: Date): string => date.toISOString().slice(0, 10);
+
+const getNextUtcMidnight = (date: Date): string => {
+  const next = new Date(date);
+  next.setUTCHours(24, 0, 0, 0);
+  return next.toISOString();
+};
 
 const applyTraitEffects = (
   currentTraits: PettitTraits,
@@ -403,121 +414,92 @@ const selectNextEncounterTemplate = (
   return pickWeightedStandardEncounter(standardCandidates, state, currentTemplateId);
 };
 
-export const getPettitViewModel = async (
-  subredditName: string,
-  username: string | null
-): Promise<PettitViewModel> => {
-  const snapshot = await loadWorldSnapshot(subredditName, username);
-  return buildViewModel(snapshot);
-};
+const getEncounterVoteTotal = (encounter: ActiveEncounter): number =>
+  encounter.options.reduce((sum, option) => sum + option.votes, 0);
 
-export const submitVote = async (
-  subredditName: string,
-  username: string,
-  optionId: string
-): Promise<PettitViewModel> => {
-  const [activeEncounter, voterMap, stats, state, memories, journals, nameSubmissions] = await Promise.all([
-    getOrCreateActiveEncounter(subredditName),
-    getVoterMap(subredditName),
-    getOrCreateStats(subredditName),
-    getOrCreateState(subredditName),
-    getMemories(subredditName),
-    getJournals(subredditName),
-    getNameSubmissions(subredditName),
-  ]);
-
-  if (voterMap[username]) {
-    throw new Error('DUPLICATE_VOTE');
+const updateDailyCycle = (
+  state: PettitState,
+  mode: TransitionMode
+): PettitState['dailyCycle'] => {
+  if (mode === 'manual') {
+    return state.dailyCycle;
   }
 
-  const nextOptions = activeEncounter.options.map((option) =>
-    option.id === optionId ? { ...option, votes: option.votes + 1 } : option
-  );
-  const optionExists = nextOptions.some((option) => option.id === optionId);
-
-  if (!optionExists) {
-    throw new Error('INVALID_OPTION');
-  }
-
-  const nextEncounter: ActiveEncounter = {
-    ...activeEncounter,
-    options: nextOptions,
+  const nextDayDate = new Date(state.dailyCycle.nextResolveAt);
+  return {
+    currentDayKey: getUtcDayKey(nextDayDate),
+    nextResolveAt: getNextUtcMidnight(nextDayDate),
+    lastProcessedDayKey: getUtcDayKey(nextDayDate),
   };
-  const nextVoterMap = {
-    ...voterMap,
-    [username]: optionId,
-  };
-  const nextStats: PettitStats = {
-    ...stats,
-    totalVotes: stats.totalVotes + 1,
-  };
-
-  await Promise.all([
-    saveActiveEncounter(subredditName, nextEncounter),
-    saveVoterMap(subredditName, nextVoterMap),
-    saveStats(subredditName, nextStats),
-  ]);
-
-  return buildViewModel({
-    state,
-    stats: nextStats,
-    activeEncounter: nextEncounter,
-    memories,
-    journals,
-    selectedOptionId: optionId,
-    pendingNamingTargets: getPendingNamingTargets(state, nameSubmissions),
-  });
 };
 
-export const submitName = async (
-  subredditName: string,
-  username: string,
-  targetKey: string,
-  proposedName: string
-): Promise<{ pendingNamingTargets: PendingNamingTarget[]; message: string }> => {
-  const [state, submissionMap] = await Promise.all([
-    getOrCreateState(subredditName),
-    getNameSubmissions(subredditName),
-  ]);
-
-  const nextSubmissionMap = submitNameForTarget(state, submissionMap, username, targetKey, proposedName);
-  await saveNameSubmissions(subredditName, nextSubmissionMap);
-
-  const { targetType, targetId } = (() => {
-    const [targetTypeValue, ...targetIdParts] = targetKey.split(':');
-
-    if ((targetTypeValue !== 'gift' && targetTypeValue !== 'landmark') || targetIdParts.length === 0) {
-      throw new Error('INVALID_NAMING_TARGET');
-    }
-
-    return {
-      targetType: targetTypeValue,
-      targetId: targetIdParts.join(':'),
-    };
-  })();
-
-  const pendingTargets = getPendingNamingTargets(state, nextSubmissionMap);
-  const target = pendingTargets.find(
-    (candidate) => candidate.targetType === targetType && candidate.targetId === targetId
-  );
+const buildEmptyAdvanceFeedback = (state: PettitState) => {
+  const topTraits = getTopTraits(state.traits, 2);
 
   return {
-    pendingNamingTargets: pendingTargets,
-    message:
-      target && target.submissionCount >= 3
-        ? `${target.baseName} is ready for an encounter vote.`
-        : 'Name submitted. The community is one step closer to making it canon.',
+    appliedChanges: [] as AppliedTraitChange[],
+    topTraits,
+    summary: 'No votes came in, so Pettit simply moved on to a fresh encounter.',
   };
 };
 
-export const resolveVote = async (subredditName: string, username: string | null): Promise<ResolveResult> => {
-  const [state, activeEncounter, memories, stats, nameSubmissions] = await Promise.all([
+const processEncounterTransition = async (
+  subredditName: string,
+  mode: TransitionMode
+): Promise<ResolveResult> => {
+  const [state, activeEncounter, memories, journals, stats, nameSubmissions] = await Promise.all([
     getOrCreateState(subredditName),
     getOrCreateActiveEncounter(subredditName),
     getMemories(subredditName),
+    getJournals(subredditName),
     getOrCreateStats(subredditName),
     getNameSubmissions(subredditName),
   ]);
+
+  const totalVotes = getEncounterVoteTotal(activeEncounter);
+
+  if (totalVotes === 0) {
+    const nextEncounterTemplate = selectNextEncounterTemplate(
+      state,
+      stats.resolvedEncounterCount,
+      nameSubmissions,
+      activeEncounter.templateId
+    );
+    const nextEncounter = createEncounterInstanceFromTemplate(
+      nextEncounterTemplate,
+      stats.resolvedEncounterCount + 1
+    );
+    const nextState: PettitState = {
+      ...state,
+      activeEncounterId: nextEncounter.id,
+      dailyCycle: updateDailyCycle(state, mode),
+    };
+
+    await Promise.all([
+      saveState(subredditName, nextState),
+      saveActiveEncounter(subredditName, nextEncounter),
+      resetVoterMap(subredditName),
+    ]);
+
+    return {
+      state: buildViewModel({
+        state: nextState,
+        stats,
+        activeEncounter: nextEncounter,
+        memories,
+        journals,
+        selectedOptionId: null,
+        pendingNamingTargets: getPendingNamingTargets(nextState, nameSubmissions),
+      }),
+      outcome: 'advanced',
+      resolution: {
+        winningOptionId: null,
+        memoryId: null,
+        journalId: null,
+      },
+      traitFeedback: buildEmptyAdvanceFeedback(nextState),
+    };
+  }
 
   const winningOption = selectWinningOption(activeEncounter);
   const template = getEncounterTemplateById(activeEncounter.templateId);
@@ -587,6 +569,7 @@ export const resolveVote = async (subredditName: string, username: string | null
     ...nextStateBeforeJournal,
     activeEncounterId: nextEncounter.id,
     latestJournalId: journal.id,
+    dailyCycle: updateDailyCycle(nextStateBeforeJournal, mode),
   };
 
   const [nextMemories, nextJournals] = await Promise.all([
@@ -609,9 +592,10 @@ export const resolveVote = async (subredditName: string, username: string | null
       activeEncounter: nextEncounter,
       memories: nextMemories,
       journals: nextJournals,
-      selectedOptionId: username ? null : null,
+      selectedOptionId: null,
       pendingNamingTargets: getPendingNamingTargets(nextState, nextNameSubmissions),
     }),
+    outcome: 'resolved',
     resolution: {
       winningOptionId: winningOption.id,
       memoryId: memory.id,
@@ -623,4 +607,138 @@ export const resolveVote = async (subredditName: string, username: string | null
       summary: createTraitFeedbackSummary(appliedChanges, topTraits),
     },
   };
+};
+
+const advanceWorldToCurrentDay = async (subredditName: string): Promise<void> => {
+  let state = await getOrCreateState(subredditName);
+  let safetyCounter = 0;
+
+  while (new Date(state.dailyCycle.nextResolveAt).getTime() <= Date.now()) {
+    await processEncounterTransition(subredditName, 'boundary');
+    state = await getOrCreateState(subredditName);
+    safetyCounter += 1;
+
+    if (safetyCounter > 366) {
+      throw new Error('DAILY_CATCHUP_LIMIT_EXCEEDED');
+    }
+  }
+};
+
+export const getPettitViewModel = async (
+  subredditName: string,
+  username: string | null
+): Promise<PettitViewModel> => {
+  await advanceWorldToCurrentDay(subredditName);
+  const snapshot = await loadWorldSnapshot(subredditName, username);
+  return buildViewModel(snapshot);
+};
+
+export const submitVote = async (
+  subredditName: string,
+  username: string,
+  optionId: string
+): Promise<PettitViewModel> => {
+  await advanceWorldToCurrentDay(subredditName);
+  const [activeEncounter, voterMap, stats, state, memories, journals, nameSubmissions] = await Promise.all([
+    getOrCreateActiveEncounter(subredditName),
+    getVoterMap(subredditName),
+    getOrCreateStats(subredditName),
+    getOrCreateState(subredditName),
+    getMemories(subredditName),
+    getJournals(subredditName),
+    getNameSubmissions(subredditName),
+  ]);
+
+  if (voterMap[username]) {
+    throw new Error('DUPLICATE_VOTE');
+  }
+
+  const nextOptions = activeEncounter.options.map((option) =>
+    option.id === optionId ? { ...option, votes: option.votes + 1 } : option
+  );
+  const optionExists = nextOptions.some((option) => option.id === optionId);
+
+  if (!optionExists) {
+    throw new Error('INVALID_OPTION');
+  }
+
+  const nextEncounter: ActiveEncounter = {
+    ...activeEncounter,
+    options: nextOptions,
+  };
+  const nextVoterMap = {
+    ...voterMap,
+    [username]: optionId,
+  };
+  const nextStats: PettitStats = {
+    ...stats,
+    totalVotes: stats.totalVotes + 1,
+  };
+
+  await Promise.all([
+    saveActiveEncounter(subredditName, nextEncounter),
+    saveVoterMap(subredditName, nextVoterMap),
+    saveStats(subredditName, nextStats),
+  ]);
+
+  return buildViewModel({
+    state,
+    stats: nextStats,
+    activeEncounter: nextEncounter,
+    memories,
+    journals,
+    selectedOptionId: optionId,
+    pendingNamingTargets: getPendingNamingTargets(state, nameSubmissions),
+  });
+};
+
+export const submitName = async (
+  subredditName: string,
+  username: string,
+  targetKey: string,
+  proposedName: string
+): Promise<{ pendingNamingTargets: PendingNamingTarget[]; message: string }> => {
+  await advanceWorldToCurrentDay(subredditName);
+  const [state, submissionMap] = await Promise.all([
+    getOrCreateState(subredditName),
+    getNameSubmissions(subredditName),
+  ]);
+
+  const nextSubmissionMap = submitNameForTarget(state, submissionMap, username, targetKey, proposedName);
+  await saveNameSubmissions(subredditName, nextSubmissionMap);
+
+  const { targetType, targetId } = (() => {
+    const [targetTypeValue, ...targetIdParts] = targetKey.split(':');
+
+    if ((targetTypeValue !== 'gift' && targetTypeValue !== 'landmark') || targetIdParts.length === 0) {
+      throw new Error('INVALID_NAMING_TARGET');
+    }
+
+    return {
+      targetType: targetTypeValue,
+      targetId: targetIdParts.join(':'),
+    };
+  })();
+
+  const pendingTargets = getPendingNamingTargets(state, nextSubmissionMap);
+  const target = pendingTargets.find(
+    (candidate) => candidate.targetType === targetType && candidate.targetId === targetId
+  );
+
+  return {
+    pendingNamingTargets: pendingTargets,
+    message:
+      target && target.submissionCount >= 3
+        ? `${target.baseName} is ready for an encounter vote.`
+        : 'Name submitted. The community is one step closer to making it canon.',
+  };
+};
+
+export const resolveVote = async (subredditName: string, _username: string | null): Promise<ResolveResult> => {
+  await advanceWorldToCurrentDay(subredditName);
+  return processEncounterTransition(subredditName, 'manual');
+};
+
+export const processScheduledDailyResolve = async (subredditName: string): Promise<void> => {
+  await advanceWorldToCurrentDay(subredditName);
 };

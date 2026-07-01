@@ -250,6 +250,7 @@ api.post('/resolve', async (c) => {
     return c.json<ResolveVoteResponse>({
       type: 'vote-resolved',
       state: result.state,
+      outcome: result.outcome,
       resolution: result.resolution,
       traitFeedback: result.traitFeedback,
     });
