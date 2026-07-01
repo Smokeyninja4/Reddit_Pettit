@@ -21,6 +21,8 @@ export type GiftCategory = 'clothing' | 'tools' | 'toys' | 'books' | 'community'
 
 export type NamingTargetType = 'gift' | 'landmark';
 
+export type AchievementCategory = 'growth' | 'community' | 'exploration' | 'memory' | 'funny';
+
 export type PettitInventoryItem = {
   id: string;
   giftId: string;
@@ -85,6 +87,15 @@ export type PettitJournalEntry = {
   content: string;
   relatedMemoryIds: string[];
   relatedEncounterId: string;
+};
+
+export type PettitAchievement = {
+  id: string;
+  key: string;
+  title: string;
+  description: string;
+  category: AchievementCategory;
+  unlockedAt: string;
 };
 
 export type EncounterOptionOutcome = {
@@ -161,6 +172,7 @@ export type PettitStats = {
   journalCount: number;
   memoryCount: number;
   resolvedEncounterCount: number;
+  achievements: PettitAchievement[];
 };
 
 export type PettitViewModel = {
@@ -187,4 +199,6 @@ export type PettitViewModel = {
   };
   latestJournal: PettitJournalEntry | null;
   recentMemories: PettitMemory[];
+  recentAchievements: PettitAchievement[];
+  achievementCount: number;
 };

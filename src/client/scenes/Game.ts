@@ -79,6 +79,9 @@ export class Game extends Scene {
   private topActionPanel!: Phaser.GameObjects.Rectangle;
   private topActionTitle!: Phaser.GameObjects.Text;
   private topActionBody!: Phaser.GameObjects.Text;
+  private achievementPanel!: Phaser.GameObjects.Rectangle;
+  private achievementTitleText!: Phaser.GameObjects.Text;
+  private achievementBodyText!: Phaser.GameObjects.Text;
   private journalPanel!: Phaser.GameObjects.Rectangle;
   private journalTitleText!: Phaser.GameObjects.Text;
   private journalBodyText!: Phaser.GameObjects.Text;
@@ -202,6 +205,20 @@ export class Game extends Scene {
       color: '#d7e7f0',
       wordWrap: { width: 240 },
       lineSpacing: 8,
+    });
+
+    this.achievementPanel = this.createPanel(0x1a222b, 0x2b3d49);
+    this.achievementTitleText = this.add.text(0, 0, 'Milestones', {
+      fontFamily: 'Georgia',
+      fontSize: '22px',
+      color: '#fff2cf',
+    });
+    this.achievementBodyText = this.add.text(0, 0, '', {
+      fontFamily: 'Trebuchet MS',
+      fontSize: '14px',
+      color: '#d7e7f0',
+      wordWrap: { width: 240 },
+      lineSpacing: 7,
     });
 
     this.journalPanel = this.createPanel(0x1a212a, 0x334756);
@@ -406,6 +423,8 @@ export class Game extends Scene {
     this.traitPanelTitle.setFontSize(Math.round(21 * scale));
     this.topActionTitle.setFontSize(Math.round(18 * scale));
     this.topActionBody.setFontSize(Math.round(14 * scale));
+    this.achievementTitleText.setFontSize(Math.round(18 * scale));
+    this.achievementBodyText.setFontSize(Math.round(13 * scale));
     this.journalTitleText.setFontSize(Math.round(27 * scale));
     this.journalBodyText.setFontSize(Math.round(17 * scale));
     this.memoryTitleText.setFontSize(Math.round(21 * scale));
@@ -473,9 +492,10 @@ export class Game extends Scene {
     const creatureHeight = clamp(Math.round(topAreaHeight * 0.4), 188, 236);
     const actionHeight = topAreaHeight - creatureHeight - metrics.gap;
     const traitHeight = clamp(Math.round(topAreaHeight * 0.3), 150, 194);
-    const topActionHeight = clamp(Math.round(topAreaHeight * 0.12), 74, 98);
-    const resolveHeight = clamp(Math.round(topAreaHeight * 0.2), 124, 158);
-    const journalHeight = topAreaHeight - traitHeight - topActionHeight - resolveHeight - metrics.gap * 3;
+    const topActionHeight = clamp(Math.round(topAreaHeight * 0.11), 72, 90);
+    const achievementHeight = clamp(Math.round(topAreaHeight * 0.15), 88, 118);
+    const resolveHeight = clamp(Math.round(topAreaHeight * 0.18), 120, 150);
+    const journalHeight = topAreaHeight - traitHeight - topActionHeight - achievementHeight - resolveHeight - metrics.gap * 4;
     const bottomY = top + topAreaHeight + metrics.gap;
 
     const creatureFrame: PanelFrame = { x: leftX, y: top, width: leftWidth, height: creatureHeight };
@@ -494,9 +514,15 @@ export class Game extends Scene {
     };
     const journalFrame: PanelFrame = {
       x: rightX,
-      y: topActionFrame.y + topActionFrame.height + metrics.gap,
+      y: topActionFrame.y + topActionFrame.height + metrics.gap + achievementHeight + metrics.gap,
       width: rightWidth,
       height: Math.max(journalHeight, 92),
+    };
+    const achievementFrame: PanelFrame = {
+      x: rightX,
+      y: topActionFrame.y + topActionFrame.height + metrics.gap,
+      width: rightWidth,
+      height: achievementHeight,
     };
     const resolveFrame: PanelFrame = {
       x: rightX,
@@ -530,6 +556,7 @@ export class Game extends Scene {
     this.layoutActionPanel(metrics, actionFrame);
     this.layoutTraitPanel(metrics, traitFrame);
     this.layoutTopActionPanel(metrics, topActionFrame);
+    this.layoutAchievementPanel(metrics, achievementFrame);
     this.layoutJournalPanel(metrics, journalFrame);
     this.layoutResolveArea(metrics, resolveFrame);
     this.layoutMemoryPanel(metrics, memoryFrame);
@@ -621,6 +648,16 @@ export class Game extends Scene {
     };
     this.layoutTopActionPanel(metrics, topActionFrame);
     currentTop += topActionHeight + metrics.gap;
+
+    const achievementHeight = 98;
+    const achievementFrame: PanelFrame = {
+      x: contentX,
+      y: currentTop,
+      width: contentWidth,
+      height: achievementHeight,
+    };
+    this.layoutAchievementPanel(metrics, achievementFrame);
+    currentTop += achievementHeight + metrics.gap;
 
     const resolveFrame: PanelFrame = {
       x: contentX,
@@ -793,6 +830,17 @@ export class Game extends Scene {
     this.topActionTitle.setPosition(frame.x + metrics.cardInsetX, frame.y + metrics.cardInsetY);
     this.topActionBody.setPosition(frame.x + metrics.cardInsetX, this.topActionTitle.y + this.topActionTitle.height + 6);
     this.topActionBody.setWordWrapWidth(frame.width - metrics.cardInsetX * 2);
+  }
+
+  private layoutAchievementPanel(metrics: LayoutMetrics, frame: PanelFrame): void {
+    this.achievementPanel.setPosition(frame.x, frame.y);
+    this.achievementPanel.setSize(frame.width, frame.height);
+    this.achievementTitleText.setPosition(frame.x + metrics.cardInsetX, frame.y + metrics.cardInsetY);
+    this.achievementBodyText.setPosition(
+      frame.x + metrics.cardInsetX,
+      this.achievementTitleText.y + this.achievementTitleText.height + 6
+    );
+    this.achievementBodyText.setWordWrapWidth(frame.width - metrics.cardInsetX * 2);
   }
 
   private layoutJournalPanel(metrics: LayoutMetrics, frame: PanelFrame): void {
@@ -973,6 +1021,16 @@ export class Game extends Scene {
           : 'No names waiting',
       ].join('\n')
     );
+
+    if (this.pettitState.recentAchievements.length > 0) {
+      this.achievementBodyText.setText(
+        this.pettitState.recentAchievements
+          .map((achievement) => `${achievement.title}\n${this.formatAchievementCategory(achievement.category)}`)
+          .join('\n\n')
+      );
+    } else {
+      this.achievementBodyText.setText("Pettit's shared milestones will appear here.");
+    }
 
     this.renderTraitBars();
     this.renderOptionButtons();
@@ -1168,7 +1226,9 @@ export class Game extends Scene {
       this.pettitState = response.state;
       this.latestTraitFeedback = response.traitFeedback;
       this.statusText.setText(
-        response.outcome === 'advanced'
+        response.unlockedAchievements.length > 0
+          ? `Milestone unlocked: ${response.unlockedAchievements[0]?.title}.`
+          : response.outcome === 'advanced'
           ? 'No votes came in, so Pettit moved on to a fresh encounter.'
           : `Resolved with "${this.humanizeOptionId(response.resolution.winningOptionId ?? '')}".`
       );
@@ -1177,6 +1237,9 @@ export class Game extends Scene {
       if (response.outcome === 'resolved') {
         this.flashPanel(this.journalPanel, 0xd89a48);
         this.flashPanel(this.memoryPanel, 0x63c19d);
+        if (response.unlockedAchievements.length > 0) {
+          this.flashPanel(this.achievementPanel, 0x8fa95d);
+        }
       }
     } catch (error) {
       console.error('Failed to resolve vote:', error);
@@ -1282,6 +1345,10 @@ export class Game extends Scene {
       .split('-')
       .map((part) => this.capitalize(part))
       .join(' ');
+  }
+
+  private formatAchievementCategory(category: string): string {
+    return this.capitalize(category);
   }
 
   private capitalize(value: string): string {

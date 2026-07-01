@@ -1,4 +1,4 @@
-import type { PendingNamingTarget, PettitViewModel, TraitKey } from './pettit';
+import type { PendingNamingTarget, PettitAchievement, PettitViewModel, TraitKey } from './pettit';
 
 export type GetPettitStateResponse = {
   type: 'state';
@@ -44,6 +44,7 @@ export type ResolveVoteResponse = {
     topTraits: TraitKey[];
     summary: string;
   };
+  unlockedAchievements: PettitAchievement[];
 };
 
 export type ErrorResponse = {

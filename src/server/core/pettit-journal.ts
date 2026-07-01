@@ -150,7 +150,8 @@ export const createJournalEntry = (
   outcome: EncounterOptionOutcome,
   memory: PettitMemory,
   previousMemory: PettitMemory | null,
-  sequenceNumber: number
+  sequenceNumber: number,
+  celebrationLine?: string | null
 ): PettitJournalEntry => {
   const topTraits = getTopTraits(state.traits, 2);
   const leadingTrait = topTraits[0] ?? 'curiosity';
@@ -207,6 +208,7 @@ export const createJournalEntry = (
     trailingReflection ?? memoryCallback,
     trailingReflection ? memoryCallback : closing,
     trailingReflection ? closing : null,
+    celebrationLine ?? null,
   ]
     .filter((line): line is string => Boolean(line))
     .join(' ');

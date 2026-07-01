@@ -726,6 +726,7 @@ export const createDefaultStats = (): PettitStats => ({
   journalCount: 0,
   memoryCount: 0,
   resolvedEncounterCount: 0,
+  achievements: [],
 });
 
 export const getTopTraits = (traits: PettitTraits, limit: number): TraitKey[] =>

@@ -253,6 +253,7 @@ api.post('/resolve', async (c) => {
       outcome: result.outcome,
       resolution: result.resolution,
       traitFeedback: result.traitFeedback,
+      unlockedAchievements: result.unlockedAchievements,
     });
   } catch (error) {
     console.error('API Resolve Error:', error);

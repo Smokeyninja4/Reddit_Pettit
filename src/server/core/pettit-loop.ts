@@ -4,6 +4,7 @@ import type {
   EncounterOptionOutcome,
   EncounterTemplate,
   PendingNamingTarget,
+  PettitAchievement,
   PettitInventoryItem,
   PettitJournalEntry,
   PettitMemory,
@@ -16,6 +17,11 @@ import type {
 } from '../../shared/pettit';
 import { getGiftById, buildGiftEncounterTemplate, selectGiftEncounterIds } from './pettit-gifts';
 import { createJournalEntry } from './pettit-journal';
+import {
+  evaluateResolvedAchievements,
+  getAchievementCelebrationLine,
+  syncAgeAchievements,
+} from './pettit-achievements';
 import {
   applyCanonName,
   clearNamingTargetSubmissions,
@@ -81,6 +87,7 @@ type ResolveResult = {
     topTraits: TraitKey[];
     summary: string;
   };
+  unlockedAchievements: PettitAchievement[];
 };
 
 type TransitionMode = 'boundary' | 'manual';
@@ -216,6 +223,7 @@ const getOutcomeForOption = (template: EncounterTemplate, optionId: string): Enc
 const buildViewModel = (snapshot: WorldSnapshot): PettitViewModel => {
   const latestJournal = snapshot.journals.length > 0 ? snapshot.journals[snapshot.journals.length - 1] ?? null : null;
   const recentMemories = snapshot.memories.slice(-3).reverse();
+  const recentAchievements = snapshot.stats.achievements.slice(-3).reverse();
   const totalVotes = snapshot.activeEncounter.options.reduce((sum, option) => sum + option.votes, 0);
 
   return {
@@ -243,6 +251,8 @@ const buildViewModel = (snapshot: WorldSnapshot): PettitViewModel => {
     },
     latestJournal,
     recentMemories,
+    recentAchievements,
+    achievementCount: snapshot.stats.achievements.length,
   };
 };
 
@@ -498,6 +508,7 @@ const processEncounterTransition = async (
         journalId: null,
       },
       traitFeedback: buildEmptyAdvanceFeedback(nextState),
+      unlockedAchievements: [],
     };
   }
 
@@ -545,7 +556,13 @@ const processEncounterTransition = async (
     resultText: personalizeEncounterText(nextStateBeforeJournal, activeEncounter.templateId, outcome.resultText),
     memoryDescription: personalizeEncounterText(nextStateBeforeJournal, activeEncounter.templateId, outcome.memoryDescription),
   };
-  const memory = createMemoryRecord(personalizedOutcome, nextStats.memoryCount);
+  const achievementResult = evaluateResolvedAchievements(
+    nextStateBeforeJournal,
+    nextStats,
+    activeEncounter.templateId,
+    personalizedOutcome
+  );
+  const memory = createMemoryRecord(personalizedOutcome, achievementResult.stats.memoryCount);
   const previousMemory = memories.length > 0 ? memories[memories.length - 1] ?? null : null;
   const journal = createJournalEntry(
     nextStateBeforeJournal,
@@ -553,17 +570,18 @@ const processEncounterTransition = async (
     personalizedOutcome,
     memory,
     previousMemory,
-    nextStats.journalCount
+    achievementResult.stats.journalCount,
+    getAchievementCelebrationLine(achievementResult.unlockedAchievements[0] ?? null)
   );
   const nextEncounterTemplate = selectNextEncounterTemplate(
     nextStateBeforeJournal,
-    nextStats.resolvedEncounterCount,
+    achievementResult.stats.resolvedEncounterCount,
     nextNameSubmissions,
     activeEncounter.templateId
   );
   const nextEncounter = createEncounterInstanceFromTemplate(
     nextEncounterTemplate,
-    nextStats.resolvedEncounterCount + 1
+    achievementResult.stats.resolvedEncounterCount + 1
   );
   const nextState: PettitState = {
     ...nextStateBeforeJournal,
@@ -580,7 +598,7 @@ const processEncounterTransition = async (
   await Promise.all([
     saveState(subredditName, nextState),
     saveActiveEncounter(subredditName, nextEncounter),
-    saveStats(subredditName, nextStats),
+    saveStats(subredditName, achievementResult.stats),
     saveNameSubmissions(subredditName, nextNameSubmissions),
     resetVoterMap(subredditName),
   ]);
@@ -588,7 +606,7 @@ const processEncounterTransition = async (
   return {
     state: buildViewModel({
       state: nextState,
-      stats: nextStats,
+      stats: achievementResult.stats,
       activeEncounter: nextEncounter,
       memories: nextMemories,
       journals: nextJournals,
@@ -606,6 +624,7 @@ const processEncounterTransition = async (
       topTraits,
       summary: createTraitFeedbackSummary(appliedChanges, topTraits),
     },
+    unlockedAchievements: achievementResult.unlockedAchievements,
   };
 };
 
@@ -624,11 +643,24 @@ const advanceWorldToCurrentDay = async (subredditName: string): Promise<void> =>
   }
 };
 
+const syncPassiveAchievements = async (subredditName: string): Promise<void> => {
+  const [state, stats] = await Promise.all([
+    getOrCreateState(subredditName),
+    getOrCreateStats(subredditName),
+  ]);
+  const result = syncAgeAchievements(state, stats);
+
+  if (result.unlockedAchievements.length > 0) {
+    await saveStats(subredditName, result.stats);
+  }
+};
+
 export const getPettitViewModel = async (
   subredditName: string,
   username: string | null
 ): Promise<PettitViewModel> => {
   await advanceWorldToCurrentDay(subredditName);
+  await syncPassiveAchievements(subredditName);
   const snapshot = await loadWorldSnapshot(subredditName, username);
   return buildViewModel(snapshot);
 };
@@ -639,6 +671,7 @@ export const submitVote = async (
   optionId: string
 ): Promise<PettitViewModel> => {
   await advanceWorldToCurrentDay(subredditName);
+  await syncPassiveAchievements(subredditName);
   const [activeEncounter, voterMap, stats, state, memories, journals, nameSubmissions] = await Promise.all([
     getOrCreateActiveEncounter(subredditName),
     getVoterMap(subredditName),
@@ -699,6 +732,7 @@ export const submitName = async (
   proposedName: string
 ): Promise<{ pendingNamingTargets: PendingNamingTarget[]; message: string }> => {
   await advanceWorldToCurrentDay(subredditName);
+  await syncPassiveAchievements(subredditName);
   const [state, submissionMap] = await Promise.all([
     getOrCreateState(subredditName),
     getNameSubmissions(subredditName),
@@ -736,9 +770,11 @@ export const submitName = async (
 
 export const resolveVote = async (subredditName: string, _username: string | null): Promise<ResolveResult> => {
   await advanceWorldToCurrentDay(subredditName);
+  await syncPassiveAchievements(subredditName);
   return processEncounterTransition(subredditName, 'manual');
 };
 
 export const processScheduledDailyResolve = async (subredditName: string): Promise<void> => {
   await advanceWorldToCurrentDay(subredditName);
+  await syncPassiveAchievements(subredditName);
 };

@@ -3,6 +3,7 @@ import type {
   ActiveEncounter,
   EncounterAffinity,
   PettitDailyCycle,
+  PettitAchievement,
   PettitJournalEntry,
   PettitInventoryItem,
   PettitLandmark,
@@ -145,6 +146,7 @@ const normalizeStats = (storedStats: LegacyStats): PettitStats => ({
   journalCount: storedStats.journalCount ?? 0,
   memoryCount: storedStats.memoryCount ?? 0,
   resolvedEncounterCount: storedStats.resolvedEncounterCount ?? storedStats.resolvedQuestCount ?? 0,
+  achievements: (storedStats.achievements ?? []) as PettitAchievement[],
 });
 
 const normalizeActiveEncounter = (storedEncounter: LegacyActiveEncounter): ActiveEncounter => {
