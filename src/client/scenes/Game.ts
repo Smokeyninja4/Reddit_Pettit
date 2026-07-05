@@ -1,6 +1,7 @@
 import { Scene } from 'phaser';
 import * as Phaser from 'phaser';
 import { fetchPettitMemories, fetchPettitState, resolvePettitVote, submitPettitVote } from '../pettitApi';
+import { buildPettitPortraitDataUrl, getPettitPortraitSignature } from '../pettitPortrait';
 import type {
   HallOfMemoriesDetailView,
   PettitAppearanceDna,
@@ -66,6 +67,7 @@ export class Game extends Scene {
   private summaryText!: Phaser.GameObjects.Text;
   private creaturePanel!: Phaser.GameObjects.Rectangle;
   private creatureArtFrame!: Phaser.GameObjects.Rectangle;
+  private creatureSnapshot!: Phaser.GameObjects.Image;
   private creatureEarLeft!: Phaser.GameObjects.Ellipse;
   private creatureEarRight!: Phaser.GameObjects.Ellipse;
   private creatureShadow!: Phaser.GameObjects.Ellipse;
@@ -144,6 +146,9 @@ export class Game extends Scene {
   private hallDetail: HallOfMemoriesDetailView | null = null;
   private hallArchivePage = 0;
   private hallOverlayVisible = false;
+  private creatureSnapshotTextureKey: string | null = null;
+  private creatureSnapshotSignature: string | null = null;
+  private creatureSnapshotLoadVersion = 0;
   private readonly handleScaleResize = (gameSize: Phaser.Structs.Size): void => {
     this.updateLayout(gameSize.width, gameSize.height);
   };
@@ -183,6 +188,7 @@ export class Game extends Scene {
 
     this.creaturePanel = this.createPanel(0x17202a, 0x324759);
     this.creatureArtFrame = this.createPanel(0x223243, 0x48657b);
+    this.creatureSnapshot = this.add.image(0, 0, 'background').setVisible(false).setDepth(4);
     this.creatureEarLeft = this.add.ellipse(0, 0, 32, 56, 0xfff1d8, 1).setStrokeStyle(2, 0x4e3a2f, 0.9).setDepth(-0.5);
     this.creatureEarRight = this.add.ellipse(0, 0, 32, 56, 0xfff1d8, 1).setStrokeStyle(2, 0x4e3a2f, 0.9).setDepth(-0.5);
     this.creatureBackAccessoryMain = this.add.rectangle(0, 0, 40, 40, 0x7f5d43, 1).setDepth(-1);
@@ -206,6 +212,7 @@ export class Game extends Scene {
     this.creatureHeldAccessoryMain = this.add.rectangle(0, 0, 18, 24, 0xe7c17c, 1).setDepth(1);
     this.creatureHeldAccessoryAccent = this.add.ellipse(0, 0, 12, 12, 0x7bd3f0, 1).setDepth(1);
     this.creatureHeldAccessoryStem = this.add.rectangle(0, 0, 8, 36, 0x8a6b52, 1).setDepth(1);
+    this.hideLegacyCreatureShapes();
     this.creatureCaptionText = this.add.text(0, 0, '', {
       fontFamily: 'Georgia',
       fontSize: '28px',
@@ -969,6 +976,9 @@ export class Game extends Scene {
     this.layoutCreatureFace(mood, dna, creatureCenterX, creatureCenterY, bodyWidth, bodyHeight);
     this.layoutCreaturePattern(dna, creatureCenterX, creatureCenterY, bodyWidth, bodyHeight, palette.accent, chaosWeight);
     this.layoutCreatureAccessories(creatureCenterX, creatureCenterY, bodyWidth, bodyHeight);
+    const portraitSize = Math.min(innerWidth * 0.38, artHeight * 0.9);
+    this.creatureSnapshot.setPosition(creatureCenterX, creatureCenterY - bodyHeight * 0.02);
+    this.creatureSnapshot.setDisplaySize(portraitSize, portraitSize);
 
     this.creatureCaptionText.setPosition(innerX + 18, innerY + 14);
     this.creatureCaptionText.setWordWrapWidth(innerWidth * 0.34);
@@ -1351,6 +1361,68 @@ export class Game extends Scene {
     this.updateLayout(this.scale.width, this.scale.height);
   }
 
+  private hideLegacyCreatureShapes(): void {
+    [
+      this.creatureEarLeft,
+      this.creatureEarRight,
+      this.creatureBackAccessoryMain,
+      this.creatureBackAccessoryAccent,
+      this.creatureShadow,
+      this.creatureBody,
+      this.creatureBelly,
+      this.creatureBlushLeft,
+      this.creatureBlushRight,
+      this.creatureEyeLeft,
+      this.creatureEyeRight,
+      this.creatureAccentPatch,
+      this.creatureAccentBand,
+      this.creatureSpark,
+      this.creatureMouth,
+      this.creatureWearableTop,
+      this.creatureWearableBrim,
+      this.creatureWearableAccent,
+      this.creatureFrontAccessoryMain,
+      this.creatureFrontAccessoryAccent,
+      this.creatureHeldAccessoryMain,
+      this.creatureHeldAccessoryAccent,
+      this.creatureHeldAccessoryStem,
+    ].forEach((shape) => shape.setAlpha(0));
+  }
+
+  private refreshCreatureSnapshot(): void {
+    if (!this.pettitState) {
+      return;
+    }
+
+    const signature = getPettitPortraitSignature(this.pettitState);
+    if (signature === this.creatureSnapshotSignature) {
+      return;
+    }
+
+    this.creatureSnapshotSignature = signature;
+    const dataUrl = buildPettitPortraitDataUrl(this.pettitState);
+    const loadVersion = ++this.creatureSnapshotLoadVersion;
+    const nextTextureKey = `pettit-portrait-${loadVersion}`;
+    const portraitImage = new Image();
+
+    portraitImage.onload = () => {
+      if (loadVersion !== this.creatureSnapshotLoadVersion) {
+        return;
+      }
+
+      if (this.creatureSnapshotTextureKey && this.textures.exists(this.creatureSnapshotTextureKey)) {
+        this.textures.remove(this.creatureSnapshotTextureKey);
+      }
+
+      this.textures.addImage(nextTextureKey, portraitImage);
+      this.creatureSnapshotTextureKey = nextTextureKey;
+      this.creatureSnapshot.setTexture(nextTextureKey).setVisible(true);
+      this.updateLayout(this.scale.width, this.scale.height);
+    };
+
+    portraitImage.src = dataUrl;
+  }
+
   private renderState(): void {
     if (!this.pettitState) {
       return;
@@ -1419,6 +1491,7 @@ export class Game extends Scene {
     this.renderTraitBars();
     this.renderOptionButtons();
     this.renderTraitFeedback();
+    this.refreshCreatureSnapshot();
 
     if (latestJournal) {
       this.journalTitleText.setText(`Journal - ${latestJournal.title}`);

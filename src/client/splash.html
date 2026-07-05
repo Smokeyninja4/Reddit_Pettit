@@ -10,7 +10,30 @@
     <title>Pettit</title>
   </head>
   <body class="app">
-    <div class="halo"></div>
+    <div class="backdrop" id="backdrop">
+      <div class="backdrop__glow"></div>
+      <div class="creature-preview" id="creature-preview">
+        <div class="creature-preview__ear creature-preview__ear--left" id="creature-ear-left"></div>
+        <div class="creature-preview__ear creature-preview__ear--right" id="creature-ear-right"></div>
+        <div class="creature-preview__backpack" id="creature-backpack"></div>
+        <div class="creature-preview__wearable creature-preview__wearable--top" id="creature-wearable-top"></div>
+        <div class="creature-preview__wearable creature-preview__wearable--brim" id="creature-wearable-brim"></div>
+        <div class="creature-preview__wearable creature-preview__wearable--accent" id="creature-wearable-accent"></div>
+        <div class="creature-preview__body" id="creature-body">
+          <div class="creature-preview__accent creature-preview__accent--patch" id="creature-accent-patch"></div>
+          <div class="creature-preview__accent creature-preview__accent--band" id="creature-accent-band"></div>
+          <div class="creature-preview__belly" id="creature-belly"></div>
+          <div class="creature-preview__eye creature-preview__eye--left" id="creature-eye-left"></div>
+          <div class="creature-preview__eye creature-preview__eye--right" id="creature-eye-right"></div>
+          <div class="creature-preview__blush creature-preview__blush--left" id="creature-blush-left"></div>
+          <div class="creature-preview__blush creature-preview__blush--right" id="creature-blush-right"></div>
+          <div class="creature-preview__mouth" id="creature-mouth"></div>
+          <div class="creature-preview__front-accessory" id="creature-front-accessory"></div>
+          <div class="creature-preview__held" id="creature-held"></div>
+        </div>
+        <div class="creature-preview__spark" id="creature-spark"></div>
+      </div>
+    </div>
     <div class="content">
       <h1 class="title" id="title"></h1>
       <p class="description" id="description"></p>
