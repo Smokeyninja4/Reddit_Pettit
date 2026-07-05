@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import type { UiResponse } from '@devvit/web/shared';
-import { context } from '@devvit/web/server';
+import { context, reddit } from '@devvit/web/server';
 import { createPost } from '../core/post';
 import {
   getGiftIdeaSubmissions,
@@ -13,6 +13,11 @@ import { buildPendingCommunityGiftBallot } from '../core/pettit-contributions';
 import { getPendingNamingTargetOptions } from '../core/pettit-naming';
 
 export const menu = new Hono();
+
+const DEV_SUBMISSION_USERNAME = 'Smokeyninja04';
+
+const isDevSubmissionUser = (username: string | null | undefined): boolean =>
+  username?.trim().toLowerCase() === DEV_SUBMISSION_USERNAME.toLowerCase();
 
 menu.post('/post-create', async (c) => {
   try {
@@ -216,7 +221,18 @@ menu.post('/reset-world', async (c) => {
       );
     }
 
-    // TODO: Remove or lock behind a stricter dev/admin gate before a real public launch.
+    const username = await reddit.getCurrentUsername();
+
+    // TODO: Remove this submission-testing helper before a real public launch.
+    if (!isDevSubmissionUser(username)) {
+      return c.json<UiResponse>(
+        {
+          showToast: 'That reset tool is reserved for submission playtesting.',
+        },
+        403
+      );
+    }
+
     await resetPettitWorld(subredditName);
 
     return c.json<UiResponse>(

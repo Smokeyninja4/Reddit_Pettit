@@ -1,5 +1,35 @@
 # Pettit Release Notes
 
+## v0.20
+
+- Submission polish and judge clarity
+- Clearer onboarding copy across splash and dashboard
+- Stronger story-first status, empty-state, and progress wording
+
+## v0.19
+
+- Shared Pettit visual source for splash and expanded view
+- Updated splash screen background and presentation
+- Closer visual continuity between first view and in-game dashboard
+
+## v0.18
+
+- Subreddit identity and procedural Pettit
+- Deterministic subreddit-specific Pettit appearance
+- Pettit birthday, identity, and creature presentation upgrades
+
+## v0.17
+
+- Pre-V1 stabilization and submission hardening
+- Dev reset support for faster playtesting
+- Final bug fixing and reliability pass before submission polish
+
+## v0.16
+
+- Community gift contribution system
+- User-submitted gift ideas through Reddit menu/forms
+- Community-created keepsakes flowing into the main Pettit loop
+
 ## v0.15
 
 - Seasonal progression

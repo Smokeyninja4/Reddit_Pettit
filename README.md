@@ -59,3 +59,5 @@ The current build supports a single shared Pettit per subreddit, one active dail
 - Expanded-view UI work should preserve the current Phaser resize and platform-switch stability behavior.
 - Gameplay and persistence rules are documented in the files under `Pettit Docs`.
 - `npm run build` currently surfaces Devvit/Vite warnings around `sourcemapFileNames` and `inlineDynamicImports`; they are upstream packaging warnings and are non-blocking for local build, playtest, and upload flows.
+- `v1_checklist.md` is the manual sign-off sheet for final submission testing.
+- `v1_features.md` is the current V1 scope reference so late changes do not accidentally expand the build.
