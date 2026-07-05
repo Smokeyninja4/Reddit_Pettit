@@ -34,18 +34,18 @@ const renderSplashCreature = (state: Awaited<ReturnType<typeof fetchPettitState>
 
 const init = async (): Promise<void> => {
   titleElement.textContent = `Hello ${context.username ?? 'friend'}, meet Pettit.`;
-  descriptionElement.textContent = 'The subreddit is raising one shared little creature together.';
-  moodElement.textContent = "Loading today's mood...";
+  descriptionElement.textContent = 'One shared Pettit. One daily community choice. A story the subreddit raises together.';
+  moodElement.textContent = "Loading today's encounter...";
   backdropElement.style.backgroundImage = `linear-gradient(180deg, rgba(255,255,255,0.1), rgba(220,235,240,0.1)), url("${redditPlazaMain}")`;
 
   try {
     const response = await fetchPettitState();
     titleElement.textContent = `Hello ${context.username ?? 'friend'}, meet ${response.state.pettit.name}.`;
-    descriptionElement.textContent = `${context.subredditName ? `r/${context.subredditName}` : 'The subreddit'} is raising one shared little creature together.`;
-    moodElement.textContent = `Right now ${response.state.pettit.name} feels ${response.state.pettit.mood}, and the community is deciding what happens next.`;
+    descriptionElement.textContent = `${context.subredditName ? `r/${context.subredditName}` : 'This community'} is raising one shared Pettit through daily votes, journals, and memories.`;
+    moodElement.textContent = `${response.state.pettit.name} feels ${response.state.pettit.mood} today. The community is choosing the next encounter now.`;
     renderSplashCreature(response.state);
   } catch {
-    moodElement.textContent = 'Pettit is waiting for the next community choice.';
+    moodElement.textContent = 'Pettit is waiting for the next community choice and the next page of its story.';
   }
 };
 

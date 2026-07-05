@@ -12,18 +12,18 @@ The community votes on decisions, shapes its personality, creates memories, and 
 
 ## Status
 
-Early prototype: first playable dashboard build
+Submission candidate: polished first playable dashboard build
 
-The current build supports a single shared Pettit per subreddit, community voting on one active quest, persistent memories and journals in Redis, a manual vote-resolution flow for playtesting, trait feedback after resolves, community gifts with persistent inventory, and a polished expanded dashboard UI.
+The current build supports a single shared Pettit per subreddit, one active daily encounter, persistent memories and journals in Redis, automated daily advancement with playtest resolve support, trait feedback after resolves, community gifts and naming, seasonal story moments, milestones, and a polished expanded dashboard UI.
 
 ## Current Features
 
 - One shared Pettit per subreddit
-- Quest voting and manual resolve flow for playtesting
+- Encounter voting and daily resolve flow
 - Persistent journals, memories, traits, and community stats
 - Trait feedback after each resolved community choice
-- Community gift rounds with persistent keepsake inventory
-- Expanded Phaser dashboard with hero, quest, journal, memories, traits, and progress widgets
+- Community gift rounds, naming, keepsakes, and shared milestones
+- Expanded Phaser dashboard with hero, encounter, journal, memories, traits, and progress widgets
 - Mobile, desktop, and fullscreen preview support with stabilized viewport switching
 
 ## Project Structure
@@ -58,3 +58,4 @@ The current build supports a single shared Pettit per subreddit, community votin
 - Persistent game state is stored in Redis and scoped to a subreddit.
 - Expanded-view UI work should preserve the current Phaser resize and platform-switch stability behavior.
 - Gameplay and persistence rules are documented in the files under `Pettit Docs`.
+- `npm run build` currently surfaces Devvit/Vite warnings around `sourcemapFileNames` and `inlineDynamicImports`; they are upstream packaging warnings and are non-blocking for local build, playtest, and upload flows.

@@ -1442,28 +1442,28 @@ export class Game extends Scene {
     this.applyMoodBadgeStyle(pettit.mood);
     this.futureSlotText.setText(
       pettit.canReceiveCommunityName
-        ? `Raised by the community.\n${pettit.birthdaySummary} - ready for a true name.\nUse the subreddit menu to submit Pettit name ideas.`
+        ? `Raised by the community.\n${pettit.birthdaySummary}.\nUse the subreddit menu to submit name ideas for Pettit.`
         : `Raised by the community.\n${pettit.birthdaySummary}.`
     );
 
     this.actionTitleText.setText(activeEncounter.title);
     this.voteSummaryText.setText(
-      `${activeEncounter.description}\n\nVotes: ${activeEncounter.totalVotes}${activeEncounter.hasVoted ? ' - Your vote is in.' : ' - Pick one action.'}`
+      `${activeEncounter.description}\n\nVotes so far: ${activeEncounter.totalVotes}${activeEncounter.hasVoted ? ' - Your choice is part of today’s story.' : ' - Choose what Pettit does next.'}`
     );
 
     this.topActionBody.setText(
       [
-        `${this.formatCount(this.pettitState.communityStats.totalVotes)} Votes`,
-        `${this.formatCount(this.pettitState.communityStats.encountersCompleted)} Stories`,
-        `${this.formatCount(this.pettitState.communityStats.memoriesCreated)} Keepsakes`,
+        `${this.formatCount(this.pettitState.communityStats.totalVotes)} Community votes`,
+        `${this.formatCount(this.pettitState.communityStats.encountersCompleted)} Shared stories`,
+        `${this.formatCount(this.pettitState.communityStats.memoriesCreated)} Memories kept`,
         this.pettitState.communityContributions.pendingGiftBallot
           ? this.pettitState.communityContributions.pendingGiftBallot.isReady
-            ? 'Gift ballot ready'
-            : `${this.pettitState.communityContributions.pendingGiftBallot.submissionCount}/3 Gift ideas`
-          : 'No gift ballot yet',
+            ? 'A community gift vote is ready'
+            : `${this.pettitState.communityContributions.pendingGiftBallot.submissionCount}/3 gift ideas waiting`
+          : 'No community gift ballot yet',
         this.pettitState.pendingNamingTargets.length > 0
-          ? `${this.formatCount(this.pettitState.pendingNamingTargets.length)} Names waiting`
-          : 'No names waiting',
+          ? `${this.formatCount(this.pettitState.pendingNamingTargets.length)} naming stories waiting`
+          : 'No naming stories waiting yet',
       ].join('\n')
     );
 
@@ -1474,7 +1474,7 @@ export class Game extends Scene {
       this.applySeasonalAccent(seasonal.accentColor);
     } else {
       this.seasonalTitleText.setText('Seasonal');
-      this.seasonalBodyText.setText('No special holiday is active right now. Pettit is moving through an ordinary day.');
+      this.seasonalBodyText.setText('No holiday is shaping today. Pettit is moving through an ordinary day with the community.');
       this.applySeasonalAccent(null);
     }
 
@@ -1485,7 +1485,7 @@ export class Game extends Scene {
           .join('\n\n')
       );
     } else {
-      this.achievementBodyText.setText("Pettit's shared milestones will appear here.");
+      this.achievementBodyText.setText("Pettit's shared milestones will appear here as the community keeps raising it.");
     }
 
     this.renderTraitBars();
@@ -1498,7 +1498,7 @@ export class Game extends Scene {
       this.journalBodyText.setText(this.truncateJournalPreview(latestJournal.content));
     } else {
       this.journalTitleText.setText('Journal');
-      this.journalBodyText.setText(`Resolve the first vote to give ${pettit.name} an opening journal entry.`);
+      this.journalBodyText.setText(`Resolve the first community choice to open ${pettit.name}'s journal.`);
     }
 
     if (recentMemories.length > 0) {
@@ -1508,7 +1508,7 @@ export class Game extends Scene {
           .join('\n\n')
       );
     } else {
-      this.memoryBodyText.setText(`No memories yet. The first resolved encounter will give ${pettit.name} something to remember.`);
+      this.memoryBodyText.setText(`No memories yet. The first resolved encounter will give ${pettit.name} a first page worth keeping.`);
     }
 
     if (this.pettitState.hallOfMemories.highlighted.length > 0) {
@@ -1519,7 +1519,7 @@ export class Game extends Scene {
           .join('\n\n')
       );
     } else {
-      this.hallBodyText.setText(`${pettit.name} has not filled any cherished pages yet.`);
+      this.hallBodyText.setText(`${pettit.name} has not filled any cherished pages yet, but the story is already beginning.`);
     }
 
     if (this.pettitState.inventory.length > 0) {
@@ -1535,7 +1535,7 @@ export class Game extends Scene {
           .join('\n\n')
       );
     } else {
-      this.inventoryBodyText.setText(`No gifts yet. A community gift round will let everyone choose something ${pettit.name} can keep.`);
+      this.inventoryBodyText.setText(`No keepsakes yet. A community gift round will let everyone choose something ${pettit.name} can carry forward.`);
     }
 
     if (this.pettitState.knownNames.length > 0) {
@@ -1554,11 +1554,11 @@ export class Game extends Scene {
       );
       if (pettit.canReceiveCommunityName) {
         this.namesBodyText.setText(
-          `${this.namesBodyText.text}\n\nUse the subreddit menu to submit Pettit name ideas.`
+          `${this.namesBodyText.text}\n\nUse the subreddit menu to submit name ideas for Pettit.`
         );
       }
     } else {
-      this.namesBodyText.setText(`Canon names will appear here once the community starts naming keepsakes, places, and ${pettit.name}.`);
+      this.namesBodyText.setText(`Community-chosen names will appear here once people begin naming keepsakes, places, and ${pettit.name}.`);
     }
 
     this.renderHallOverlayContent();
@@ -1781,22 +1781,22 @@ export class Game extends Scene {
     }
 
     try {
-      this.statusText.setText('Recording your vote...');
+      this.statusText.setText('Adding your choice to today’s vote...');
       this.latestTraitFeedback = null;
       this.updateLayout(this.scale.width, this.scale.height);
       const response = await submitPettitVote({ optionId });
       this.pettitState = response.state;
-      this.statusText.setText('Vote recorded. Pettit is waiting for the community.');
+      this.statusText.setText('Your vote is in. Now the community’s story can keep unfolding.');
       this.syncOptionButtons();
       this.renderState();
     } catch (error) {
       console.error('Failed to submit vote:', error);
 
       if (error instanceof Error && error.message === 'The selected option is no longer valid') {
-        this.statusText.setText('That choice just changed. Refreshing Pettit...');
+        this.statusText.setText('That encounter changed just in time. Refreshing Pettit...');
         this.updateLayout(this.scale.width, this.scale.height);
         await this.loadState();
-        this.statusText.setText('That encounter updated before your vote landed. Please choose again.');
+        this.statusText.setText('That encounter moved before your vote landed. Please choose again.');
         this.updateLayout(this.scale.width, this.scale.height);
         return;
       }
@@ -1808,7 +1808,7 @@ export class Game extends Scene {
 
   private async handleResolve(): Promise<void> {
     try {
-      this.statusText.setText('Resolving the current vote...');
+      this.statusText.setText('Turning today’s choice into Pettit’s next story...');
       this.updateLayout(this.scale.width, this.scale.height);
       const response = await resolvePettitVote();
       this.pettitState = response.state;
@@ -1817,10 +1817,10 @@ export class Game extends Scene {
       this.hallArchivePage = 0;
       this.statusText.setText(
         response.unlockedAchievements.length > 0
-          ? `Milestone unlocked: ${response.unlockedAchievements[0]?.title}.`
+          ? `New milestone: ${response.unlockedAchievements[0]?.title}.`
           : response.outcome === 'advanced'
-          ? 'No votes came in, so Pettit moved on to a fresh encounter.'
-          : `Resolved with "${this.humanizeOptionId(response.resolution.winningOptionId ?? '')}".`
+          ? 'No votes came in today, so Pettit wandered onward to a fresh encounter.'
+          : `Today’s choice became "${this.humanizeOptionId(response.resolution.winningOptionId ?? '')}".`
       );
       this.syncOptionButtons();
       this.renderState();
