@@ -19,7 +19,21 @@ export type EncounterSeason = 'spring' | 'summer' | 'autumn' | 'winter';
 
 export type GiftCategory = 'clothing' | 'tools' | 'toys' | 'books' | 'community' | 'funny';
 
-export type NamingTargetType = 'gift' | 'landmark';
+export type NamingTargetType = 'gift' | 'landmark' | 'pettit';
+
+export type PettitNameOrigin = 'subreddit' | 'community';
+
+export type PettitPaletteKey = 'sunrise' | 'meadow' | 'berry' | 'twilight' | 'moss';
+
+export type PettitEarStyle = 'round' | 'leaf' | 'tilt';
+
+export type PettitEyeStyle = 'dot' | 'oval' | 'sleepy';
+
+export type PettitBlushStyle = 'round' | 'soft' | 'none';
+
+export type PettitSparkStyle = 'orb' | 'leaf' | 'star';
+
+export type PettitAccentPattern = 'plain' | 'patch' | 'speck' | 'band';
 
 export type AchievementCategory = 'growth' | 'community' | 'exploration' | 'memory' | 'funny';
 
@@ -79,6 +93,19 @@ export type PettitSeasonalProgress = {
   shootingStarYear: Record<string, string>;
   legendaryEventYear: Record<string, string | null>;
   pettitDayGiftGrantedYears: string[];
+};
+
+export type PettitAppearanceDna = {
+  seedVersion: 1;
+  paletteKey: PettitPaletteKey;
+  bodyWidthScale: number;
+  bodyHeightScale: number;
+  earStyle: PettitEarStyle;
+  eyeStyle: PettitEyeStyle;
+  eyeSpacing: number;
+  blushStyle: PettitBlushStyle;
+  sparkStyle: PettitSparkStyle;
+  accentPattern: PettitAccentPattern;
 };
 
 export type PettitInventoryItem = {
@@ -249,10 +276,13 @@ export type PettitDailyCycle = {
 export type PettitState = {
   id: string;
   name: string;
+  nameOrigin: PettitNameOrigin;
+  pettitNamingFinalizedAt: string | null;
   createdAt: string;
   ageDays: number;
   mood: PettitMood;
   traits: PettitTraits;
+  appearanceDna: PettitAppearanceDna;
   inventory: PettitInventoryItem[];
   landmarks: PettitLandmark[];
   activeEncounterId: string;
@@ -272,10 +302,14 @@ export type PettitStats = {
 export type PettitViewModel = {
   pettit: {
     name: string;
+    nameOrigin: PettitNameOrigin;
     ageDays: number;
+    birthdaySummary: string;
     mood: PettitMood;
     traits: PettitTraits;
     topTraits: TraitKey[];
+    appearanceDna: PettitAppearanceDna;
+    canReceiveCommunityName: boolean;
   };
   communityStats: {
     ageDays: number;

@@ -1,7 +1,13 @@
 import { Scene } from 'phaser';
 import * as Phaser from 'phaser';
 import { fetchPettitMemories, fetchPettitState, resolvePettitVote, submitPettitVote } from '../pettitApi';
-import type { HallOfMemoriesDetailView, PettitMemory, PettitViewModel, TraitKey } from '../../shared/pettit';
+import type {
+  HallOfMemoriesDetailView,
+  PettitAppearanceDna,
+  PettitMemory,
+  PettitViewModel,
+  TraitKey,
+} from '../../shared/pettit';
 import type { ResolveVoteResponse } from '../../shared/api';
 
 const VIEWPORT_REFRESH_EVENT = 'devvit:viewport-refresh';
@@ -60,6 +66,8 @@ export class Game extends Scene {
   private summaryText!: Phaser.GameObjects.Text;
   private creaturePanel!: Phaser.GameObjects.Rectangle;
   private creatureArtFrame!: Phaser.GameObjects.Rectangle;
+  private creatureEarLeft!: Phaser.GameObjects.Ellipse;
+  private creatureEarRight!: Phaser.GameObjects.Ellipse;
   private creatureShadow!: Phaser.GameObjects.Ellipse;
   private creatureBody!: Phaser.GameObjects.Ellipse;
   private creatureBelly!: Phaser.GameObjects.Ellipse;
@@ -67,8 +75,20 @@ export class Game extends Scene {
   private creatureBlushRight!: Phaser.GameObjects.Ellipse;
   private creatureEyeLeft!: Phaser.GameObjects.Ellipse;
   private creatureEyeRight!: Phaser.GameObjects.Ellipse;
+  private creatureAccentPatch!: Phaser.GameObjects.Ellipse;
+  private creatureAccentBand!: Phaser.GameObjects.Rectangle;
   private creatureSpark!: Phaser.GameObjects.Ellipse;
   private creatureMouth!: Phaser.GameObjects.Arc;
+  private creatureBackAccessoryMain!: Phaser.GameObjects.Rectangle;
+  private creatureBackAccessoryAccent!: Phaser.GameObjects.Rectangle;
+  private creatureWearableTop!: Phaser.GameObjects.Rectangle;
+  private creatureWearableBrim!: Phaser.GameObjects.Rectangle;
+  private creatureWearableAccent!: Phaser.GameObjects.Ellipse;
+  private creatureFrontAccessoryMain!: Phaser.GameObjects.Rectangle;
+  private creatureFrontAccessoryAccent!: Phaser.GameObjects.Ellipse;
+  private creatureHeldAccessoryMain!: Phaser.GameObjects.Rectangle;
+  private creatureHeldAccessoryAccent!: Phaser.GameObjects.Ellipse;
+  private creatureHeldAccessoryStem!: Phaser.GameObjects.Rectangle;
   private creatureCaptionText!: Phaser.GameObjects.Text;
   private moodBadgeText!: Phaser.GameObjects.Text;
   private futureSlotText!: Phaser.GameObjects.Text;
@@ -163,6 +183,10 @@ export class Game extends Scene {
 
     this.creaturePanel = this.createPanel(0x17202a, 0x324759);
     this.creatureArtFrame = this.createPanel(0x223243, 0x48657b);
+    this.creatureEarLeft = this.add.ellipse(0, 0, 32, 56, 0xfff1d8, 1).setStrokeStyle(2, 0x4e3a2f, 0.9).setDepth(-0.5);
+    this.creatureEarRight = this.add.ellipse(0, 0, 32, 56, 0xfff1d8, 1).setStrokeStyle(2, 0x4e3a2f, 0.9).setDepth(-0.5);
+    this.creatureBackAccessoryMain = this.add.rectangle(0, 0, 40, 40, 0x7f5d43, 1).setDepth(-1);
+    this.creatureBackAccessoryAccent = this.add.rectangle(0, 0, 20, 20, 0xd2c3ab, 1).setDepth(-1);
     this.creatureShadow = this.add.ellipse(0, 0, 100, 30, 0x091017, 0.45);
     this.creatureBody = this.add.ellipse(0, 0, 160, 190, 0xfff1d8, 1).setStrokeStyle(3, 0x4e3a2f, 0.9);
     this.creatureBelly = this.add.ellipse(0, 0, 88, 78, 0xfff9ee, 0.95).setStrokeStyle(2, 0xe4d7c3, 0.8);
@@ -170,8 +194,18 @@ export class Game extends Scene {
     this.creatureBlushRight = this.add.ellipse(0, 0, 22, 14, 0xffb58f, 0.85);
     this.creatureEyeLeft = this.add.ellipse(0, 0, 12, 18, 0x1a2026, 1);
     this.creatureEyeRight = this.add.ellipse(0, 0, 12, 18, 0x1a2026, 1);
+    this.creatureAccentPatch = this.add.ellipse(0, 0, 18, 14, 0xffd47e, 0.92);
+    this.creatureAccentBand = this.add.rectangle(0, 0, 40, 12, 0xffd47e, 0.9);
     this.creatureSpark = this.add.ellipse(0, 0, 20, 20, 0xff8f3f, 1).setStrokeStyle(2, 0x5d3421, 0.85);
     this.creatureMouth = this.add.arc(0, 0, 18, 160, 20, false).setStrokeStyle(3, 0x1a2026, 1);
+    this.creatureWearableTop = this.add.rectangle(0, 0, 40, 24, 0x8b6fd4, 1).setDepth(1);
+    this.creatureWearableBrim = this.add.rectangle(0, 0, 56, 10, 0x6a4fa8, 1).setDepth(1);
+    this.creatureWearableAccent = this.add.ellipse(0, 0, 12, 12, 0xffd67a, 1).setDepth(1);
+    this.creatureFrontAccessoryMain = this.add.rectangle(0, 0, 40, 16, 0xa84d53, 1).setDepth(1);
+    this.creatureFrontAccessoryAccent = this.add.ellipse(0, 0, 14, 14, 0xf6d07a, 1).setDepth(1);
+    this.creatureHeldAccessoryMain = this.add.rectangle(0, 0, 18, 24, 0xe7c17c, 1).setDepth(1);
+    this.creatureHeldAccessoryAccent = this.add.ellipse(0, 0, 12, 12, 0x7bd3f0, 1).setDepth(1);
+    this.creatureHeldAccessoryStem = this.add.rectangle(0, 0, 8, 36, 0x8a6b52, 1).setDepth(1);
     this.creatureCaptionText = this.add.text(0, 0, '', {
       fontFamily: 'Georgia',
       fontSize: '28px',
@@ -287,7 +321,7 @@ export class Game extends Scene {
       lineSpacing: 8,
     });
     this.hallPanel = this.createPanel(0x18212a, 0x2b3c48);
-    this.hallTitleText = this.add.text(0, 0, 'Hall of Memories', {
+    this.hallTitleText = this.add.text(0, 0, 'Memory Book', {
       fontFamily: 'Georgia',
       fontSize: '21px',
       color: '#f2ead7',
@@ -300,7 +334,7 @@ export class Game extends Scene {
       lineSpacing: 6,
     });
     this.hallButton = this.add
-      .text(0, 0, 'View full hall', {
+      .text(0, 0, 'Open memory book', {
         fontFamily: 'Trebuchet MS',
         fontSize: '14px',
         color: '#13202a',
@@ -385,7 +419,7 @@ export class Game extends Scene {
       .setOrigin(0)
       .setStrokeStyle(1, 0x314554, 0.5)
       .setDepth(41);
-    this.hallOverlayTitleText = this.add.text(0, 0, 'Hall of Memories', {
+    this.hallOverlayTitleText = this.add.text(0, 0, 'Memory Book', {
       fontFamily: 'Georgia',
       fontSize: '28px',
       color: '#fff1d2',
@@ -402,7 +436,7 @@ export class Game extends Scene {
       .setDepth(42)
       .setInteractive({ useHandCursor: true })
       .on('pointerdown', () => this.closeHallOverlay());
-    this.hallOverlayHighlightedTitleText = this.add.text(0, 0, 'Highlighted', {
+    this.hallOverlayHighlightedTitleText = this.add.text(0, 0, 'Cherished Pages', {
       fontFamily: 'Georgia',
       fontSize: '20px',
       color: '#ffe7a8',
@@ -414,7 +448,7 @@ export class Game extends Scene {
       wordWrap: { width: 520 },
       lineSpacing: 7,
     }).setDepth(42);
-    this.hallOverlayArchiveTitleText = this.add.text(0, 0, 'Archive', {
+    this.hallOverlayArchiveTitleText = this.add.text(0, 0, 'Earlier Pages', {
       fontFamily: 'Georgia',
       fontSize: '20px',
       color: '#dff3ea',
@@ -875,32 +909,66 @@ export class Game extends Scene {
     const innerY = frame.y + metrics.cardInsetY;
     const innerWidth = frame.width - metrics.cardInsetX * 2;
     const artHeight = frame.height - metrics.cardInsetY * 2;
+    const dna = this.pettitState?.pettit.appearanceDna ?? this.getFallbackAppearanceDna();
+    const traits = this.pettitState?.pettit.traits ?? {
+      curiosity: 50,
+      chaos: 50,
+      trust: 50,
+      courage: 50,
+    };
+    const palette = this.getCreaturePalette(dna.paletteKey);
+    const curiosityWeight = traits.curiosity / 100;
+    const trustWeight = traits.trust / 100;
+    const courageWeight = traits.courage / 100;
+    const chaosWeight = traits.chaos / 100;
 
     this.creatureArtFrame.setPosition(innerX, innerY);
     this.creatureArtFrame.setSize(innerWidth, artHeight);
-    const creatureCenterX = innerX + innerWidth * 0.48;
-    const creatureCenterY = innerY + artHeight * 0.6;
-    const bodyWidth = Math.min(innerWidth * 0.26, artHeight * 0.72);
-    const bodyHeight = Math.min(artHeight * 0.7, bodyWidth * 1.12);
-    const eyeOffsetX = bodyWidth * 0.16;
-    const eyeY = creatureCenterY - bodyHeight * 0.12;
+    const creatureCenterX = innerX + innerWidth * 0.48 + (chaosWeight - 0.5) * 8;
+    const creatureCenterY = innerY + artHeight * (0.6 - courageWeight * 0.04);
+    const bodyWidth = Math.min(innerWidth * 0.26, artHeight * 0.72) * (dna.bodyWidthScale + trustWeight * 0.08);
+    const bodyHeight = Math.min(artHeight * 0.7, bodyWidth * 1.12) * (dna.bodyHeightScale + courageWeight * 0.06);
+    const eyeOffsetX = bodyWidth * 0.16 * dna.eyeSpacing * (1 + curiosityWeight * 0.08);
+    const eyeY = creatureCenterY - bodyHeight * (0.12 + curiosityWeight * 0.03);
     const blushOffsetX = bodyWidth * 0.22;
     const blushY = creatureCenterY + bodyHeight * 0.04;
     const mood = this.pettitState?.pettit.mood ?? 'curious';
+    const earWidth = bodyWidth * (dna.earStyle === 'leaf' ? 0.16 : 0.18);
+    const earHeight = bodyHeight * (dna.earStyle === 'round' ? 0.24 : dna.earStyle === 'leaf' ? 0.34 : 0.28);
+    const earRotation = dna.earStyle === 'leaf' ? 0.28 : dna.earStyle === 'tilt' ? 0.45 : 0.12;
 
+    this.creatureEarLeft.setFillStyle(palette.body, 1).setStrokeStyle(2, palette.outline, 0.9);
+    this.creatureEarRight.setFillStyle(palette.body, 1).setStrokeStyle(2, palette.outline, 0.9);
+    this.creatureEarLeft.setPosition(creatureCenterX - bodyWidth * 0.24, creatureCenterY - bodyHeight * 0.42);
+    this.creatureEarRight.setPosition(
+      creatureCenterX + bodyWidth * (0.24 + chaosWeight * 0.03),
+      creatureCenterY - bodyHeight * 0.42
+    );
+    this.creatureEarLeft.setSize(earWidth, earHeight).setRotation(-earRotation);
+    this.creatureEarRight.setSize(earWidth * (1 + chaosWeight * 0.08), earHeight).setRotation(earRotation);
     this.creatureShadow.setPosition(creatureCenterX, creatureCenterY + bodyHeight * 0.34);
     this.creatureShadow.setSize(bodyWidth * 0.78, bodyHeight * 0.18);
+    this.creatureBody.setFillStyle(palette.body, 1).setStrokeStyle(3, palette.outline, 0.9);
     this.creatureBody.setPosition(creatureCenterX, creatureCenterY);
     this.creatureBody.setSize(bodyWidth, bodyHeight);
+    this.creatureBelly.setFillStyle(palette.belly, 0.95).setStrokeStyle(2, palette.bellyOutline, 0.8);
     this.creatureBelly.setPosition(creatureCenterX, creatureCenterY + bodyHeight * 0.16);
-    this.creatureBelly.setSize(bodyWidth * 0.52, bodyHeight * 0.4);
+    this.creatureBelly.setSize(bodyWidth * (0.52 + trustWeight * 0.06), bodyHeight * 0.4);
     this.creatureEyeLeft.setPosition(creatureCenterX - eyeOffsetX, eyeY);
-    this.creatureEyeRight.setPosition(creatureCenterX + eyeOffsetX, eyeY);
+    this.creatureEyeRight.setPosition(creatureCenterX + eyeOffsetX + chaosWeight * 3, eyeY - chaosWeight * 2);
     this.creatureBlushLeft.setPosition(creatureCenterX - blushOffsetX, blushY);
     this.creatureBlushRight.setPosition(creatureCenterX + blushOffsetX, blushY);
+    this.creatureBlushLeft.setFillStyle(palette.blush, 0.85);
+    this.creatureBlushRight.setFillStyle(palette.blush, 0.85);
     this.creatureSpark.setPosition(creatureCenterX + bodyWidth * 0.16, creatureCenterY - bodyHeight * 0.52);
-    this.creatureSpark.setSize(bodyWidth * 0.12, bodyWidth * 0.12);
-    this.layoutCreatureFace(mood, creatureCenterX, creatureCenterY, bodyWidth, bodyHeight);
+    this.creatureSpark.setSize(
+      bodyWidth * (dna.sparkStyle === 'leaf' ? 0.1 : 0.12),
+      bodyWidth * (dna.sparkStyle === 'star' ? 0.12 : 0.14)
+    );
+    this.creatureSpark.setFillStyle(palette.accent, 1).setStrokeStyle(2, palette.outline, 0.65);
+    this.layoutCreatureFace(mood, dna, creatureCenterX, creatureCenterY, bodyWidth, bodyHeight);
+    this.layoutCreaturePattern(dna, creatureCenterX, creatureCenterY, bodyWidth, bodyHeight, palette.accent, chaosWeight);
+    this.layoutCreatureAccessories(creatureCenterX, creatureCenterY, bodyWidth, bodyHeight);
 
     this.creatureCaptionText.setPosition(innerX + 18, innerY + 14);
     this.creatureCaptionText.setWordWrapWidth(innerWidth * 0.34);
@@ -912,18 +980,37 @@ export class Game extends Scene {
 
   private layoutCreatureFace(
     mood: PettitViewModel['pettit']['mood'],
+    dna: PettitAppearanceDna,
     centerX: number,
     centerY: number,
     bodyWidth: number,
     bodyHeight: number
   ): void {
     const mouthY = centerY + bodyHeight * 0.08;
+    const eyeWidth =
+      dna.eyeStyle === 'dot' ? bodyWidth * 0.055 : dna.eyeStyle === 'sleepy' ? bodyWidth * 0.078 : bodyWidth * 0.065;
+    const eyeHeight =
+      dna.eyeStyle === 'sleepy'
+        ? bodyHeight * 0.075
+        : dna.eyeStyle === 'dot'
+          ? bodyHeight * 0.09
+          : bodyHeight * 0.1;
 
-    this.creatureEyeLeft.setSize(bodyWidth * 0.065, bodyHeight * 0.1);
-    this.creatureEyeRight.setSize(bodyWidth * 0.065, bodyHeight * 0.1);
+    this.creatureEyeLeft.setSize(eyeWidth, eyeHeight);
+    this.creatureEyeRight.setSize(eyeWidth, eyeHeight);
     this.creatureMouth.setPosition(centerX, mouthY);
     this.creatureMouth.setRadius(bodyWidth * 0.12);
     this.creatureMouth.setRotation(0);
+    this.creatureBlushLeft.setVisible(dna.blushStyle !== 'none');
+    this.creatureBlushRight.setVisible(dna.blushStyle !== 'none');
+
+    if (dna.blushStyle === 'soft') {
+      this.creatureBlushLeft.setSize(bodyWidth * 0.16, bodyHeight * 0.07);
+      this.creatureBlushRight.setSize(bodyWidth * 0.16, bodyHeight * 0.07);
+    } else {
+      this.creatureBlushLeft.setSize(bodyWidth * 0.14, bodyHeight * 0.08);
+      this.creatureBlushRight.setSize(bodyWidth * 0.14, bodyHeight * 0.08);
+    }
 
     if (mood === 'excited') {
       this.creatureEyeLeft.setSize(bodyWidth * 0.055, bodyHeight * 0.12);
@@ -1273,14 +1360,18 @@ export class Game extends Scene {
     this.titleText.setText(pettit.name);
     this.subtitleText.setText('Community Creature');
     this.summaryText.setText(
-      `Day ${pettit.ageDays} - Raised together - Top traits: ${pettit.topTraits.map((trait) => this.formatTraitName(trait)).join(' + ')}`
+      `Day ${pettit.ageDays} - ${pettit.birthdaySummary} - Mood: ${this.capitalize(pettit.mood)} - Top traits: ${pettit.topTraits
+        .map((trait) => this.formatTraitName(trait))
+        .join(' + ')}`
     );
 
     this.creatureCaptionText.setText(`${pettit.name}`);
     this.moodBadgeText.setText(this.formatMoodBadge(pettit.mood));
     this.applyMoodBadgeStyle(pettit.mood);
     this.futureSlotText.setText(
-      'Raised by the community.'
+      pettit.canReceiveCommunityName
+        ? `Raised by the community.\n${pettit.birthdaySummary} - ready for a true name.`
+        : `Raised by the community.\n${pettit.birthdaySummary}.`
     );
 
     this.actionTitleText.setText(activeEncounter.title);
@@ -1334,7 +1425,7 @@ export class Game extends Scene {
       this.journalBodyText.setText(this.truncateJournalPreview(latestJournal.content));
     } else {
       this.journalTitleText.setText('Journal');
-      this.journalBodyText.setText('Resolve the first vote to give Pettit its opening journal entry.');
+      this.journalBodyText.setText(`Resolve the first vote to give ${pettit.name} an opening journal entry.`);
     }
 
     if (recentMemories.length > 0) {
@@ -1344,7 +1435,7 @@ export class Game extends Scene {
           .join('\n\n')
       );
     } else {
-      this.memoryBodyText.setText('No memories yet. The first resolved encounter will give Pettit something to remember.');
+      this.memoryBodyText.setText(`No memories yet. The first resolved encounter will give ${pettit.name} something to remember.`);
     }
 
     if (this.pettitState.hallOfMemories.highlighted.length > 0) {
@@ -1355,7 +1446,7 @@ export class Game extends Scene {
           .join('\n\n')
       );
     } else {
-      this.hallBodyText.setText('Pettit has not built up a hall of highlighted memories yet.');
+      this.hallBodyText.setText(`${pettit.name} has not filled any cherished pages yet.`);
     }
 
     if (this.pettitState.inventory.length > 0) {
@@ -1371,7 +1462,7 @@ export class Game extends Scene {
           .join('\n\n')
       );
     } else {
-      this.inventoryBodyText.setText('No gifts yet. A community gift round will let everyone choose something Pettit can keep.');
+      this.inventoryBodyText.setText(`No gifts yet. A community gift round will let everyone choose something ${pettit.name} can keep.`);
     }
 
     if (this.pettitState.knownNames.length > 0) {
@@ -1389,7 +1480,7 @@ export class Game extends Scene {
           .join('\n\n')
       );
     } else {
-      this.namesBodyText.setText('Canon names will appear here once the community starts naming gifts and places.');
+      this.namesBodyText.setText(`Canon names will appear here once the community starts naming keepsakes, places, and ${pettit.name}.`);
     }
 
     this.renderHallOverlayContent();
@@ -1534,8 +1625,8 @@ export class Game extends Scene {
     }
 
     if (!this.hallDetail) {
-      this.hallOverlayHighlightedBodyText.setText('Loading highlighted memories...');
-      this.hallOverlayArchiveBodyText.setText('Loading Pettit history...');
+      this.hallOverlayHighlightedBodyText.setText('Loading cherished pages...');
+      this.hallOverlayArchiveBodyText.setText('Loading the rest of the memory book...');
       this.hallOverlayPageText.setText('');
       this.hallOverlayPrevButton.disableInteractive().setAlpha(0.45);
       this.hallOverlayNextButton.disableInteractive().setAlpha(0.45);
@@ -1550,16 +1641,14 @@ export class Game extends Scene {
     this.hallOverlayHighlightedBodyText.setText(
       highlighted.length > 0
         ? highlighted.map((memory) => this.formatHallDetailLine(memory, 58)).join('\n')
-        : 'No highlighted memories yet. Pettit is still building a story worth displaying here.'
+        : `${this.pettitState?.pettit.name ?? 'Pettit'} is still building a story worth preserving here.`
     );
     this.hallOverlayArchiveBodyText.setText(
       archivePage.length > 0
         ? archivePage.map((memory) => this.formatHallDetailLine(memory, 52)).join('\n')
-        : 'No archive memories yet.'
+        : 'No earlier pages yet.'
     );
-    this.hallOverlayPageText.setText(
-      pageCount > 1 ? `Archive page ${this.hallArchivePage + 1} of ${pageCount}` : 'Full archive'
-    );
+    this.hallOverlayPageText.setText(`Volume ${this.hallArchivePage + 1} of ${pageCount}`);
 
     if (this.hallArchivePage > 0) {
       this.hallOverlayPrevButton.setInteractive({ useHandCursor: true }).setAlpha(1);
@@ -1677,6 +1766,270 @@ export class Game extends Scene {
     this.time.delayedCall(500, () => {
       panel.setFillStyle(originalFill, 0.94);
     });
+  }
+
+  private getFallbackAppearanceDna(): PettitAppearanceDna {
+    return {
+      seedVersion: 1,
+      paletteKey: 'sunrise',
+      bodyWidthScale: 1,
+      bodyHeightScale: 1,
+      earStyle: 'round',
+      eyeStyle: 'oval',
+      eyeSpacing: 1,
+      blushStyle: 'round',
+      sparkStyle: 'orb',
+      accentPattern: 'plain',
+    };
+  }
+
+  private getCreaturePalette(paletteKey: PettitAppearanceDna['paletteKey']): {
+    body: number;
+    belly: number;
+    bellyOutline: number;
+    outline: number;
+    accent: number;
+    blush: number;
+  } {
+    const palettes: Record<PettitAppearanceDna['paletteKey'], { body: number; belly: number; bellyOutline: number; outline: number; accent: number; blush: number }> =
+      {
+        sunrise: {
+          body: 0xfff1d8,
+          belly: 0xfff9ee,
+          bellyOutline: 0xe4d7c3,
+          outline: 0x4e3a2f,
+          accent: 0xff9a48,
+          blush: 0xffb58f,
+        },
+        meadow: {
+          body: 0xf3f6dc,
+          belly: 0xfbfff0,
+          bellyOutline: 0xd4dfc5,
+          outline: 0x3c4736,
+          accent: 0x8fca63,
+          blush: 0xf2c5a2,
+        },
+        berry: {
+          body: 0xffe3ef,
+          belly: 0xfff2f7,
+          bellyOutline: 0xf1ccd8,
+          outline: 0x56384a,
+          accent: 0xc8678f,
+          blush: 0xf7a8bd,
+        },
+        twilight: {
+          body: 0xe8e7ff,
+          belly: 0xf5f3ff,
+          bellyOutline: 0xd6d1f2,
+          outline: 0x3d4161,
+          accent: 0x8aa7ff,
+          blush: 0xd9b8f2,
+        },
+        moss: {
+          body: 0xe7f0de,
+          belly: 0xf5fbef,
+          bellyOutline: 0xd0dfc8,
+          outline: 0x445443,
+          accent: 0x6eb28e,
+          blush: 0xe6b89d,
+        },
+      };
+
+    return palettes[paletteKey] ?? palettes.sunrise;
+  }
+
+  private layoutCreaturePattern(
+    dna: PettitAppearanceDna,
+    centerX: number,
+    centerY: number,
+    bodyWidth: number,
+    bodyHeight: number,
+    accentColor: number,
+    chaosWeight: number
+  ): void {
+    this.creatureAccentPatch.setVisible(false);
+    this.creatureAccentBand.setVisible(false);
+
+    if (dna.accentPattern === 'patch' || dna.accentPattern === 'speck') {
+      this.creatureAccentPatch.setVisible(true);
+      this.creatureAccentPatch.setFillStyle(accentColor, dna.accentPattern === 'speck' ? 0.72 : 0.9);
+      this.creatureAccentPatch.setPosition(
+        centerX + bodyWidth * (dna.accentPattern === 'speck' ? 0.18 : -0.14) + chaosWeight * 4,
+        centerY - bodyHeight * (dna.accentPattern === 'speck' ? 0.04 : 0.18)
+      );
+      this.creatureAccentPatch.setSize(
+        bodyWidth * (dna.accentPattern === 'speck' ? 0.08 : 0.18),
+        bodyHeight * (dna.accentPattern === 'speck' ? 0.06 : 0.12)
+      );
+    }
+
+    if (dna.accentPattern === 'band') {
+      this.creatureAccentBand.setVisible(true);
+      this.creatureAccentBand.setFillStyle(accentColor, 0.72);
+      this.creatureAccentBand.setPosition(centerX, centerY - bodyHeight * 0.08);
+      this.creatureAccentBand.setSize(bodyWidth * 0.62, bodyHeight * 0.08);
+      this.creatureAccentBand.setRotation(-0.08 + chaosWeight * 0.06);
+    }
+  }
+
+  private layoutCreatureAccessories(centerX: number, centerY: number, bodyWidth: number, bodyHeight: number): void {
+    const wearableItem = this.findRecentGift([
+      'birthday-hat',
+      'wizard-hat',
+      'straw-hat',
+      'wool-hat',
+      'explorer-hat',
+      'flower-crown',
+      'hand-knitted-scarf',
+      'small-backpack',
+      'tiny-cape',
+    ]);
+    const handheldItem = this.findRecentGift([
+      'lantern',
+      'walking-stick',
+      'adventure-book',
+      'story-book',
+      'star-map',
+      'compass',
+    ]);
+
+    this.creatureBackAccessoryMain.setVisible(false);
+    this.creatureBackAccessoryAccent.setVisible(false);
+    this.creatureWearableTop.setVisible(false);
+    this.creatureWearableBrim.setVisible(false);
+    this.creatureWearableAccent.setVisible(false);
+    this.creatureFrontAccessoryMain.setVisible(false);
+    this.creatureFrontAccessoryAccent.setVisible(false);
+    this.creatureHeldAccessoryMain.setVisible(false);
+    this.creatureHeldAccessoryAccent.setVisible(false);
+    this.creatureHeldAccessoryStem.setVisible(false);
+
+    if (wearableItem) {
+      switch (wearableItem.giftId) {
+        case 'small-backpack':
+          this.creatureBackAccessoryMain.setVisible(true).setFillStyle(0x7f5d43, 1);
+          this.creatureBackAccessoryAccent.setVisible(true).setFillStyle(0xd7c4a3, 1);
+          this.creatureBackAccessoryMain.setPosition(centerX + bodyWidth * 0.14, centerY + bodyHeight * 0.06);
+          this.creatureBackAccessoryMain.setSize(bodyWidth * 0.32, bodyHeight * 0.34);
+          this.creatureBackAccessoryAccent.setPosition(centerX + bodyWidth * 0.26, centerY + bodyHeight * 0.06);
+          this.creatureBackAccessoryAccent.setSize(bodyWidth * 0.06, bodyHeight * 0.34);
+          break;
+        case 'tiny-cape':
+          this.creatureBackAccessoryMain.setVisible(true).setFillStyle(0xb24d56, 1);
+          this.creatureBackAccessoryAccent.setVisible(true).setFillStyle(0xf6d07a, 1);
+          this.creatureBackAccessoryMain.setPosition(centerX, centerY + bodyHeight * 0.12);
+          this.creatureBackAccessoryMain.setSize(bodyWidth * 0.56, bodyHeight * 0.42);
+          this.creatureBackAccessoryAccent.setPosition(centerX, centerY - bodyHeight * 0.04);
+          this.creatureBackAccessoryAccent.setSize(bodyWidth * 0.18, bodyHeight * 0.05);
+          break;
+        case 'hand-knitted-scarf':
+          this.creatureFrontAccessoryMain.setVisible(true).setFillStyle(0xc75d68, 1);
+          this.creatureFrontAccessoryAccent.setVisible(true).setFillStyle(0xf0d8a6, 1);
+          this.creatureFrontAccessoryMain.setPosition(centerX, centerY + bodyHeight * 0.05);
+          this.creatureFrontAccessoryMain.setSize(bodyWidth * 0.44, bodyHeight * 0.07);
+          this.creatureFrontAccessoryAccent.setPosition(centerX - bodyWidth * 0.08, centerY + bodyHeight * 0.12);
+          this.creatureFrontAccessoryAccent.setSize(bodyWidth * 0.08, bodyHeight * 0.14);
+          break;
+        case 'flower-crown':
+          this.creatureWearableBrim.setVisible(true).setFillStyle(0x74ba78, 1);
+          this.creatureWearableAccent.setVisible(true).setFillStyle(0xffb7d2, 1);
+          this.creatureWearableBrim.setPosition(centerX, centerY - bodyHeight * 0.48);
+          this.creatureWearableBrim.setSize(bodyWidth * 0.34, bodyHeight * 0.05);
+          this.creatureWearableAccent.setPosition(centerX + bodyWidth * 0.08, centerY - bodyHeight * 0.49);
+          this.creatureWearableAccent.setSize(bodyWidth * 0.08, bodyWidth * 0.08);
+          break;
+        default:
+          this.creatureWearableTop.setVisible(true);
+          this.creatureWearableBrim.setVisible(true);
+          this.creatureWearableAccent.setVisible(true);
+          this.creatureWearableTop.setPosition(centerX, centerY - bodyHeight * 0.48);
+          this.creatureWearableTop.setSize(bodyWidth * 0.26, bodyHeight * 0.16);
+          this.creatureWearableBrim.setPosition(centerX, centerY - bodyHeight * 0.41);
+          this.creatureWearableBrim.setSize(bodyWidth * 0.42, bodyHeight * 0.05);
+          this.creatureWearableAccent.setPosition(centerX + bodyWidth * 0.08, centerY - bodyHeight * 0.48);
+          this.creatureWearableAccent.setSize(bodyWidth * 0.08, bodyWidth * 0.08);
+
+          if (wearableItem.giftId === 'wizard-hat') {
+            this.creatureWearableTop.setFillStyle(0x5d4ab8, 1);
+            this.creatureWearableBrim.setFillStyle(0x3d2d89, 1);
+            this.creatureWearableAccent.setFillStyle(0xffd67a, 1);
+          } else if (wearableItem.giftId === 'birthday-hat') {
+            this.creatureWearableTop.setFillStyle(0xf29b57, 1);
+            this.creatureWearableBrim.setFillStyle(0xc45b62, 1);
+            this.creatureWearableAccent.setFillStyle(0xfff1a6, 1);
+          } else if (wearableItem.giftId === 'wool-hat') {
+            this.creatureWearableTop.setFillStyle(0x6d7bb0, 1);
+            this.creatureWearableBrim.setFillStyle(0x4a5a87, 1);
+            this.creatureWearableAccent.setFillStyle(0xdfe5ff, 1);
+          } else if (wearableItem.giftId === 'explorer-hat') {
+            this.creatureWearableTop.setFillStyle(0x94744f, 1);
+            this.creatureWearableBrim.setFillStyle(0x6d5538, 1);
+            this.creatureWearableAccent.setFillStyle(0xe7c67b, 1);
+          } else {
+            this.creatureWearableTop.setFillStyle(0xd2b06f, 1);
+            this.creatureWearableBrim.setFillStyle(0xa7854e, 1);
+            this.creatureWearableAccent.setFillStyle(0xf7e0ad, 1);
+          }
+          break;
+      }
+    }
+
+    if (handheldItem) {
+      switch (handheldItem.giftId) {
+        case 'walking-stick':
+          this.creatureHeldAccessoryStem.setVisible(true).setFillStyle(0x8a6b52, 1);
+          this.creatureHeldAccessoryStem.setPosition(centerX + bodyWidth * 0.34, centerY + bodyHeight * 0.1);
+          this.creatureHeldAccessoryStem.setSize(bodyWidth * 0.05, bodyHeight * 0.42);
+          break;
+        case 'compass':
+          this.creatureHeldAccessoryAccent.setVisible(true).setFillStyle(0x7bc4da, 1);
+          this.creatureHeldAccessoryAccent.setPosition(centerX + bodyWidth * 0.24, centerY + bodyHeight * 0.14);
+          this.creatureHeldAccessoryAccent.setSize(bodyWidth * 0.14, bodyWidth * 0.14);
+          break;
+        case 'lantern':
+          this.creatureHeldAccessoryMain.setVisible(true).setFillStyle(0xe6c075, 1);
+          this.creatureHeldAccessoryAccent.setVisible(true).setFillStyle(0x7fd7f0, 1);
+          this.creatureHeldAccessoryStem.setVisible(true).setFillStyle(0x6d5538, 1);
+          this.creatureHeldAccessoryMain.setPosition(centerX + bodyWidth * 0.28, centerY + bodyHeight * 0.14);
+          this.creatureHeldAccessoryMain.setSize(bodyWidth * 0.12, bodyHeight * 0.16);
+          this.creatureHeldAccessoryAccent.setPosition(centerX + bodyWidth * 0.28, centerY + bodyHeight * 0.12);
+          this.creatureHeldAccessoryAccent.setSize(bodyWidth * 0.08, bodyWidth * 0.08);
+          this.creatureHeldAccessoryStem.setPosition(centerX + bodyWidth * 0.28, centerY + bodyHeight * 0.01);
+          this.creatureHeldAccessoryStem.setSize(bodyWidth * 0.018, bodyHeight * 0.14);
+          break;
+        default:
+          this.creatureHeldAccessoryMain.setVisible(true);
+          this.creatureHeldAccessoryAccent.setVisible(true);
+          this.creatureHeldAccessoryMain.setPosition(centerX + bodyWidth * 0.28, centerY + bodyHeight * 0.18);
+          this.creatureHeldAccessoryMain.setSize(bodyWidth * 0.16, bodyHeight * 0.14);
+          this.creatureHeldAccessoryAccent.setPosition(centerX + bodyWidth * 0.28, centerY + bodyHeight * 0.14);
+          this.creatureHeldAccessoryAccent.setSize(bodyWidth * 0.05, bodyWidth * 0.05);
+
+          if (handheldItem.giftId === 'star-map') {
+            this.creatureHeldAccessoryMain.setFillStyle(0x6d87d1, 1);
+            this.creatureHeldAccessoryAccent.setFillStyle(0xffde8f, 1);
+          } else if (handheldItem.giftId === 'story-book') {
+            this.creatureHeldAccessoryMain.setFillStyle(0xb86952, 1);
+            this.creatureHeldAccessoryAccent.setFillStyle(0xf9e2ac, 1);
+          } else {
+            this.creatureHeldAccessoryMain.setFillStyle(0x4b79c7, 1);
+            this.creatureHeldAccessoryAccent.setFillStyle(0xf7e0a3, 1);
+          }
+          break;
+      }
+    }
+  }
+
+  private findRecentGift(giftIds: readonly string[]): PettitViewModel['inventory'][number] | null {
+    const inventory = this.pettitState?.inventory ?? [];
+
+    for (const item of [...inventory].reverse()) {
+      if (giftIds.includes(item.giftId)) {
+        return item;
+      }
+    }
+
+    return null;
   }
 
   private formatTraitName(traitKey: TraitKey | undefined): string {

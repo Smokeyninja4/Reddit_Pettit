@@ -2,7 +2,13 @@ import { Hono } from 'hono';
 import type { UiResponse } from '@devvit/web/shared';
 import { context } from '@devvit/web/server';
 import { createPost } from '../core/post';
-import { getGiftIdeaSubmissions, getNameSubmissions, getOrCreateState, resetPettitWorld } from '../core/pettit-store';
+import {
+  getGiftIdeaSubmissions,
+  getNameSubmissions,
+  getOrCreateState,
+  getOrCreateStats,
+  resetPettitWorld,
+} from '../core/pettit-store';
 import { buildPendingCommunityGiftBallot } from '../core/pettit-contributions';
 import { getPendingNamingTargetOptions } from '../core/pettit-naming';
 
@@ -42,12 +48,13 @@ menu.post('/name-form', async (c) => {
       );
     }
 
-    const [state, submissions] = await Promise.all([
+    const [state, stats, submissions] = await Promise.all([
       getOrCreateState(subredditName),
+      getOrCreateStats(subredditName),
       getNameSubmissions(subredditName),
     ]);
 
-    const targetOptions = getPendingNamingTargetOptions(state, submissions);
+    const targetOptions = getPendingNamingTargetOptions(state, submissions, stats.resolvedEncounterCount);
 
     if (targetOptions.length === 0) {
       return c.json<UiResponse>(

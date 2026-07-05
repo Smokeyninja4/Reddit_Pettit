@@ -50,6 +50,11 @@ import {
   submitNameForTarget,
 } from './pettit-naming';
 import {
+  canReceiveCommunityName,
+  getPettitBirthdaySummary,
+  personalizePettitText,
+} from './pettit-identity';
+import {
   canonicalizeEncounterTemplateId,
   createEncounterInstanceFromTemplate,
   getEncounterTemplateById,
@@ -261,10 +266,14 @@ const buildViewModel = (snapshot: WorldSnapshot): PettitViewModel => {
   return {
     pettit: {
       name: snapshot.state.name,
+      nameOrigin: snapshot.state.nameOrigin,
       ageDays: snapshot.state.ageDays,
+      birthdaySummary: getPettitBirthdaySummary(snapshot.state.createdAt),
       mood: snapshot.state.mood,
       traits: snapshot.state.traits,
       topTraits: getTopTraits(snapshot.state.traits, 2),
+      appearanceDna: snapshot.state.appearanceDna,
+      canReceiveCommunityName: canReceiveCommunityName(snapshot.state, snapshot.stats.resolvedEncounterCount),
     },
     communityStats: {
       ageDays: snapshot.state.ageDays,
@@ -313,7 +322,7 @@ const loadWorldSnapshot = async (subredditName: string, username: string | null)
     memories,
     journals,
     selectedOptionId: username ? voterMap[username] ?? null : null,
-    pendingNamingTargets: getPendingNamingTargets(state, nameSubmissions),
+    pendingNamingTargets: getPendingNamingTargets(state, nameSubmissions, stats.resolvedEncounterCount),
     giftIdeaSubmissions,
   };
 };
@@ -445,10 +454,12 @@ const selectNextEncounterTemplate = (
   currentTemplateId: string
 ): EncounterTemplate => {
   const seasonalModifier = getSeasonalEncounterModifier(state);
-  const namingEncounterTemplate = selectReadyNamingEncounterTemplate(state, nameSubmissions);
+  const resolvedCount = resolvedEncounterCount;
 
-  if (namingEncounterTemplate) {
-    return namingEncounterTemplate;
+  const namingEncounterTemplateWithIdentity = selectReadyNamingEncounterTemplate(state, nameSubmissions, resolvedCount);
+
+  if (namingEncounterTemplateWithIdentity) {
+    return namingEncounterTemplateWithIdentity;
   }
 
   const communityGiftEncounterTemplate = selectReadyCommunityGiftEncounterTemplate(giftIdeaSubmissions);
@@ -602,7 +613,7 @@ const processEncounterTransition = async (
         memories,
         journals,
         selectedOptionId: null,
-        pendingNamingTargets: getPendingNamingTargets(nextState, nameSubmissions),
+        pendingNamingTargets: getPendingNamingTargets(nextState, nameSubmissions, stats.resolvedEncounterCount),
         giftIdeaSubmissions,
       }),
       outcome: 'advanced',
@@ -662,8 +673,14 @@ const processEncounterTransition = async (
 
   const personalizedOutcome: EncounterOptionOutcome = {
     ...outcome,
-    resultText: personalizeEncounterText(nextStateBeforeJournal, activeEncounter.templateId, outcome.resultText),
-    memoryDescription: personalizeEncounterText(nextStateBeforeJournal, activeEncounter.templateId, outcome.memoryDescription),
+    resultText: personalizePettitText(
+      nextStateBeforeJournal,
+      personalizeEncounterText(nextStateBeforeJournal, activeEncounter.templateId, outcome.resultText)
+    ),
+    memoryDescription: personalizePettitText(
+      nextStateBeforeJournal,
+      personalizeEncounterText(nextStateBeforeJournal, activeEncounter.templateId, outcome.memoryDescription)
+    ),
   };
   const achievementResult = evaluateResolvedAchievements(
     nextStateBeforeJournal,
@@ -723,7 +740,11 @@ const processEncounterTransition = async (
       memories: nextMemories,
       journals: nextJournals,
       selectedOptionId: null,
-      pendingNamingTargets: getPendingNamingTargets(nextState, nextNameSubmissions),
+      pendingNamingTargets: getPendingNamingTargets(
+        nextState,
+        nextNameSubmissions,
+        achievementResult.stats.resolvedEncounterCount
+      ),
       giftIdeaSubmissions: nextGiftIdeaSubmissions,
     }),
     outcome: 'resolved',
@@ -837,7 +858,7 @@ export const submitVote = async (
     memories,
     journals,
     selectedOptionId: optionId,
-    pendingNamingTargets: getPendingNamingTargets(state, nameSubmissions),
+    pendingNamingTargets: getPendingNamingTargets(state, nameSubmissions, nextStats.resolvedEncounterCount),
     giftIdeaSubmissions,
   });
 };
@@ -856,13 +877,14 @@ export const submitName = async (
     getNameSubmissions(subredditName),
   ]);
 
-  const nextSubmissionMap = submitNameForTarget(state, submissionMap, username, targetKey, proposedName);
+  const stats = await getOrCreateStats(subredditName);
+  const nextSubmissionMap = submitNameForTarget(state, stats, submissionMap, username, targetKey, proposedName);
   await saveNameSubmissions(subredditName, nextSubmissionMap);
 
   const { targetType, targetId } = (() => {
     const [targetTypeValue, ...targetIdParts] = targetKey.split(':');
 
-    if ((targetTypeValue !== 'gift' && targetTypeValue !== 'landmark') || targetIdParts.length === 0) {
+    if ((targetTypeValue !== 'gift' && targetTypeValue !== 'landmark' && targetTypeValue !== 'pettit') || targetIdParts.length === 0) {
       throw new Error('INVALID_NAMING_TARGET');
     }
 
@@ -872,7 +894,7 @@ export const submitName = async (
     };
   })();
 
-  const pendingTargets = getPendingNamingTargets(state, nextSubmissionMap);
+  const pendingTargets = getPendingNamingTargets(state, nextSubmissionMap, stats.resolvedEncounterCount);
   const target = pendingTargets.find(
     (candidate) => candidate.targetType === targetType && candidate.targetId === targetId
   );

@@ -23,6 +23,7 @@ import {
   getEncounterTemplateById,
 } from './pettit-seed';
 import { getGiftById, resolveInventoryGiftId } from './pettit-gifts';
+import { createAppearanceDna, deriveStarterPettitName, inferPettitNameOrigin } from './pettit-identity';
 
 type VoterMap = Record<string, string>;
 type NamingSubmissionMap = Record<string, PettitNameSubmission[]>;
@@ -141,10 +142,18 @@ const normalizeInventoryItem = (item: Partial<PettitInventoryItem>, index: numbe
 
 const normalizeState = (storedState: LegacyState): PettitState => {
   const activeEncounterId = storedState.activeEncounterId ?? storedState.activeQuestId ?? 'encounter-cave-1';
+  const subredditName = String(storedState.id ?? '')
+    .replace(/^pettit-/, '')
+    .trim();
+  const fallbackName = subredditName ? deriveStarterPettitName(subredditName) : 'Pettit';
 
   return {
     ...storedState,
+    name: storedState.name ?? fallbackName,
+    nameOrigin: storedState.nameOrigin ?? inferPettitNameOrigin(storedState.name ?? fallbackName, subredditName),
+    pettitNamingFinalizedAt: storedState.pettitNamingFinalizedAt ?? null,
     ageDays: calculateAgeDays(storedState.createdAt),
+    appearanceDna: storedState.appearanceDna ?? createAppearanceDna(subredditName),
     inventory: (storedState.inventory ?? [])
       .map((item, index) => normalizeInventoryItem(item as Partial<PettitInventoryItem>, index))
       .filter((item): item is PettitInventoryItem => item !== null),

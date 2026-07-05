@@ -9,6 +9,7 @@ import type {
   PettitTraits,
   TraitKey,
 } from '../../shared/pettit';
+import { createAppearanceDna, deriveStarterPettitName } from './pettit-identity';
 import {
   getCommunityGiftEncounterTemplateById,
   isCommunityGiftEncounterTemplateId,
@@ -713,11 +714,14 @@ export const createDefaultDailyCycle = (date: Date = new Date()): PettitDailyCyc
 
 export const createDefaultPettitState = (subredditName: string): PettitState => ({
   id: `pettit-${subredditName}`,
-  name: 'Pettit',
+  name: deriveStarterPettitName(subredditName),
+  nameOrigin: 'subreddit',
+  pettitNamingFinalizedAt: null,
   createdAt: new Date().toISOString(),
   ageDays: 0,
   mood: 'curious',
   traits: { ...DEFAULT_TRAITS },
+  appearanceDna: createAppearanceDna(subredditName),
   inventory: [],
   landmarks: [],
   activeEncounterId: `${TRANSITION_ENCOUNTERS[0]?.id ?? 'encounter-cave'}-1`,

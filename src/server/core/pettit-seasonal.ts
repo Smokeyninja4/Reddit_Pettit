@@ -12,6 +12,7 @@ import type {
   TraitKey,
 } from '../../shared/pettit';
 import { getGiftById } from './pettit-gifts';
+import { getPettitBirthdayMonthDay, personalizePettitText } from './pettit-identity';
 
 type SeasonalJournalTone =
   | 'reflective'
@@ -70,9 +71,6 @@ export type SeasonalJournalContext = {
   tone?: SeasonalJournalTone;
   preferOldMemories: boolean;
 };
-
-const PETTIT_DAY_MONTH = 7;
-const PETTIT_DAY_DAY = 1;
 
 const LEGENDARY_EVENT_CHANCE_PERCENT = 2;
 
@@ -395,7 +393,10 @@ const EVENT_DEFINITIONS: readonly SeasonalEventDefinition[] = [
     rareChanceBonus: 0,
     journalTone: 'birthday',
     preferOldMemories: true,
-    match: (date) => isSameUtcDay(date, PETTIT_DAY_MONTH, PETTIT_DAY_DAY),
+    match: (_date, progress) => {
+      void progress;
+      return false;
+    },
     encounter: {
       title: 'Birthday Gathering',
       description: 'A little birthday gathering forms around Pettit, full of handmade things and warm attention.',
@@ -1299,9 +1300,14 @@ const getActiveDefinition = (
     return legendary;
   }
 
-  const matchingDefinitions = EVENT_DEFINITIONS.filter(
-    (definition) => definition.kind !== 'legendary' && definition.match(date, state.seasonalProgress)
-  );
+  const matchingDefinitions = EVENT_DEFINITIONS.filter((definition) => {
+    if (definition.key === 'pettit-day') {
+      const { month, day } = getPettitBirthdayMonthDay(state.createdAt);
+      return isSameUtcDay(date, month, day);
+    }
+
+    return definition.kind !== 'legendary' && definition.match(date, state.seasonalProgress);
+  });
 
   return matchingDefinitions[0] ?? null;
 };
@@ -1381,12 +1387,12 @@ export const syncSeasonalState = (
     activeEvent: definition
       ? {
           key: definition.key,
-          title: definition.title,
-          kind: definition.kind,
-          timingLabel: definition.timingLabel,
-          flavorText: definition.flavorText,
-          accentColor: definition.accentColor,
-        }
+        title: definition.title,
+        kind: definition.kind,
+        timingLabel: definition.timingLabel,
+        flavorText: personalizePettitText(nextState, definition.flavorText),
+        accentColor: definition.accentColor,
+      }
       : null,
     changed,
   };

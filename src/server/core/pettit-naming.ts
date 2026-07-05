@@ -7,8 +7,14 @@ import type {
   PettitLandmark,
   PettitNameSubmission,
   PettitState,
+  PettitStats,
 } from '../../shared/pettit';
 import { canonicalizeGiftId, getGiftById } from './pettit-gifts';
+import {
+  canReceiveCommunityName,
+  deriveStarterPettitName,
+  PETTIT_NAMING_TARGET_ID,
+} from './pettit-identity';
 
 type LandmarkDefinition = {
   id: string;
@@ -107,13 +113,27 @@ export const buildNamingTargetKey = (targetType: NamingTargetType, targetId: str
 const parseNamingTargetKey = (targetKey: string): { targetType: NamingTargetType; targetId: string } => {
   const [targetType, ...targetIdParts] = targetKey.split(':');
 
-  if ((targetType !== 'gift' && targetType !== 'landmark') || targetIdParts.length === 0) {
+  if ((targetType !== 'gift' && targetType !== 'landmark' && targetType !== 'pettit') || targetIdParts.length === 0) {
     throw new Error('INVALID_NAMING_TARGET');
   }
 
   return {
     targetType,
     targetId: targetIdParts.join(':'),
+  };
+};
+
+const getPettitTarget = (state: PettitState, resolvedEncounterCount: number): NamingTarget | null => {
+  if (!canReceiveCommunityName(state, resolvedEncounterCount)) {
+    return null;
+  }
+
+  return {
+    targetType: 'pettit',
+    targetId: PETTIT_NAMING_TARGET_ID,
+    baseName: state.name,
+    description: 'The shared little creature the whole subreddit has been raising together.',
+    discoveredAt: state.createdAt,
   };
 };
 
@@ -168,7 +188,16 @@ const getLandmarkTarget = (landmark: PettitLandmark): NamingTarget | null => {
   };
 };
 
-const getNamingTarget = (state: PettitState, targetType: NamingTargetType, targetId: string): NamingTarget | null => {
+const getNamingTarget = (
+  state: PettitState,
+  targetType: NamingTargetType,
+  targetId: string,
+  resolvedEncounterCount: number
+): NamingTarget | null => {
+  if (targetType === 'pettit') {
+    return targetId === PETTIT_NAMING_TARGET_ID ? getPettitTarget(state, resolvedEncounterCount) : null;
+  }
+
   if (targetType === 'gift') {
     const canonicalTargetId = canonicalizeGiftId(targetId);
     const item = state.inventory.find(
@@ -183,12 +212,16 @@ const getNamingTarget = (state: PettitState, targetType: NamingTargetType, targe
 
 export const getPendingNamingTargets = (
   state: PettitState,
-  submissionMap: NamingSubmissionMap
+  submissionMap: NamingSubmissionMap,
+  resolvedEncounterCount: number
 ): PendingNamingTarget[] => {
   const targets = [
+    getPettitTarget(state, resolvedEncounterCount),
     ...state.inventory.map((item) => getGiftTarget(item)).filter((target): target is NamingTarget => target !== null),
     ...state.landmarks.map((landmark) => getLandmarkTarget(landmark)).filter((target): target is NamingTarget => target !== null),
-  ].sort(sortByDiscovery);
+  ]
+    .filter((target): target is NamingTarget => target !== null)
+    .sort(sortByDiscovery);
 
   return targets.map((target) => ({
     targetType: target.targetType,
@@ -220,7 +253,20 @@ export const getCanonNames = (state: PettitState): CanonNameRecord[] => {
       description: landmark.description,
     }));
 
-  return [...landmarkNames, ...inventoryNames];
+  const pettitName =
+    state.nameOrigin === 'community' && state.pettitNamingFinalizedAt
+      ? [
+          {
+            targetType: 'pettit' as const,
+            targetId: PETTIT_NAMING_TARGET_ID,
+            baseName: deriveStarterPettitName(state.id.replace(/^pettit-/, '')),
+            canonName: state.name,
+            description: 'The permanent community-chosen name for this subreddit’s Pettit.',
+          },
+        ]
+      : [];
+
+  return [...pettitName, ...landmarkNames, ...inventoryNames];
 };
 
 export const discoverLandmark = (state: PettitState, landmarkId: string | undefined): PettitState => {
@@ -247,7 +293,8 @@ export const isNamingEncounterTemplateId = (templateId: string): boolean => {
 export const buildNamingEncounterTemplate = (
   targetType: NamingTargetType,
   targetId: string,
-  candidateNames: readonly string[]
+  candidateNames: readonly string[],
+  baseNameOverride?: string
 ): EncounterTemplate => {
   const target =
     targetType === 'gift'
@@ -262,6 +309,16 @@ export const buildNamingEncounterTemplate = (
           };
         })()
       : (() => {
+          if (targetType === 'pettit') {
+            return {
+              targetType: 'pettit' as const,
+              targetId,
+              baseName: 'Pettit',
+              description: 'The shared creature the community is raising together.',
+              discoveredAt: '',
+            };
+          }
+
           const landmark = getLandmarkDefinition(targetId);
           return {
             targetType: 'landmark' as const,
@@ -272,10 +329,13 @@ export const buildNamingEncounterTemplate = (
           };
         })();
 
-  const title = `Choose A Name For ${target.baseName}`;
+  const displayBaseName = baseNameOverride ?? target.baseName;
+  const title = `Choose A Name For ${displayBaseName}`;
   const description =
     targetType === 'gift'
       ? "The community has adopted this keepsake. Which name should become part of Pettit's world?"
+      : targetType === 'pettit'
+        ? 'The community has raised this creature together. Which name should become part of its permanent story?'
       : "This place has become part of Pettit's story. Which name should the community make canon?";
 
   return {
@@ -292,12 +352,20 @@ export const buildNamingEncounterTemplate = (
       resultText:
         targetType === 'gift'
           ? `The community decided that ${target.baseName.toLowerCase()} should be known as "${candidateName}" from now on.`
+          : targetType === 'pettit'
+            ? `The community chose "${candidateName}" as the name this Pettit will carry from now on.`
           : `The community chose to call this place "${candidateName}", and the name settled into Pettit's world immediately.`,
       memoryTitle:
-        targetType === 'gift' ? `Named ${target.baseName} "${candidateName}"` : `Named ${candidateName}`,
+        targetType === 'gift'
+          ? `Named ${target.baseName} "${candidateName}"`
+          : targetType === 'pettit'
+            ? `Named Pettit "${candidateName}"`
+            : `Named ${candidateName}`,
       memoryDescription:
         targetType === 'gift'
           ? `The community gave Pettit's ${target.baseName.toLowerCase()} a permanent name: "${candidateName}".`
+          : targetType === 'pettit'
+            ? `The community chose "${candidateName}" as Pettit's permanent canon name.`
           : `The community turned ${target.baseName.toLowerCase()} into a remembered place called "${candidateName}".`,
       memoryType: 'community',
       importance: 4,
@@ -320,7 +388,7 @@ export const getNamingEncounterTemplateById = (templateId: string): EncounterTem
   const encoded = stripNamingPrefix(templateId);
   const [targetTypeValue, targetId, encodedNames] = encoded.split(':');
 
-  if ((targetTypeValue !== 'gift' && targetTypeValue !== 'landmark') || !targetId || !encodedNames) {
+  if ((targetTypeValue !== 'gift' && targetTypeValue !== 'landmark' && targetTypeValue !== 'pettit') || !targetId || !encodedNames) {
     throw new Error(`Malformed naming encounter template: ${templateId}`);
   }
 
@@ -334,13 +402,14 @@ export const getNamingEncounterTemplateById = (templateId: string): EncounterTem
 
 export const selectReadyNamingEncounterTemplate = (
   state: PettitState,
-  submissionMap: NamingSubmissionMap
+  submissionMap: NamingSubmissionMap,
+  resolvedEncounterCount: number
 ): EncounterTemplate | null => {
-  const pendingTargets = getPendingNamingTargets(state, submissionMap)
+  const pendingTargets = getPendingNamingTargets(state, submissionMap, resolvedEncounterCount)
     .filter((target) => target.submissionCount >= 3)
     .sort((left, right) => {
-      const leftTarget = getNamingTarget(state, left.targetType, left.targetId);
-      const rightTarget = getNamingTarget(state, right.targetType, right.targetId);
+      const leftTarget = getNamingTarget(state, left.targetType, left.targetId, resolvedEncounterCount);
+      const rightTarget = getNamingTarget(state, right.targetType, right.targetId, resolvedEncounterCount);
 
       if (!leftTarget || !rightTarget) {
         return 0;
@@ -357,18 +426,19 @@ export const selectReadyNamingEncounterTemplate = (
 
   const targetKey = buildNamingTargetKey(nextTarget.targetType, nextTarget.targetId);
   const candidateNames = (submissionMap[targetKey] ?? []).slice(0, 3).map((submission) => submission.proposedName);
-  return buildNamingEncounterTemplate(nextTarget.targetType, nextTarget.targetId, candidateNames);
+  return buildNamingEncounterTemplate(nextTarget.targetType, nextTarget.targetId, candidateNames, nextTarget.baseName);
 };
 
 export const submitNameForTarget = (
   state: PettitState,
+  stats: PettitStats,
   submissionMap: NamingSubmissionMap,
   username: string,
   targetKey: string,
   proposedName: string
 ): NamingSubmissionMap => {
   const { targetType, targetId } = parseNamingTargetKey(targetKey);
-  const target = getNamingTarget(state, targetType, targetId);
+  const target = getNamingTarget(state, targetType, targetId, stats.resolvedEncounterCount);
 
   if (!target) {
     throw new Error('INVALID_NAMING_TARGET');
@@ -420,6 +490,15 @@ export const applyCanonName = (
   targetId: string,
   canonName: string
 ): PettitState => {
+  if (targetType === 'pettit') {
+    return {
+      ...state,
+      name: canonName,
+      nameOrigin: 'community',
+      pettitNamingFinalizedAt: new Date().toISOString(),
+    };
+  }
+
   if (targetType === 'gift') {
     return {
       ...state,
@@ -496,9 +575,10 @@ export const personalizeEncounterText = (
 
 export const getPendingNamingTargetOptions = (
   state: PettitState,
-  submissionMap: NamingSubmissionMap
+  submissionMap: NamingSubmissionMap,
+  resolvedEncounterCount: number
 ): Array<{ label: string; value: string }> => {
-  return getPendingNamingTargets(state, submissionMap).map((target) => ({
+  return getPendingNamingTargets(state, submissionMap, resolvedEncounterCount).map((target) => ({
     label: `${target.baseName} (${target.submissionCount}/3)`,
     value: buildNamingTargetKey(target.targetType, target.targetId),
   }));
