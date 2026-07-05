@@ -28,7 +28,7 @@
       },
       {
         "label": "Submit a community name",
-        "description": "Help name Pettit's keepsakes and places",
+        "description": "Help name Pettit, its keepsakes, and its places",
         "location": "subreddit",
         "endpoint": "/internal/menu/name-form"
       },
