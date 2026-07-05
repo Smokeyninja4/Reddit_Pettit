@@ -1370,7 +1370,7 @@ export class Game extends Scene {
     this.applyMoodBadgeStyle(pettit.mood);
     this.futureSlotText.setText(
       pettit.canReceiveCommunityName
-        ? `Raised by the community.\n${pettit.birthdaySummary} - ready for a true name.`
+        ? `Raised by the community.\n${pettit.birthdaySummary} - ready for a true name.\nUse the subreddit menu to submit Pettit name ideas.`
         : `Raised by the community.\n${pettit.birthdaySummary}.`
     );
 
@@ -1479,6 +1479,11 @@ export class Game extends Scene {
           .map((target) => `${target.baseName}\n${target.submissionCount}/3 names submitted`)
           .join('\n\n')
       );
+      if (pettit.canReceiveCommunityName) {
+        this.namesBodyText.setText(
+          `${this.namesBodyText.text}\n\nUse the subreddit menu to submit Pettit name ideas.`
+        );
+      }
     } else {
       this.namesBodyText.setText(`Canon names will appear here once the community starts naming keepsakes, places, and ${pettit.name}.`);
     }
