@@ -320,3 +320,21 @@ export const saveGiftIdeaSubmissions = async (
   const keys = buildPettitKeys(subredditName);
   await redis.set(keys.giftIdeaSubmissions, JSON.stringify(submissions));
 };
+
+export const resetPettitWorld = async (subredditName: string): Promise<void> => {
+  const keys = buildPettitKeys(subredditName);
+  const defaultState = createDefaultPettitState(subredditName);
+  const defaultEncounter = createEncounterInstance('encounter-cave', 1);
+  const defaultStats = createDefaultStats();
+
+  await Promise.all([
+    redis.set(keys.state, JSON.stringify(defaultState)),
+    redis.set(keys.activeEncounter, JSON.stringify(defaultEncounter)),
+    redis.set(keys.voters, JSON.stringify({})),
+    redis.set(keys.memories, JSON.stringify([])),
+    redis.set(keys.journals, JSON.stringify([])),
+    redis.set(keys.stats, JSON.stringify(defaultStats)),
+    redis.set(keys.namingSubmissions, JSON.stringify({})),
+    redis.set(keys.giftIdeaSubmissions, JSON.stringify([])),
+  ]);
+};

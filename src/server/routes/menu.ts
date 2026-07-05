@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import type { UiResponse } from '@devvit/web/shared';
 import { context } from '@devvit/web/server';
 import { createPost } from '../core/post';
-import { getGiftIdeaSubmissions, getNameSubmissions, getOrCreateState } from '../core/pettit-store';
+import { getGiftIdeaSubmissions, getNameSubmissions, getOrCreateState, resetPettitWorld } from '../core/pettit-store';
 import { buildPendingCommunityGiftBallot } from '../core/pettit-contributions';
 import { getPendingNamingTargetOptions } from '../core/pettit-naming';
 
@@ -190,6 +190,42 @@ menu.post('/gift-form', async (c) => {
     return c.json<UiResponse>(
       {
         showToast: 'Failed to open the community gift form',
+      },
+      400
+    );
+  }
+});
+
+menu.post('/reset-world', async (c) => {
+  const subredditName = context.subredditName;
+
+  try {
+    if (!subredditName) {
+      return c.json<UiResponse>(
+        {
+          showToast: 'No subreddit context was available',
+        },
+        400
+      );
+    }
+
+    // TODO: Remove or lock behind a stricter dev/admin gate before a real public launch.
+    await resetPettitWorld(subredditName);
+
+    return c.json<UiResponse>(
+      {
+        showToast: {
+          text: 'Pettit was reset for this subreddit. Refresh the post to start from a fresh world.',
+          appearance: 'success',
+        },
+      },
+      200
+    );
+  } catch (error) {
+    console.error(`Error resetting Pettit world: ${error}`);
+    return c.json<UiResponse>(
+      {
+        showToast: 'Failed to reset Pettit for this subreddit',
       },
       400
     );

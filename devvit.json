@@ -37,6 +37,13 @@
         "description": "Propose a new keepsake for Pettit",
         "location": "subreddit",
         "endpoint": "/internal/menu/gift-form"
+      },
+      {
+        "label": "Reset Pettit (Dev Only)",
+        "description": "Reset this subreddit's Pettit world for playtesting",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/reset-world"
       }
     ]
   },

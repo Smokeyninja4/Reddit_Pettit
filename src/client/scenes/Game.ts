@@ -51,6 +51,7 @@ const clamp = (value: number, min: number, max: number): number => {
 
 export class Game extends Scene {
   private static readonly optionIdDataKey = 'optionId';
+  private static readonly optionBaseColorDataKey = 'optionBaseColor';
   private camera!: Phaser.Cameras.Scene2D.Camera;
   private background!: Phaser.GameObjects.Image;
   private rootPanel!: Phaser.GameObjects.Rectangle;
@@ -1231,7 +1232,14 @@ export class Game extends Scene {
         createdButton.setOrigin(0, 0);
         createdButton.setInteractive({ useHandCursor: true });
         createdButton.on('pointerover', () => {
-          if (!this.pettitState?.activeEncounter.hasVoted) {
+          const currentOptionId = createdButton.getData(Game.optionIdDataKey) as string | undefined;
+          const activeEncounter = this.pettitState?.activeEncounter;
+
+          if (!currentOptionId || !activeEncounter || activeEncounter.hasVoted) {
+            return;
+          }
+
+          if (activeEncounter.selectedOptionId !== currentOptionId) {
             createdButton.setStyle({ backgroundColor: '#468b53' });
           }
         });
@@ -1428,9 +1436,10 @@ export class Game extends Scene {
       }
 
       button.setData(Game.optionIdDataKey, option.id);
+      button.setData(Game.optionBaseColorDataKey, palette[index] ?? '#53647a');
       button.setText(option.label);
       button.setStyle({
-        backgroundColor: palette[index] ?? '#53647a',
+        backgroundColor: (button.getData(Game.optionBaseColorDataKey) as string | undefined) ?? '#53647a',
       });
       this.applyOptionState(button, option.id);
     });
@@ -1574,7 +1583,7 @@ export class Game extends Scene {
 
     const isSelected = encounter.selectedOptionId === optionId;
     const isLocked = encounter.hasVoted;
-    const baseColor = (button.style.backgroundColor as string | undefined) ?? '#53647a';
+    const baseColor = (button.getData(Game.optionBaseColorDataKey) as string | undefined) ?? '#53647a';
 
     if (isSelected) {
       button.setStyle({
