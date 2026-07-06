@@ -919,10 +919,10 @@ export class Game extends Scene {
 
     const contentX = metrics.frameLeft + metrics.padding;
     const buttonWidth = Math.floor((metrics.frameWidth - metrics.padding * 2 - metrics.gap * 2) / 3);
-    const buttonY = metrics.frameTop + metrics.frameHeight - metrics.padding - 48;
+    const buttonY = metrics.frameTop + metrics.frameHeight - metrics.padding - 42;
     this.mobileNavButtons.forEach((button, index) => {
       button.setPosition(contentX + index * (buttonWidth + metrics.gap), buttonY);
-      button.setFixedSize(buttonWidth, 48);
+      button.setFixedSize(buttonWidth, 42);
       button.setAlign('center');
     });
   }
@@ -1029,35 +1029,34 @@ export class Game extends Scene {
   private layoutMobileDashboard(metrics: LayoutMetrics): void {
     const contentX = metrics.frameLeft + metrics.padding;
     const contentWidth = metrics.leftColumnWidth;
-    const navHeight = 44;
+    const navHeight = 42;
     const navTop = metrics.frameTop + metrics.frameHeight - metrics.padding - navHeight;
     const bottomLimit = navTop - metrics.gap;
     const mobileContentTop = this.summaryText.y + this.summaryText.height + metrics.gap;
-    let gap = Math.max(8, metrics.gap - 4);
-    let traitHeight = 68;
-    let creatureHeight = clamp(Math.round(metrics.frameHeight * 0.12), 78, 104);
-    let actionHeight = clamp(this.measureActionPanelHeight(metrics, contentWidth), 188, 252);
-    let resolveHeight = clamp(this.measureResolvePanelHeight(metrics, contentWidth), 72, 104);
+    let gap = Math.max(6, metrics.gap - 6);
+    let traitHeight = 56;
+    let creatureHeight = 82;
+    let resolveHeight = 70;
     const availableHeight = bottomLimit - mobileContentTop;
-    let totalHeight = creatureHeight + actionHeight + resolveHeight + traitHeight + gap * 3;
+    let actionHeight = availableHeight - creatureHeight - resolveHeight - traitHeight - gap * 3;
 
-    if (totalHeight > availableHeight) {
-      const overflow = totalHeight - availableHeight;
-      creatureHeight = Math.max(72, creatureHeight - Math.ceil(overflow * 0.28));
-      resolveHeight = Math.max(66, resolveHeight - Math.ceil(overflow * 0.14));
-      traitHeight = Math.max(58, traitHeight - Math.ceil(overflow * 0.16));
-      gap = Math.max(6, gap - Math.ceil(overflow * 0.04));
-      totalHeight = creatureHeight + actionHeight + resolveHeight + traitHeight + gap * 3;
+    if (actionHeight < 196) {
+      creatureHeight = 74;
+      traitHeight = 52;
+      resolveHeight = 66;
+      gap = 6;
+      actionHeight = availableHeight - creatureHeight - resolveHeight - traitHeight - gap * 3;
     }
 
-    if (totalHeight > availableHeight) {
-      actionHeight = Math.max(170, actionHeight - (totalHeight - availableHeight));
-      totalHeight = creatureHeight + actionHeight + resolveHeight + traitHeight + gap * 3;
+    if (actionHeight < 172) {
+      creatureHeight = 68;
+      traitHeight = 48;
+      resolveHeight = 62;
+      gap = 5;
+      actionHeight = availableHeight - creatureHeight - resolveHeight - traitHeight - gap * 3;
     }
 
-    if (totalHeight > availableHeight) {
-      creatureHeight = Math.max(68, creatureHeight - (totalHeight - availableHeight));
-    }
+    actionHeight = Math.max(164, actionHeight);
 
     let currentTop = mobileContentTop;
 
@@ -1086,11 +1085,10 @@ export class Game extends Scene {
       height: resolveHeight,
     };
     this.layoutResolveArea(metrics, resolveFrame);
-    currentTop += resolveHeight + gap;
 
     const traitFrame: PanelFrame = {
       x: contentX,
-      y: Math.max(Math.min(currentTop, bottomLimit - traitHeight), resolveFrame.y + resolveFrame.height + gap),
+      y: bottomLimit - traitHeight,
       width: contentWidth,
       height: traitHeight,
     };
@@ -1292,23 +1290,24 @@ export class Game extends Scene {
     const buttonCount = Math.max(this.optionButtons.length, 1);
     const useSingleRow = metrics.mode === 'desktop' && frame.width >= 720;
     const columns = useSingleRow ? buttonCount : Math.min(2, buttonCount);
+    const buttonGap = metrics.mode === 'desktop' ? metrics.buttonGap : Math.max(8, metrics.buttonGap - 4);
 
     this.actionTitleText.setPosition(innerX, innerY + 4);
     this.actionTitleText.setWordWrapWidth(innerWidth);
-    this.voteSummaryText.setPosition(innerX, innerY + this.actionTitleText.height + (metrics.mode === 'desktop' ? 20 : 14));
+    this.voteSummaryText.setPosition(innerX, innerY + this.actionTitleText.height + (metrics.mode === 'desktop' ? 20 : 12));
     this.voteSummaryText.setWordWrapWidth(innerWidth);
 
-    const buttonTop = this.voteSummaryText.y + this.voteSummaryText.height + (metrics.mode === 'desktop' ? 24 : 18);
-    const buttonWidth = Math.floor((innerWidth - metrics.buttonGap * (columns - 1)) / columns);
+    const buttonTop = this.voteSummaryText.y + this.voteSummaryText.height + (metrics.mode === 'desktop' ? 24 : 14);
+    const buttonWidth = Math.floor((innerWidth - buttonGap * (columns - 1)) / columns);
 
     this.optionButtons.forEach((button, index) => {
       const column = useSingleRow ? index : index % columns;
       const row = useSingleRow ? 0 : Math.floor(index / columns);
-      const buttonX = innerX + column * (buttonWidth + metrics.buttonGap);
-      const buttonY = buttonTop + row * (metrics.actionButtonHeight + metrics.buttonGap);
+      const buttonX = innerX + column * (buttonWidth + buttonGap);
+      const buttonY = buttonTop + row * (metrics.actionButtonHeight + buttonGap);
       button.setPosition(buttonX, buttonY);
       button.setFixedSize(buttonWidth, metrics.actionButtonHeight);
-      button.setWordWrapWidth(button.width - 24);
+      button.setWordWrapWidth(button.width - 16);
     });
   }
 
@@ -1322,13 +1321,13 @@ export class Game extends Scene {
       return;
     }
 
-    const labelWidth = clamp(Math.round(frame.width * (metrics.mode === 'desktop' ? 0.24 : 0.2)), 58, 100);
+    const labelWidth = clamp(Math.round(frame.width * (metrics.mode === 'desktop' ? 0.24 : 0.18)), 52, 100);
     const valueWidth = 34;
     const barTrackWidth = frame.width - metrics.cardInsetX * 2 - labelWidth - valueWidth - 14;
-    const startY = metrics.mode === 'desktop' ? this.traitPanelTitle.y + this.traitPanelTitle.height + 16 : frame.y + metrics.cardInsetY + 8;
+    const startY = metrics.mode === 'desktop' ? this.traitPanelTitle.y + this.traitPanelTitle.height + 16 : frame.y + metrics.cardInsetY + 4;
     const rowGap =
-      metrics.mode === 'desktop' ? clamp(Math.round(frame.height * 0.16), 26, 34) : 18;
-    const trackHeight = metrics.mode === 'desktop' ? 10 : 6;
+      metrics.mode === 'desktop' ? clamp(Math.round(frame.height * 0.16), 26, 34) : 12;
+    const trackHeight = metrics.mode === 'desktop' ? 10 : 5;
     const barKeys: TraitKey[] = ['curiosity', 'chaos', 'trust', 'courage'];
 
     barKeys.forEach((traitKey, index) => {
