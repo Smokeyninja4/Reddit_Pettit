@@ -13,7 +13,8 @@ import type { ResolveVoteResponse } from '../../shared/api';
 
 const VIEWPORT_REFRESH_EVENT = 'devvit:viewport-refresh';
 
-type LayoutMode = 'dashboard' | 'stacked';
+type LayoutMode = 'desktop' | 'mobile';
+type OverlayView = 'journal' | 'inventory' | 'stats';
 
 type LayoutMetrics = {
   width: number;
@@ -139,6 +140,12 @@ export class Game extends Scene {
   private hallOverlayPageText!: Phaser.GameObjects.Text;
   private hallOverlayPrevButton!: Phaser.GameObjects.Text;
   private hallOverlayNextButton!: Phaser.GameObjects.Text;
+  private navRailPanel!: Phaser.GameObjects.Rectangle;
+  private navBrandText!: Phaser.GameObjects.Text;
+  private navBrandSubText!: Phaser.GameObjects.Text;
+  private desktopNavButtons: Phaser.GameObjects.Text[] = [];
+  private mobileNavButtons: Phaser.GameObjects.Text[] = [];
+  private overlayInventoryButtons: Phaser.GameObjects.Text[] = [];
   private optionButtons: Phaser.GameObjects.Text[] = [];
   private traitBars: Record<TraitKey, TraitBarVisual> | null = null;
   private pettitState: PettitViewModel | null = null;
@@ -146,6 +153,8 @@ export class Game extends Scene {
   private hallDetail: HallOfMemoriesDetailView | null = null;
   private hallArchivePage = 0;
   private hallOverlayVisible = false;
+  private activeOverlayView: OverlayView | null = null;
+  private selectedOverlayGiftId: string | null = null;
   private creatureSnapshotTextureKey: string | null = null;
   private creatureSnapshotSignature: string | null = null;
   private creatureSnapshotLoadVersion = 0;
@@ -184,6 +193,17 @@ export class Game extends Scene {
       fontFamily: 'Trebuchet MS',
       fontSize: '16px',
       color: '#b8c7d3',
+    });
+    this.navRailPanel = this.createPanel(0x111821, 0x263846);
+    this.navBrandText = this.add.text(0, 0, 'PETTIT', {
+      fontFamily: 'Georgia',
+      fontSize: '24px',
+      color: '#fff2cf',
+    });
+    this.navBrandSubText = this.add.text(0, 0, 'Community Creature', {
+      fontFamily: 'Trebuchet MS',
+      fontSize: '14px',
+      color: '#d7e7f0',
     });
 
     this.creaturePanel = this.createPanel(0x17202a, 0x324759);
@@ -496,6 +516,83 @@ export class Game extends Scene {
       .setDepth(42)
       .setInteractive({ useHandCursor: true })
       .on('pointerdown', () => this.changeHallArchivePage(1));
+
+    const desktopNavConfig: Array<{ label: string; view: OverlayView | null; color: string }> = [
+      { label: 'Main View', view: null, color: '#6f4aa5' },
+      { label: 'Journal', view: 'journal', color: '#8d6a3f' },
+      { label: 'Inventory', view: 'inventory', color: '#7c5b39' },
+      { label: 'Stats', view: 'stats', color: '#4b6a9d' },
+    ];
+    desktopNavConfig.forEach(({ label, view, color }) => {
+      const button = this.add
+        .text(0, 0, label, {
+          fontFamily: 'Trebuchet MS',
+          fontSize: '16px',
+          color: '#f7f3e8',
+          backgroundColor: color,
+          padding: { x: 16, y: 12 },
+        })
+        .setOrigin(0, 0)
+        .setDepth(5)
+        .setInteractive({ useHandCursor: true })
+        .on('pointerdown', () => {
+          if (view) {
+            void this.openOverlay(view);
+          } else {
+            this.closeHallOverlay();
+          }
+        });
+      this.desktopNavButtons.push(button);
+    });
+
+    const mobileNavConfig: Array<{ label: string; view: OverlayView; color: string }> = [
+      { label: 'Journal', view: 'journal', color: '#8d6a3f' },
+      { label: 'Inventory', view: 'inventory', color: '#7c5b39' },
+      { label: 'Stats', view: 'stats', color: '#4b6a9d' },
+    ];
+    mobileNavConfig.forEach(({ label, view, color }) => {
+      const button = this.add
+        .text(0, 0, label, {
+          fontFamily: 'Trebuchet MS',
+          fontSize: '15px',
+          color: '#f7f3e8',
+          backgroundColor: color,
+          padding: { x: 14, y: 10 },
+          align: 'center',
+        })
+        .setOrigin(0, 0)
+        .setDepth(5)
+        .setInteractive({ useHandCursor: true })
+        .on('pointerdown', () => {
+          void this.openOverlay(view);
+        });
+      this.mobileNavButtons.push(button);
+    });
+
+    for (let index = 0; index < 8; index += 1) {
+      const itemButton = this.add
+        .text(0, 0, '', {
+          fontFamily: 'Trebuchet MS',
+          fontSize: '14px',
+          color: '#f7f3e8',
+          backgroundColor: '#1e2832',
+          padding: { x: 10, y: 10 },
+          align: 'center',
+        })
+        .setOrigin(0, 0)
+        .setDepth(42)
+        .setVisible(false)
+        .setInteractive({ useHandCursor: true })
+        .on('pointerdown', () => {
+          const giftId = itemButton.getData('giftId') as string | undefined;
+          if (giftId) {
+            this.selectedOverlayGiftId = giftId;
+            this.renderHallOverlayContent();
+            this.updateLayout(this.scale.width, this.scale.height);
+          }
+        });
+      this.overlayInventoryButtons.push(itemButton);
+    }
     this.setHallOverlayVisible(false);
 
     this.createTraitBars();
@@ -546,6 +643,79 @@ export class Game extends Scene {
     };
   }
 
+  private setObjectVisibility(
+    objects: Array<Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Visible>,
+    visible: boolean
+  ): void {
+    objects.forEach((object) => {
+      object.setVisible(visible);
+      if ('disableInteractive' in object && typeof object.disableInteractive === 'function' && !visible) {
+        object.disableInteractive();
+      }
+    });
+  }
+
+  private setMainLayoutVisibility(mode: LayoutMode): void {
+    const baseVisibleObjects: Array<Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Visible> = [
+      this.creaturePanel,
+      this.creatureArtFrame,
+      this.creatureSnapshot,
+      this.creatureCaptionText,
+      this.moodBadgeText,
+      this.futureSlotText,
+      this.actionPanel,
+      this.actionTitleText,
+      this.voteSummaryText,
+      this.resolvePanel,
+      this.statusText,
+      this.traitFeedbackText,
+      this.resolveButton,
+      this.traitPanel,
+      this.traitPanelTitle,
+    ];
+    this.setObjectVisibility(baseVisibleObjects, true);
+    this.setObjectVisibility(this.optionButtons, true);
+
+    const desktopOnly: Array<Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Visible> = [
+      this.topActionPanel,
+      this.topActionTitle,
+      this.topActionBody,
+      this.memoryPanel,
+      this.memoryTitleText,
+      this.memoryBodyText,
+    ];
+    const alwaysOverlayOnly: Array<Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Visible> = [
+      this.seasonalPanel,
+      this.seasonalTitleText,
+      this.seasonalBodyText,
+      this.achievementPanel,
+      this.achievementTitleText,
+      this.achievementBodyText,
+      this.journalPanel,
+      this.journalTitleText,
+      this.journalBodyText,
+      this.hallPanel,
+      this.hallTitleText,
+      this.hallBodyText,
+      this.hallButton,
+      this.namesPanel,
+      this.namesTitleText,
+      this.namesBodyText,
+      this.inventoryPanel,
+      this.inventoryTitleText,
+      this.inventoryBodyText,
+    ];
+
+    this.setObjectVisibility(desktopOnly, mode === 'desktop');
+    this.setObjectVisibility(alwaysOverlayOnly, false);
+
+    if (this.traitBars) {
+      Object.values(this.traitBars).forEach((bar) => {
+        this.setObjectVisibility([bar.label, bar.track, bar.fill, bar.value], true);
+      });
+    }
+  }
+
   private handleViewportRefresh(): void {
     if (this.pettitState) {
       this.renderState();
@@ -556,19 +726,22 @@ export class Game extends Scene {
   }
 
   private getLayoutMetrics(width: number, height: number): LayoutMetrics {
-    const mode: LayoutMode = width >= 1060 && height >= 720 ? 'dashboard' : 'stacked';
-    const scaleFactor = Math.min(Math.min(width / 1360, height / 980), 1);
-    const padding = Math.round((mode === 'dashboard' ? 28 : 20) * scaleFactor);
-    const gap = Math.round((mode === 'dashboard' ? 27 : 18) * scaleFactor);
-    const frameWidth = Math.min(width - padding * 2, mode === 'dashboard' ? 1220 : 860);
+    const mode: LayoutMode = width >= 620 && height >= 430 ? 'desktop' : 'mobile';
+    const scaleFactor =
+      mode === 'desktop'
+        ? clamp(Math.min(width / 1280, height / 900), 0.72, 1)
+        : clamp(Math.min(width / 430, height / 820), 0.92, 1);
+    const padding = Math.round((mode === 'desktop' ? 24 : 18) * scaleFactor);
+    const gap = Math.round((mode === 'desktop' ? 22 : 16) * scaleFactor);
+    const frameWidth = Math.min(width - padding * 2, mode === 'desktop' ? 1320 : 860);
     const frameHeight = Math.min(height - padding * 2, 900);
     const frameLeft = (width - frameWidth) / 2;
     const frameTop = (height - frameHeight) / 2;
-    const contentTop = frameTop + 98 * scaleFactor;
+    const contentTop = frameTop + (mode === 'desktop' ? 98 : 82) * scaleFactor;
     const contentBottom = frameTop + frameHeight - padding;
-    const leftColumnWidth = mode === 'dashboard' ? Math.round(frameWidth * 0.64) : frameWidth - padding * 2;
+    const leftColumnWidth = mode === 'desktop' ? Math.round(frameWidth * 0.54) : frameWidth - padding * 2;
     const rightColumnWidth =
-      mode === 'dashboard'
+      mode === 'desktop'
         ? frameWidth - padding * 2 - leftColumnWidth - gap
         : frameWidth - padding * 2;
 
@@ -584,10 +757,10 @@ export class Game extends Scene {
       gap,
       panelRadius: 18,
       titleGap: Math.round(10 * scaleFactor),
-      cardInsetX: Math.round(22 * scaleFactor),
-      cardInsetY: Math.round(20 * scaleFactor),
+      cardInsetX: Math.round(18 * scaleFactor),
+      cardInsetY: Math.round(18 * scaleFactor),
       buttonGap: Math.round(14 * scaleFactor),
-      actionButtonHeight: Math.round((mode === 'dashboard' ? 62 : 52) * scaleFactor),
+      actionButtonHeight: Math.round((mode === 'desktop' ? 58 : 42) * scaleFactor),
       scaleFactor,
       contentTop,
       contentBottom,
@@ -597,20 +770,22 @@ export class Game extends Scene {
   }
 
   private updateTextStyles(metrics: LayoutMetrics): void {
-    const compact = metrics.mode === 'dashboard' ? 1 : 0.9;
+    const compact = metrics.mode === 'desktop' ? 1 : 0.9;
     const scale = metrics.scaleFactor * compact;
 
-    this.titleText.setFontSize(Math.round(38 * scale));
-    this.subtitleText.setFontSize(Math.round(15 * scale));
-    this.summaryText.setFontSize(Math.round(16 * scale));
-    this.creatureCaptionText.setFontSize(Math.round(30 * scale));
-    this.moodBadgeText.setFontSize(Math.round(13 * scale));
+    this.titleText.setFontSize(Math.round((metrics.mode === 'desktop' ? 38 : 24) * scale));
+    this.subtitleText.setFontSize(Math.round((metrics.mode === 'desktop' ? 15 : 12) * scale));
+    this.summaryText.setFontSize(Math.round((metrics.mode === 'desktop' ? 16 : 11) * scale));
+    this.navBrandText.setFontSize(Math.round(26 * scale));
+    this.navBrandSubText.setFontSize(Math.round(13 * scale));
+    this.creatureCaptionText.setFontSize(Math.round((metrics.mode === 'desktop' ? 30 : 18) * scale));
+    this.moodBadgeText.setFontSize(Math.round((metrics.mode === 'desktop' ? 13 : 11) * scale));
     this.futureSlotText.setFontSize(Math.round(13 * scale));
-    this.actionTitleText.setFontSize(Math.round(27 * scale));
-    this.voteSummaryText.setFontSize(Math.round(18 * scale));
+    this.actionTitleText.setFontSize(Math.round((metrics.mode === 'desktop' ? 27 : 20) * scale));
+    this.voteSummaryText.setFontSize(Math.round((metrics.mode === 'desktop' ? 18 : 13) * scale));
     this.traitPanelTitle.setFontSize(Math.round(21 * scale));
     this.topActionTitle.setFontSize(Math.round(18 * scale));
-    this.topActionBody.setFontSize(Math.round(14 * scale));
+    this.topActionBody.setFontSize(Math.round(13 * scale));
     this.seasonalTitleText.setFontSize(Math.round(18 * scale));
     this.seasonalBodyText.setFontSize(Math.round(13 * scale));
     this.achievementTitleText.setFontSize(Math.round(18 * scale));
@@ -626,9 +801,9 @@ export class Game extends Scene {
     this.namesBodyText.setFontSize(Math.round(13 * scale));
     this.inventoryTitleText.setFontSize(Math.round(19 * scale));
     this.inventoryBodyText.setFontSize(Math.round(13 * scale));
-    this.statusText.setFontSize(Math.round(14 * scale));
-    this.traitFeedbackText.setFontSize(Math.round(13 * scale));
-    this.resolveButton.setFontSize(Math.round(17 * scale));
+    this.statusText.setFontSize(Math.round((metrics.mode === 'desktop' ? 14 : 12) * scale));
+    this.traitFeedbackText.setFontSize(Math.round((metrics.mode === 'desktop' ? 13 : 11) * scale));
+    this.resolveButton.setFontSize(Math.round((metrics.mode === 'desktop' ? 17 : 14) * scale));
     this.hallOverlayTitleText.setFontSize(Math.round(26 * scale));
     this.hallOverlayCloseButton.setFontSize(Math.round(14 * scale));
     this.hallOverlayHighlightedTitleText.setFontSize(Math.round(18 * scale));
@@ -638,15 +813,18 @@ export class Game extends Scene {
     this.hallOverlayPageText.setFontSize(Math.round(13 * scale));
     this.hallOverlayPrevButton.setFontSize(Math.round(13 * scale));
     this.hallOverlayNextButton.setFontSize(Math.round(13 * scale));
+    this.desktopNavButtons.forEach((button) => button.setFontSize(Math.round(15 * scale)));
+    this.mobileNavButtons.forEach((button) => button.setFontSize(Math.round(12 * scale)));
+    this.overlayInventoryButtons.forEach((button) => button.setFontSize(Math.round(13 * scale)));
 
     this.optionButtons.forEach((button) => {
-      button.setFontSize(Math.round(18 * scale));
+      button.setFontSize(Math.round((metrics.mode === 'desktop' ? 18 : 14) * scale));
     });
 
     if (this.traitBars) {
       Object.values(this.traitBars).forEach((bar) => {
-        bar.label.setFontSize(Math.round(15 * scale));
-        bar.value.setFontSize(Math.round(13 * scale));
+        bar.label.setFontSize(Math.round((metrics.mode === 'desktop' ? 15 : 12) * scale));
+        bar.value.setFontSize(Math.round((metrics.mode === 'desktop' ? 13 : 11) * scale));
       });
     }
   }
@@ -669,47 +847,158 @@ export class Game extends Scene {
   private layoutDashboard(metrics: LayoutMetrics): void {
     this.rootPanel.setPosition(metrics.frameLeft, metrics.frameTop);
     this.rootPanel.setSize(metrics.frameWidth, metrics.frameHeight);
+    this.setMainLayoutVisibility(metrics.mode);
 
-    const headerLeft = metrics.frameLeft + metrics.padding;
+    const railWidth =
+      metrics.mode === 'desktop'
+        ? metrics.frameWidth < 980
+          ? clamp(Math.round(metrics.frameWidth * 0.11), 108, 128)
+          : clamp(Math.round(metrics.frameWidth * 0.14), 160, 200)
+        : 0;
+    const headerLeft = metrics.frameLeft + metrics.padding + railWidth + (metrics.mode === 'desktop' ? metrics.gap : 0);
     const headerTop = metrics.frameTop + metrics.padding;
 
     this.titleText.setPosition(headerLeft, headerTop);
-    this.subtitleText.setPosition(headerLeft + this.titleText.width + metrics.titleGap, headerTop + 7);
-    this.summaryText.setPosition(headerLeft, headerTop + this.titleText.height + 10);
-
-    if (metrics.mode === 'dashboard') {
-      this.layoutWideDashboard(metrics);
+    if (metrics.mode === 'desktop') {
+      this.subtitleText.setVisible(true);
+      this.subtitleText.setPosition(headerLeft + this.titleText.width + metrics.titleGap, headerTop + 7);
+      this.summaryText.setPosition(headerLeft, headerTop + this.titleText.height + 10);
     } else {
-      this.layoutStackedDashboard(metrics);
+      this.subtitleText.setVisible(false);
+      this.summaryText.setPosition(headerLeft, headerTop + this.titleText.height + 6);
+    }
+
+    this.layoutNavigation(metrics, railWidth);
+
+    if (metrics.mode === 'desktop') {
+      this.layoutDesktopDashboard(metrics, railWidth);
+    } else {
+      this.layoutMobileDashboard(metrics);
     }
   }
 
-  private layoutWideDashboard(metrics: LayoutMetrics): void {
-    const leftX = metrics.frameLeft + metrics.padding;
-    const rightX = leftX + metrics.leftColumnWidth + metrics.gap;
-    const top = metrics.contentTop;
-    const rightWidth = metrics.rightColumnWidth;
-    const leftWidth = metrics.leftColumnWidth;
-    const memoryHeight = clamp(Math.round(metrics.frameHeight * 0.18), 128, 180);
-    const topAreaHeight = metrics.contentBottom - top - metrics.gap - memoryHeight;
-    const creatureHeight = clamp(Math.round(topAreaHeight * 0.4), 188, 236);
-    const actionHeight = topAreaHeight - creatureHeight - metrics.gap;
-    const traitHeight = clamp(Math.round(topAreaHeight * 0.3), 150, 194);
-    const topActionHeight = clamp(Math.round(topAreaHeight * 0.1), 72, 86);
-    const seasonalHeight = clamp(Math.round(topAreaHeight * 0.13), 84, 110);
-    const achievementHeight = clamp(Math.round(topAreaHeight * 0.13), 86, 108);
-    const resolveHeight = clamp(Math.round(topAreaHeight * 0.18), 120, 150);
-    const journalHeight =
-      topAreaHeight - traitHeight - topActionHeight - seasonalHeight - achievementHeight - resolveHeight - metrics.gap * 5;
-    const bottomY = top + topAreaHeight + metrics.gap;
+  private layoutNavigation(metrics: LayoutMetrics, railWidth: number): void {
+    const desktopVisible = metrics.mode === 'desktop';
+    this.navRailPanel.setVisible(desktopVisible);
+    this.navBrandText.setVisible(desktopVisible);
+    this.navBrandSubText.setVisible(desktopVisible);
+    this.desktopNavButtons.forEach((button) => {
+      button.setVisible(desktopVisible);
+      button.setAlpha(desktopVisible ? 1 : 0);
+      if (desktopVisible && !button.input?.enabled) {
+        button.setInteractive({ useHandCursor: true });
+      } else if (!desktopVisible) {
+        button.disableInteractive();
+      }
+    });
+    this.mobileNavButtons.forEach((button) => {
+      button.setVisible(!desktopVisible);
+      button.setAlpha(!desktopVisible ? 1 : 0);
+      if (!desktopVisible && !button.input?.enabled) {
+        button.setInteractive({ useHandCursor: true });
+      } else if (desktopVisible) {
+        button.disableInteractive();
+      }
+    });
 
-    const creatureFrame: PanelFrame = { x: leftX, y: top, width: leftWidth, height: creatureHeight };
+    if (desktopVisible) {
+      const railX = metrics.frameLeft + metrics.padding;
+      const railY = metrics.contentTop - 38;
+      const railHeight = metrics.contentBottom - railY;
+      this.navRailPanel.setPosition(railX, railY);
+      this.navRailPanel.setSize(railWidth, railHeight);
+      this.navBrandText.setPosition(railX + 18, railY + 22);
+      this.navBrandSubText.setPosition(railX + 18, this.navBrandText.y + this.navBrandText.height + 8);
+      this.desktopNavButtons.forEach((button, index) => {
+        button.setPosition(railX + 16, railY + 92 + index * (button.height + 12));
+        button.setFixedSize(railWidth - 32, button.height);
+        button.setAlign('center');
+      });
+      return;
+    }
+
+    const contentX = metrics.frameLeft + metrics.padding;
+    const buttonWidth = Math.floor((metrics.frameWidth - metrics.padding * 2 - metrics.gap * 2) / 3);
+    const buttonY = metrics.frameTop + metrics.frameHeight - metrics.padding - 48;
+    this.mobileNavButtons.forEach((button, index) => {
+      button.setPosition(contentX + index * (buttonWidth + metrics.gap), buttonY);
+      button.setFixedSize(buttonWidth, 48);
+      button.setAlign('center');
+    });
+  }
+
+  private layoutDesktopDashboard(metrics: LayoutMetrics, railWidth: number): void {
+    const compactDesktop = metrics.frameWidth < 980;
+    const resolvedRailWidth = compactDesktop ? clamp(Math.round(metrics.frameWidth * 0.11), 108, 128) : railWidth;
+    const usableWidth = metrics.frameWidth - metrics.padding * 2 - resolvedRailWidth - metrics.gap;
+    const leftX = metrics.frameLeft + metrics.padding + resolvedRailWidth + metrics.gap;
+    const top = metrics.contentTop;
+    const topAreaHeight = metrics.contentBottom - top;
+    const mainWidth = compactDesktop ? usableWidth : Math.round(usableWidth * 0.62);
+    const rightWidth = compactDesktop ? 0 : usableWidth - mainWidth - metrics.gap;
+    const rightX = leftX + mainWidth + metrics.gap;
+    const creatureHeight = clamp(Math.round(topAreaHeight * (compactDesktop ? 0.23 : 0.31)), compactDesktop ? 126 : 170, compactDesktop ? 176 : 254);
+    const measuredActionHeight = this.measureActionPanelHeight(metrics, mainWidth);
+    const actionHeight = clamp(
+      Math.max(measuredActionHeight, Math.round(topAreaHeight * (compactDesktop ? 0.3 : 0.34))),
+      compactDesktop ? 216 : 236,
+      compactDesktop ? 306 : 328
+    );
+    const resolveHeight = compactDesktop
+      ? clamp(this.measureResolvePanelHeight(metrics, mainWidth), 82, 108)
+      : Math.max(topAreaHeight - creatureHeight - actionHeight - metrics.gap * 2, 92);
+
+    const creatureFrame: PanelFrame = { x: leftX, y: top, width: mainWidth, height: creatureHeight };
     const actionFrame: PanelFrame = {
       x: leftX,
       y: creatureFrame.y + creatureFrame.height + metrics.gap,
-      width: leftWidth,
+      width: mainWidth,
       height: actionHeight,
     };
+    const resolveFrame: PanelFrame = {
+      x: leftX,
+      y: actionFrame.y + actionFrame.height + metrics.gap,
+      width: mainWidth,
+      height: resolveHeight,
+    };
+
+    this.layoutCreaturePanel(metrics, creatureFrame);
+    this.layoutActionPanel(metrics, actionFrame);
+    this.layoutResolveArea(metrics, resolveFrame);
+
+    if (compactDesktop) {
+      const summaryTop = resolveFrame.y + resolveFrame.height + metrics.gap;
+      const summaryWidth = Math.floor((mainWidth - metrics.gap) / 2);
+      const summaryHeight = Math.max(metrics.contentBottom - summaryTop, 96);
+      const traitFrame: PanelFrame = {
+        x: leftX,
+        y: summaryTop,
+        width: summaryWidth,
+        height: summaryHeight,
+      };
+      const topActionFrame: PanelFrame = {
+        x: leftX + summaryWidth + metrics.gap,
+        y: summaryTop,
+        width: mainWidth - summaryWidth - metrics.gap,
+        height: summaryHeight,
+      };
+
+      this.traitPanel.setVisible(true);
+      this.traitPanelTitle.setVisible(true);
+      this.topActionPanel.setVisible(true);
+      this.topActionTitle.setVisible(true);
+      this.topActionBody.setVisible(true);
+      this.memoryPanel.setVisible(false);
+      this.memoryTitleText.setVisible(false);
+      this.memoryBodyText.setVisible(false);
+      this.layoutTraitPanel(metrics, traitFrame);
+      this.layoutTopActionPanel(metrics, topActionFrame);
+      return;
+    }
+
+    const traitHeight = clamp(Math.round(topAreaHeight * 0.31), 150, 214);
+    const topActionHeight = clamp(Math.round(topAreaHeight * 0.22), 110, 162);
+    const memoryHeight = clamp(Math.round(topAreaHeight * 0.18), 100, 152);
     const traitFrame: PanelFrame = { x: rightX, y: top, width: rightWidth, height: traitHeight };
     const topActionFrame: PanelFrame = {
       x: rightX,
@@ -717,79 +1006,61 @@ export class Game extends Scene {
       width: rightWidth,
       height: topActionHeight,
     };
-    const seasonalFrame: PanelFrame = {
+    const memoryFrame: PanelFrame = {
       x: rightX,
       y: topActionFrame.y + topActionFrame.height + metrics.gap,
       width: rightWidth,
-      height: seasonalHeight,
-    };
-    const achievementFrame: PanelFrame = {
-      x: rightX,
-      y: seasonalFrame.y + seasonalFrame.height + metrics.gap,
-      width: rightWidth,
-      height: achievementHeight,
-    };
-    const journalFrame: PanelFrame = {
-      x: rightX,
-      y: achievementFrame.y + achievementFrame.height + metrics.gap,
-      width: rightWidth,
-      height: Math.max(journalHeight, 92),
-    };
-    const resolveFrame: PanelFrame = {
-      x: rightX,
-      y: journalFrame.y + journalFrame.height + metrics.gap,
-      width: rightWidth,
-      height: resolveHeight,
-    };
-    const bottomWidth = leftWidth + metrics.gap + rightWidth;
-    const hallWidth = clamp(Math.round(bottomWidth * 0.22), 210, 250);
-    const namesWidth = clamp(Math.round(bottomWidth * 0.18), 180, 220);
-    const inventoryWidth = clamp(Math.round(bottomWidth * 0.2), 190, 250);
-    const memoryFrame: PanelFrame = {
-      x: leftX,
-      y: bottomY,
-      width: bottomWidth - hallWidth - namesWidth - inventoryWidth - metrics.gap * 3,
-      height: memoryHeight,
-    };
-    const hallFrame: PanelFrame = {
-      x: memoryFrame.x + memoryFrame.width + metrics.gap,
-      y: bottomY,
-      width: hallWidth,
-      height: memoryHeight,
-    };
-    const namesFrame: PanelFrame = {
-      x: hallFrame.x + hallFrame.width + metrics.gap,
-      y: bottomY,
-      width: namesWidth,
-      height: memoryHeight,
-    };
-    const inventoryFrame: PanelFrame = {
-      x: namesFrame.x + namesFrame.width + metrics.gap,
-      y: bottomY,
-      width: inventoryWidth,
       height: memoryHeight,
     };
 
-    this.layoutCreaturePanel(metrics, creatureFrame);
-    this.layoutActionPanel(metrics, actionFrame);
+    this.traitPanel.setVisible(true);
+    this.traitPanelTitle.setVisible(true);
+    this.topActionPanel.setVisible(true);
+    this.topActionTitle.setVisible(true);
+    this.topActionBody.setVisible(true);
+    this.memoryPanel.setVisible(true);
+    this.memoryTitleText.setVisible(true);
+    this.memoryBodyText.setVisible(true);
     this.layoutTraitPanel(metrics, traitFrame);
     this.layoutTopActionPanel(metrics, topActionFrame);
-    this.layoutSeasonalPanel(metrics, seasonalFrame);
-    this.layoutAchievementPanel(metrics, achievementFrame);
-    this.layoutJournalPanel(metrics, journalFrame);
-    this.layoutResolveArea(metrics, resolveFrame);
     this.layoutMemoryPanel(metrics, memoryFrame);
-    this.layoutHallPanel(metrics, hallFrame);
-    this.layoutNamesPanel(metrics, namesFrame);
-    this.layoutInventoryPanel(metrics, inventoryFrame);
   }
 
-  private layoutStackedDashboard(metrics: LayoutMetrics): void {
+  private layoutMobileDashboard(metrics: LayoutMetrics): void {
     const contentX = metrics.frameLeft + metrics.padding;
     const contentWidth = metrics.leftColumnWidth;
-    let currentTop = metrics.contentTop;
+    const navHeight = 44;
+    const navTop = metrics.frameTop + metrics.frameHeight - metrics.padding - navHeight;
+    const bottomLimit = navTop - metrics.gap;
+    const mobileContentTop = this.summaryText.y + this.summaryText.height + metrics.gap;
+    let gap = Math.max(8, metrics.gap - 4);
+    let traitHeight = 68;
+    let creatureHeight = clamp(Math.round(metrics.frameHeight * 0.12), 78, 104);
+    let actionHeight = clamp(this.measureActionPanelHeight(metrics, contentWidth), 188, 252);
+    let resolveHeight = clamp(this.measureResolvePanelHeight(metrics, contentWidth), 72, 104);
+    const availableHeight = bottomLimit - mobileContentTop;
+    let totalHeight = creatureHeight + actionHeight + resolveHeight + traitHeight + gap * 3;
 
-    const creatureHeight = Math.round(metrics.frameHeight * 0.2);
+    if (totalHeight > availableHeight) {
+      const overflow = totalHeight - availableHeight;
+      creatureHeight = Math.max(72, creatureHeight - Math.ceil(overflow * 0.28));
+      resolveHeight = Math.max(66, resolveHeight - Math.ceil(overflow * 0.14));
+      traitHeight = Math.max(58, traitHeight - Math.ceil(overflow * 0.16));
+      gap = Math.max(6, gap - Math.ceil(overflow * 0.04));
+      totalHeight = creatureHeight + actionHeight + resolveHeight + traitHeight + gap * 3;
+    }
+
+    if (totalHeight > availableHeight) {
+      actionHeight = Math.max(170, actionHeight - (totalHeight - availableHeight));
+      totalHeight = creatureHeight + actionHeight + resolveHeight + traitHeight + gap * 3;
+    }
+
+    if (totalHeight > availableHeight) {
+      creatureHeight = Math.max(68, creatureHeight - (totalHeight - availableHeight));
+    }
+
+    let currentTop = mobileContentTop;
+
     const creatureFrame: PanelFrame = {
       x: contentX,
       y: currentTop,
@@ -797,39 +1068,8 @@ export class Game extends Scene {
       height: creatureHeight,
     };
     this.layoutCreaturePanel(metrics, creatureFrame);
-    currentTop += creatureHeight + metrics.gap;
+    currentTop += creatureHeight + gap;
 
-    const traitHeight = 170;
-    const traitFrame: PanelFrame = {
-      x: contentX,
-      y: currentTop,
-      width: contentWidth,
-      height: traitHeight,
-    };
-    this.layoutTraitPanel(metrics, traitFrame);
-    currentTop += traitHeight + metrics.gap;
-
-    const topActionHeight = 84;
-    const topActionFrame: PanelFrame = {
-      x: contentX,
-      y: currentTop,
-      width: contentWidth,
-      height: topActionHeight,
-    };
-    this.layoutTopActionPanel(metrics, topActionFrame);
-    currentTop += topActionHeight + metrics.gap;
-
-    const seasonalHeight = 96;
-    const seasonalFrame: PanelFrame = {
-      x: contentX,
-      y: currentTop,
-      width: contentWidth,
-      height: seasonalHeight,
-    };
-    this.layoutSeasonalPanel(metrics, seasonalFrame);
-    currentTop += seasonalHeight + metrics.gap;
-
-    const actionHeight = metrics.actionButtonHeight * Math.max(this.optionButtons.length, 1) + 110;
     const actionFrame: PanelFrame = {
       x: contentX,
       y: currentTop,
@@ -837,75 +1077,56 @@ export class Game extends Scene {
       height: actionHeight,
     };
     this.layoutActionPanel(metrics, actionFrame);
-    currentTop += actionHeight + metrics.gap;
-
-    const journalHeight = Math.round(metrics.frameHeight * 0.22);
-    const journalFrame: PanelFrame = {
-      x: contentX,
-      y: currentTop,
-      width: contentWidth,
-      height: journalHeight,
-    };
-    this.layoutJournalPanel(metrics, journalFrame);
-    currentTop += journalHeight + metrics.gap;
-
-    const memoryHeight = Math.round(metrics.frameHeight * 0.14);
-    const memoryFrame: PanelFrame = {
-      x: contentX,
-      y: currentTop,
-      width: contentWidth,
-      height: memoryHeight,
-    };
-    this.layoutMemoryPanel(metrics, memoryFrame);
-    currentTop += memoryHeight + metrics.gap;
-
-    const hallHeight = Math.round(metrics.frameHeight * 0.14);
-    const hallFrame: PanelFrame = {
-      x: contentX,
-      y: currentTop,
-      width: contentWidth,
-      height: hallHeight,
-    };
-    this.layoutHallPanel(metrics, hallFrame);
-    currentTop += hallHeight + metrics.gap;
-
-    const namesHeight = Math.round(metrics.frameHeight * 0.11);
-    const namesFrame: PanelFrame = {
-      x: contentX,
-      y: currentTop,
-      width: contentWidth,
-      height: namesHeight,
-    };
-    this.layoutNamesPanel(metrics, namesFrame);
-    currentTop += namesHeight + metrics.gap;
-
-    const inventoryHeight = Math.round(metrics.frameHeight * 0.13);
-    const inventoryFrame: PanelFrame = {
-      x: contentX,
-      y: currentTop,
-      width: contentWidth,
-      height: inventoryHeight,
-    };
-    this.layoutInventoryPanel(metrics, inventoryFrame);
-    currentTop += inventoryHeight + metrics.gap;
-
-    const achievementHeight = 98;
-    const achievementFrame: PanelFrame = {
-      x: contentX,
-      y: currentTop,
-      width: contentWidth,
-      height: achievementHeight,
-    };
-    this.layoutAchievementPanel(metrics, achievementFrame);
-    currentTop += achievementHeight + metrics.gap;
+    currentTop += actionHeight + gap;
 
     const resolveFrame: PanelFrame = {
       x: contentX,
       y: currentTop,
       width: contentWidth,
-      height: metrics.contentBottom - currentTop,
+      height: resolveHeight,
     };
     this.layoutResolveArea(metrics, resolveFrame);
+    currentTop += resolveHeight + gap;
+
+    const traitFrame: PanelFrame = {
+      x: contentX,
+      y: Math.max(Math.min(currentTop, bottomLimit - traitHeight), resolveFrame.y + resolveFrame.height + gap),
+      width: contentWidth,
+      height: traitHeight,
+    };
+    this.layoutTraitPanel(metrics, traitFrame);
+  }
+
+  private measureActionPanelHeight(metrics: LayoutMetrics, panelWidth: number): number {
+    const innerWidth = panelWidth - metrics.cardInsetX * 2;
+    this.actionTitleText.setWordWrapWidth(innerWidth);
+    this.voteSummaryText.setWordWrapWidth(innerWidth);
+    const useSingleRow = metrics.mode === 'desktop' && panelWidth >= 720;
+    const columns = useSingleRow ? Math.max(this.optionButtons.length, 1) : Math.min(2, Math.max(this.optionButtons.length, 1));
+    const buttonRows = Math.ceil(Math.max(this.optionButtons.length, 1) / columns);
+    const buttonHeight = buttonRows * metrics.actionButtonHeight + (buttonRows - 1) * metrics.buttonGap;
+    return Math.ceil(
+      metrics.cardInsetY * 2 +
+        this.actionTitleText.height +
+        20 +
+        this.voteSummaryText.height +
+        24 +
+        buttonHeight +
+        14
+    );
+  }
+
+  private measureResolvePanelHeight(metrics: LayoutMetrics, panelWidth: number): number {
+    const innerWidth = panelWidth - metrics.cardInsetX * 2;
+    this.statusText.setWordWrapWidth(innerWidth);
+    this.traitFeedbackText.setWordWrapWidth(innerWidth);
+    return Math.ceil(
+      metrics.cardInsetY * 2 +
+        this.statusText.height +
+        (this.traitFeedbackText.text ? this.traitFeedbackText.height + 10 : 0) +
+        this.resolveButton.height +
+        26
+    );
   }
 
   private layoutCreaturePanel(metrics: LayoutMetrics, frame: PanelFrame): void {
@@ -931,8 +1152,8 @@ export class Game extends Scene {
 
     this.creatureArtFrame.setPosition(innerX, innerY);
     this.creatureArtFrame.setSize(innerWidth, artHeight);
-    const creatureCenterX = innerX + innerWidth * 0.48 + (chaosWeight - 0.5) * 8;
-    const creatureCenterY = innerY + artHeight * (0.6 - courageWeight * 0.04);
+    const creatureCenterX = innerX + innerWidth * (metrics.mode === 'desktop' ? 0.48 : 0.5) + (chaosWeight - 0.5) * 8;
+    const creatureCenterY = innerY + artHeight * ((metrics.mode === 'desktop' ? 0.6 : 0.6) - courageWeight * 0.04);
     const bodyWidth = Math.min(innerWidth * 0.26, artHeight * 0.72) * (dna.bodyWidthScale + trustWeight * 0.08);
     const bodyHeight = Math.min(artHeight * 0.7, bodyWidth * 1.12) * (dna.bodyHeightScale + courageWeight * 0.06);
     const eyeOffsetX = bodyWidth * 0.16 * dna.eyeSpacing * (1 + curiosityWeight * 0.08);
@@ -976,16 +1197,26 @@ export class Game extends Scene {
     this.layoutCreatureFace(mood, dna, creatureCenterX, creatureCenterY, bodyWidth, bodyHeight);
     this.layoutCreaturePattern(dna, creatureCenterX, creatureCenterY, bodyWidth, bodyHeight, palette.accent, chaosWeight);
     this.layoutCreatureAccessories(creatureCenterX, creatureCenterY, bodyWidth, bodyHeight);
-    const portraitSize = Math.min(innerWidth * 0.38, artHeight * 0.9);
+    const compactDesktop = metrics.mode === 'desktop' && frame.width < 620;
+    const portraitSize = Math.min(
+      innerWidth * (metrics.mode === 'desktop' ? (compactDesktop ? 0.36 : 0.46) : 0.2),
+      artHeight * (metrics.mode === 'desktop' ? (compactDesktop ? 0.78 : 0.92) : 0.56)
+    );
     this.creatureSnapshot.setPosition(creatureCenterX, creatureCenterY - bodyHeight * 0.02);
     this.creatureSnapshot.setDisplaySize(portraitSize, portraitSize);
 
     this.creatureCaptionText.setPosition(innerX + 18, innerY + 14);
-    this.creatureCaptionText.setWordWrapWidth(innerWidth * 0.34);
+    this.creatureCaptionText.setWordWrapWidth(
+      innerWidth * (metrics.mode === 'desktop' ? (compactDesktop ? 0.34 : 0.44) : 0.5)
+    );
     this.moodBadgeText.setPosition(innerX + innerWidth - this.moodBadgeText.width - 18, innerY + 14);
-    this.futureSlotText.setWordWrapWidth(Math.max(180, innerWidth * 0.36));
+    this.futureSlotText.setWordWrapWidth(
+      Math.max(metrics.mode === 'desktop' ? 180 : 128, innerWidth * (metrics.mode === 'desktop' ? 0.28 : 0.24))
+    );
     this.futureSlotText.setPosition(innerX + innerWidth - 18, this.moodBadgeText.y + this.moodBadgeText.height + 10);
     this.futureSlotText.setOrigin(1, 0);
+    this.creatureCaptionText.setVisible(metrics.mode === 'desktop');
+    this.futureSlotText.setVisible(metrics.mode === 'desktop');
   }
 
   private layoutCreatureFace(
@@ -1059,28 +1290,24 @@ export class Game extends Scene {
     const innerY = frame.y + metrics.cardInsetY;
     const innerWidth = frame.width - metrics.cardInsetX * 2;
     const buttonCount = Math.max(this.optionButtons.length, 1);
+    const useSingleRow = metrics.mode === 'desktop' && frame.width >= 720;
+    const columns = useSingleRow ? buttonCount : Math.min(2, buttonCount);
 
     this.actionTitleText.setPosition(innerX, innerY + 4);
     this.actionTitleText.setWordWrapWidth(innerWidth);
-    this.voteSummaryText.setPosition(innerX, innerY + this.actionTitleText.height + 20);
+    this.voteSummaryText.setPosition(innerX, innerY + this.actionTitleText.height + (metrics.mode === 'desktop' ? 20 : 14));
     this.voteSummaryText.setWordWrapWidth(innerWidth);
 
-    const buttonTop = this.voteSummaryText.y + this.voteSummaryText.height + 24;
-    const buttonWidth =
-      metrics.mode === 'dashboard'
-        ? Math.floor((innerWidth - metrics.buttonGap * (buttonCount - 1)) / buttonCount)
-        : innerWidth;
+    const buttonTop = this.voteSummaryText.y + this.voteSummaryText.height + (metrics.mode === 'desktop' ? 24 : 18);
+    const buttonWidth = Math.floor((innerWidth - metrics.buttonGap * (columns - 1)) / columns);
 
     this.optionButtons.forEach((button, index) => {
-      if (metrics.mode === 'dashboard') {
-        const buttonX = innerX + index * (buttonWidth + metrics.buttonGap);
-        button.setPosition(buttonX, buttonTop);
-        button.setFixedSize(buttonWidth, metrics.actionButtonHeight);
-      } else {
-        const buttonY = buttonTop + index * (metrics.actionButtonHeight + metrics.buttonGap);
-        button.setPosition(innerX, buttonY);
-        button.setFixedSize(buttonWidth, metrics.actionButtonHeight);
-      }
+      const column = useSingleRow ? index : index % columns;
+      const row = useSingleRow ? 0 : Math.floor(index / columns);
+      const buttonX = innerX + column * (buttonWidth + metrics.buttonGap);
+      const buttonY = buttonTop + row * (metrics.actionButtonHeight + metrics.buttonGap);
+      button.setPosition(buttonX, buttonY);
+      button.setFixedSize(buttonWidth, metrics.actionButtonHeight);
       button.setWordWrapWidth(button.width - 24);
     });
   }
@@ -1088,17 +1315,20 @@ export class Game extends Scene {
   private layoutTraitPanel(metrics: LayoutMetrics, frame: PanelFrame): void {
     this.traitPanel.setPosition(frame.x, frame.y);
     this.traitPanel.setSize(frame.width, frame.height);
+    this.traitPanelTitle.setVisible(metrics.mode === 'desktop');
     this.traitPanelTitle.setPosition(frame.x + metrics.cardInsetX, frame.y + metrics.cardInsetY);
 
     if (!this.traitBars || !this.pettitState) {
       return;
     }
 
-    const labelWidth = clamp(Math.round(frame.width * 0.24), 74, 100);
+    const labelWidth = clamp(Math.round(frame.width * (metrics.mode === 'desktop' ? 0.24 : 0.2)), 58, 100);
     const valueWidth = 34;
     const barTrackWidth = frame.width - metrics.cardInsetX * 2 - labelWidth - valueWidth - 14;
-    const startY = this.traitPanelTitle.y + this.traitPanelTitle.height + 16;
-    const rowGap = clamp(Math.round(frame.height * 0.16), 26, 34);
+    const startY = metrics.mode === 'desktop' ? this.traitPanelTitle.y + this.traitPanelTitle.height + 16 : frame.y + metrics.cardInsetY + 8;
+    const rowGap =
+      metrics.mode === 'desktop' ? clamp(Math.round(frame.height * 0.16), 26, 34) : 18;
+    const trackHeight = metrics.mode === 'desktop' ? 10 : 6;
     const barKeys: TraitKey[] = ['curiosity', 'chaos', 'trust', 'courage'];
 
     barKeys.forEach((traitKey, index) => {
@@ -1110,13 +1340,13 @@ export class Game extends Scene {
       const rowY = startY + index * rowGap;
       bar.label.setPosition(frame.x + metrics.cardInsetX, rowY - 10);
       bar.track.setPosition(frame.x + metrics.cardInsetX + labelWidth, rowY);
-      bar.track.setSize(barTrackWidth, 10);
+      bar.track.setSize(barTrackWidth, trackHeight);
       bar.value.setPosition(frame.x + frame.width - metrics.cardInsetX - valueWidth, rowY - 12);
 
       const value = this.pettitState?.pettit.traits[traitKey] ?? 0;
       const fillWidth = Math.max(18, Math.round((barTrackWidth * value) / 100));
       bar.fill.setPosition(bar.track.x, rowY);
-      bar.fill.setSize(fillWidth, 10);
+      bar.fill.setSize(fillWidth, trackHeight);
     });
   }
 
@@ -1126,42 +1356,6 @@ export class Game extends Scene {
     this.topActionTitle.setPosition(frame.x + metrics.cardInsetX, frame.y + metrics.cardInsetY);
     this.topActionBody.setPosition(frame.x + metrics.cardInsetX, this.topActionTitle.y + this.topActionTitle.height + 6);
     this.topActionBody.setWordWrapWidth(frame.width - metrics.cardInsetX * 2);
-  }
-
-  private layoutSeasonalPanel(metrics: LayoutMetrics, frame: PanelFrame): void {
-    this.seasonalPanel.setPosition(frame.x, frame.y);
-    this.seasonalPanel.setSize(frame.width, frame.height);
-    this.seasonalTitleText.setPosition(frame.x + metrics.cardInsetX, frame.y + metrics.cardInsetY);
-    this.seasonalBodyText.setPosition(
-      frame.x + metrics.cardInsetX,
-      this.seasonalTitleText.y + this.seasonalTitleText.height + 6
-    );
-    this.seasonalBodyText.setWordWrapWidth(frame.width - metrics.cardInsetX * 2);
-  }
-
-  private layoutAchievementPanel(metrics: LayoutMetrics, frame: PanelFrame): void {
-    this.achievementPanel.setPosition(frame.x, frame.y);
-    this.achievementPanel.setSize(frame.width, frame.height);
-    this.achievementTitleText.setPosition(frame.x + metrics.cardInsetX, frame.y + metrics.cardInsetY);
-    this.achievementBodyText.setPosition(
-      frame.x + metrics.cardInsetX,
-      this.achievementTitleText.y + this.achievementTitleText.height + 6
-    );
-    this.achievementBodyText.setWordWrapWidth(frame.width - metrics.cardInsetX * 2);
-  }
-
-  private layoutJournalPanel(metrics: LayoutMetrics, frame: PanelFrame): void {
-    this.journalPanel.setPosition(frame.x, frame.y);
-    this.journalPanel.setSize(frame.width, frame.height);
-
-    const innerX = frame.x + metrics.cardInsetX;
-    const innerY = frame.y + metrics.cardInsetY;
-    const innerWidth = frame.width - metrics.cardInsetX * 2;
-
-    this.journalTitleText.setPosition(innerX, innerY);
-    this.journalTitleText.setWordWrapWidth(innerWidth);
-    this.journalBodyText.setPosition(innerX, innerY + this.journalTitleText.height + 10);
-    this.journalBodyText.setWordWrapWidth(innerWidth);
   }
 
   private layoutMemoryPanel(metrics: LayoutMetrics, frame: PanelFrame): void {
@@ -1177,48 +1371,6 @@ export class Game extends Scene {
     this.memoryBodyText.setWordWrapWidth(innerWidth);
   }
 
-  private layoutHallPanel(metrics: LayoutMetrics, frame: PanelFrame): void {
-    this.hallPanel.setPosition(frame.x, frame.y);
-    this.hallPanel.setSize(frame.width, frame.height);
-
-    const innerX = frame.x + metrics.cardInsetX;
-    const innerY = frame.y + metrics.cardInsetY;
-    const innerWidth = frame.width - metrics.cardInsetX * 2;
-
-    this.hallTitleText.setPosition(innerX, innerY);
-    this.hallBodyText.setPosition(innerX, innerY + this.hallTitleText.height + 10);
-    this.hallBodyText.setWordWrapWidth(innerWidth);
-    this.hallButton.setPosition(innerX, frame.y + frame.height - this.hallButton.height - metrics.cardInsetY);
-    this.hallButton.setFixedSize(Math.min(innerWidth, 150), this.hallButton.height);
-    this.hallButton.setAlign('center');
-  }
-
-  private layoutInventoryPanel(metrics: LayoutMetrics, frame: PanelFrame): void {
-    this.inventoryPanel.setPosition(frame.x, frame.y);
-    this.inventoryPanel.setSize(frame.width, frame.height);
-
-    const innerX = frame.x + metrics.cardInsetX;
-    const innerY = frame.y + metrics.cardInsetY;
-    const innerWidth = frame.width - metrics.cardInsetX * 2;
-
-    this.inventoryTitleText.setPosition(innerX, innerY);
-    this.inventoryBodyText.setPosition(innerX, innerY + this.inventoryTitleText.height + 10);
-    this.inventoryBodyText.setWordWrapWidth(innerWidth);
-  }
-
-  private layoutNamesPanel(metrics: LayoutMetrics, frame: PanelFrame): void {
-    this.namesPanel.setPosition(frame.x, frame.y);
-    this.namesPanel.setSize(frame.width, frame.height);
-
-    const innerX = frame.x + metrics.cardInsetX;
-    const innerY = frame.y + metrics.cardInsetY;
-    const innerWidth = frame.width - metrics.cardInsetX * 2;
-
-    this.namesTitleText.setPosition(innerX, innerY);
-    this.namesBodyText.setPosition(innerX, innerY + this.namesTitleText.height + 10);
-    this.namesBodyText.setWordWrapWidth(innerWidth);
-  }
-
   private layoutResolveArea(metrics: LayoutMetrics, frame: PanelFrame): void {
     this.resolvePanel.setPosition(frame.x, frame.y);
     this.resolvePanel.setSize(frame.width, frame.height);
@@ -1226,16 +1378,19 @@ export class Game extends Scene {
     const statusWidth = frame.width - metrics.cardInsetX * 2;
     const innerX = frame.x + metrics.cardInsetX;
     const innerY = frame.y + metrics.cardInsetY;
-    const buttonWidth = Math.max(220, Math.min(frame.width - metrics.cardInsetX * 2, 320));
+    const buttonWidth =
+      metrics.mode === 'desktop'
+        ? Math.max(220, Math.min(frame.width - metrics.cardInsetX * 2, 320))
+        : Math.max(180, Math.min(frame.width - metrics.cardInsetX * 2, 260));
 
     this.statusText.setWordWrapWidth(statusWidth);
     this.statusText.setPosition(innerX, innerY);
     this.traitFeedbackText.setWordWrapWidth(statusWidth);
-    this.traitFeedbackText.setPosition(innerX, this.statusText.y + this.statusText.height + 10);
+    this.traitFeedbackText.setPosition(innerX, this.statusText.y + this.statusText.height + (metrics.mode === 'desktop' ? 10 : 6));
     this.resolveButton.setPosition(
       frame.x + (frame.width - buttonWidth) / 2,
       Math.max(
-        this.traitFeedbackText.y + this.traitFeedbackText.height + 20,
+        this.traitFeedbackText.y + this.traitFeedbackText.height + (metrics.mode === 'desktop' ? 20 : 14),
         frame.y + frame.height - this.resolveButton.height - metrics.cardInsetY
       )
     );
@@ -1247,8 +1402,8 @@ export class Game extends Scene {
     this.hallOverlayBackdrop.setPosition(0, 0);
     this.hallOverlayBackdrop.setSize(metrics.width, metrics.height);
 
-    const panelWidth = Math.min(metrics.width - metrics.padding * 2, metrics.mode === 'dashboard' ? 860 : 720);
-    const panelHeight = Math.min(metrics.height - metrics.padding * 2, metrics.mode === 'dashboard' ? 720 : 780);
+    const panelWidth = Math.min(metrics.width - metrics.padding * 2, metrics.mode === 'desktop' ? 920 : 760);
+    const panelHeight = Math.min(metrics.height - metrics.padding * 2, metrics.mode === 'desktop' ? 760 : 820);
     const panelX = (metrics.width - panelWidth) / 2;
     const panelY = (metrics.height - panelHeight) / 2;
     const innerX = panelX + metrics.cardInsetX;
@@ -1274,6 +1429,25 @@ export class Game extends Scene {
       this.hallOverlayArchiveTitleText.y + this.hallOverlayArchiveTitleText.height + 10
     );
     this.hallOverlayArchiveBodyText.setWordWrapWidth(innerWidth);
+
+    if (this.activeOverlayView === 'inventory') {
+      const columns = metrics.mode === 'desktop' ? 4 : 2;
+      const buttonWidth = Math.floor((innerWidth - metrics.gap * (columns - 1)) / columns);
+      const buttonHeight = 52;
+      const buttonTop = this.hallOverlayArchiveBodyText.y + this.hallOverlayArchiveBodyText.height + 18;
+      this.overlayInventoryButtons.forEach((button, index) => {
+        const row = Math.floor(index / columns);
+        const column = index % columns;
+        button.setPosition(innerX + column * (buttonWidth + metrics.gap), buttonTop + row * (buttonHeight + 12));
+        button.setFixedSize(buttonWidth, buttonHeight);
+        button.setAlign('center');
+      });
+      this.hallOverlayPageText.setPosition(innerX, panelY + panelHeight - this.hallOverlayPageText.height - metrics.cardInsetY);
+      this.hallOverlayPrevButton.setPosition(innerX, this.hallOverlayPageText.y - this.hallOverlayPrevButton.height - 10);
+      this.hallOverlayNextButton.setPosition(panelX + panelWidth - metrics.cardInsetX, this.hallOverlayPrevButton.y);
+      return;
+    }
+
     this.hallOverlayPageText.setPosition(
       innerX,
       panelY + panelHeight - this.hallOverlayPageText.height - metrics.cardInsetY
@@ -1428,7 +1602,7 @@ export class Game extends Scene {
       return;
     }
 
-    const { pettit, activeEncounter, latestJournal, recentMemories } = this.pettitState;
+    const { pettit, activeEncounter, recentMemories } = this.pettitState;
     this.titleText.setText(pettit.name);
     this.subtitleText.setText('Community Creature');
     this.summaryText.setText(
@@ -1437,7 +1611,7 @@ export class Game extends Scene {
         .join(' + ')}`
     );
 
-    this.creatureCaptionText.setText(`${pettit.name}`);
+    this.creatureCaptionText.setText(pettit.name);
     this.moodBadgeText.setText(this.formatMoodBadge(pettit.mood));
     this.applyMoodBadgeStyle(pettit.mood);
     this.futureSlotText.setText(
@@ -1447,59 +1621,37 @@ export class Game extends Scene {
     );
 
     this.actionTitleText.setText(activeEncounter.title);
+    const compactVoteSummary =
+      `Votes: ${activeEncounter.totalVotes}${activeEncounter.hasVoted ? " - Your vote is in today's story." : ' - Choose what Pettit does next.'}`;
     this.voteSummaryText.setText(
-      `${activeEncounter.description}\n\nVotes so far: ${activeEncounter.totalVotes}${activeEncounter.hasVoted ? ' - Your choice is part of today’s story.' : ' - Choose what Pettit does next.'}`
+      this.scale.width < 620
+        ? `${activeEncounter.description}\n\n${compactVoteSummary}`
+        : `${activeEncounter.description}\n\nVotes so far: ${activeEncounter.totalVotes}${activeEncounter.hasVoted ? " - Your choice is part of today's story." : ' - Choose what Pettit does next.'}`
     );
 
+    this.topActionTitle.setText('Today & Community');
     this.topActionBody.setText(
       [
-        `${this.formatCount(this.pettitState.communityStats.totalVotes)} Community votes`,
-        `${this.formatCount(this.pettitState.communityStats.encountersCompleted)} Shared stories`,
-        `${this.formatCount(this.pettitState.communityStats.memoriesCreated)} Memories kept`,
+        `${this.formatCount(activeEncounter.totalVotes)} votes on today's encounter`,
+        `${this.formatCount(this.pettitState.communityStats.encountersCompleted)} shared stories so far`,
+        `${this.formatCount(this.pettitState.communityStats.memoriesCreated)} keepsakes and memories held`,
         this.pettitState.communityContributions.pendingGiftBallot
           ? this.pettitState.communityContributions.pendingGiftBallot.isReady
-            ? 'A community gift vote is ready'
-            : `${this.pettitState.communityContributions.pendingGiftBallot.submissionCount}/3 gift ideas waiting`
-          : 'No community gift ballot yet',
+            ? 'A community gift vote is ready.'
+            : `${this.pettitState.communityContributions.pendingGiftBallot.submissionCount}/3 gift ideas are waiting.`
+          : 'No community gift ballot yet.',
         this.pettitState.pendingNamingTargets.length > 0
-          ? `${this.formatCount(this.pettitState.pendingNamingTargets.length)} naming stories waiting`
-          : 'No naming stories waiting yet',
+          ? `${this.formatCount(this.pettitState.pendingNamingTargets.length)} naming stories are waiting.`
+          : 'No naming stories are waiting yet.',
       ].join('\n')
     );
 
-    if (this.pettitState.seasonal.activeEvent) {
-      const seasonal = this.pettitState.seasonal.activeEvent;
-      this.seasonalTitleText.setText(seasonal.title);
-      this.seasonalBodyText.setText(`${seasonal.timingLabel}\n${seasonal.flavorText}`);
-      this.applySeasonalAccent(seasonal.accentColor);
-    } else {
-      this.seasonalTitleText.setText('Seasonal');
-      this.seasonalBodyText.setText('No holiday is shaping today. Pettit is moving through an ordinary day with the community.');
-      this.applySeasonalAccent(null);
-    }
-
-    if (this.pettitState.recentAchievements.length > 0) {
-      this.achievementBodyText.setText(
-        this.pettitState.recentAchievements
-          .map((achievement) => `${achievement.title}\n${this.formatAchievementCategory(achievement.category)}`)
-          .join('\n\n')
-      );
-    } else {
-      this.achievementBodyText.setText("Pettit's shared milestones will appear here as the community keeps raising it.");
-    }
+    this.applySeasonalAccent(this.pettitState.seasonal.activeEvent?.accentColor ?? null);
 
     this.renderTraitBars();
     this.renderOptionButtons();
     this.renderTraitFeedback();
     this.refreshCreatureSnapshot();
-
-    if (latestJournal) {
-      this.journalTitleText.setText(`Journal - ${latestJournal.title}`);
-      this.journalBodyText.setText(this.truncateJournalPreview(latestJournal.content));
-    } else {
-      this.journalTitleText.setText('Journal');
-      this.journalBodyText.setText(`Resolve the first community choice to open ${pettit.name}'s journal.`);
-    }
 
     if (recentMemories.length > 0) {
       this.memoryBodyText.setText(
@@ -1509,56 +1661,6 @@ export class Game extends Scene {
       );
     } else {
       this.memoryBodyText.setText(`No memories yet. The first resolved encounter will give ${pettit.name} a first page worth keeping.`);
-    }
-
-    if (this.pettitState.hallOfMemories.highlighted.length > 0) {
-      this.hallBodyText.setText(
-        this.pettitState.hallOfMemories.highlighted
-          .slice(0, 3)
-          .map((memory) => this.formatHallPreview(memory))
-          .join('\n\n')
-      );
-    } else {
-      this.hallBodyText.setText(`${pettit.name} has not filled any cherished pages yet, but the story is already beginning.`);
-    }
-
-    if (this.pettitState.inventory.length > 0) {
-      this.inventoryBodyText.setText(
-        this.pettitState.inventory
-          .slice(-4)
-          .reverse()
-          .map((item) =>
-            item.canonName
-              ? `${item.canonName}\n${item.name} - ${item.description}`
-              : `${item.name}\n${item.source === 'Community Contribution' ? 'Community Gift Idea' : this.formatGiftCategory(item.category)} - ${item.description}`
-          )
-          .join('\n\n')
-      );
-    } else {
-      this.inventoryBodyText.setText(`No keepsakes yet. A community gift round will let everyone choose something ${pettit.name} can carry forward.`);
-    }
-
-    if (this.pettitState.knownNames.length > 0) {
-      this.namesBodyText.setText(
-        this.pettitState.knownNames
-          .slice(0, 4)
-          .map((entry) => `${entry.canonName}\n${entry.baseName}`)
-          .join('\n\n')
-      );
-    } else if (this.pettitState.pendingNamingTargets.length > 0) {
-      this.namesBodyText.setText(
-        this.pettitState.pendingNamingTargets
-          .slice(0, 3)
-          .map((target) => `${target.baseName}\n${target.submissionCount}/3 names submitted`)
-          .join('\n\n')
-      );
-      if (pettit.canReceiveCommunityName) {
-        this.namesBodyText.setText(
-          `${this.namesBodyText.text}\n\nUse the subreddit menu to submit name ideas for Pettit.`
-        );
-      }
-    } else {
-      this.namesBodyText.setText(`Community-chosen names will appear here once people begin naming keepsakes, places, and ${pettit.name}.`);
     }
 
     this.renderHallOverlayContent();
@@ -1647,14 +1749,20 @@ export class Game extends Scene {
     objects.forEach((object) => {
       object.setVisible(visible);
     });
+    this.overlayInventoryButtons.forEach((button) => button.setVisible(visible && this.activeOverlayView === 'inventory'));
   }
 
   private async openHallOverlay(): Promise<void> {
+    await this.openOverlay('journal');
+  }
+
+  private async openOverlay(view: OverlayView): Promise<void> {
+    this.activeOverlayView = view;
     this.setHallOverlayVisible(true);
     this.renderHallOverlayContent();
     this.updateLayout(this.scale.width, this.scale.height);
 
-    if (this.hallDetail) {
+    if (view !== 'journal' || this.hallDetail) {
       return;
     }
 
@@ -1679,6 +1787,7 @@ export class Game extends Scene {
   }
 
   private closeHallOverlay(): void {
+    this.activeOverlayView = null;
     this.setHallOverlayVisible(false);
   }
 
@@ -1702,8 +1811,21 @@ export class Game extends Scene {
       return;
     }
 
+    if (this.activeOverlayView === 'inventory') {
+      this.renderInventoryOverlayContent();
+      return;
+    }
+
+    if (this.activeOverlayView === 'stats') {
+      this.renderStatsOverlayContent();
+      return;
+    }
+
     if (!this.hallDetail) {
-      this.hallOverlayHighlightedBodyText.setText('Loading cherished pages...');
+      this.hallOverlayTitleText.setText('Journal & Memory Book');
+      this.hallOverlayHighlightedTitleText.setText('Latest Journal');
+      this.hallOverlayArchiveTitleText.setText('Memory Book');
+      this.hallOverlayHighlightedBodyText.setText('Loading today’s journal...');
       this.hallOverlayArchiveBodyText.setText('Loading the rest of the memory book...');
       this.hallOverlayPageText.setText('');
       this.hallOverlayPrevButton.disableInteractive().setAlpha(0.45);
@@ -1711,16 +1833,27 @@ export class Game extends Scene {
       return;
     }
 
-    const highlighted = this.hallDetail.highlighted.slice(0, 6);
     const archiveStart = this.hallArchivePage * 12;
     const archivePage = this.hallDetail.archive.slice(archiveStart, archiveStart + 12);
     const pageCount = this.getHallArchivePageCount(this.hallDetail);
+    const latestJournal = this.pettitState?.latestJournal;
+    const journalTitle = latestJournal ? `Journal - ${latestJournal.title}` : 'Journal';
+    const journalBody = latestJournal
+      ? this.truncateJournalPreview(latestJournal.content)
+      : `Resolve the first community choice to open ${this.pettitState?.pettit.name ?? 'Pettit'}'s journal.`;
+    const milestones = this.pettitState?.recentAchievements.length
+      ? this.pettitState.recentAchievements
+          .slice(0, 3)
+          .map((achievement) => `- ${achievement.title}`)
+          .join('\n')
+      : 'No new milestones yet.';
 
+    this.hallOverlayTitleText.setText('Journal & Memory Book');
+    this.hallOverlayHighlightedTitleText.setText(journalTitle);
     this.hallOverlayHighlightedBodyText.setText(
-      highlighted.length > 0
-        ? highlighted.map((memory) => this.formatHallDetailLine(memory, 58)).join('\n')
-        : `${this.pettitState?.pettit.name ?? 'Pettit'} is still building a story worth preserving here.`
+      `${journalBody}\n\nMilestones:\n${milestones}`
     );
+    this.hallOverlayArchiveTitleText.setText('Memory Book');
     this.hallOverlayArchiveBodyText.setText(
       archivePage.length > 0
         ? archivePage.map((memory) => this.formatHallDetailLine(memory, 52)).join('\n')
@@ -1739,6 +1872,90 @@ export class Game extends Scene {
     } else {
       this.hallOverlayNextButton.disableInteractive().setAlpha(0.45);
     }
+  }
+
+  private renderInventoryOverlayContent(): void {
+    const inventory = this.pettitState?.inventory ?? [];
+    const selected =
+      inventory.find((item) => item.id === this.selectedOverlayGiftId) ??
+      [...inventory].slice(-1)[0] ??
+      null;
+
+    this.selectedOverlayGiftId = selected?.id ?? null;
+    this.hallOverlayTitleText.setText('Keepsakes & Inventory');
+    this.hallOverlayHighlightedTitleText.setText(
+      selected ? `Selected: ${selected.canonName ?? selected.name}` : 'Keepsakes'
+    );
+    this.hallOverlayHighlightedBodyText.setText(
+      selected
+        ? `${selected.source === 'Community Contribution' ? 'Community gift idea' : this.formatGiftCategory(selected.category)}\n${selected.description}\nUnlocked ${selected.obtainedAt.slice(0, 10)}`
+        : `${this.pettitState?.pettit.name ?? 'Pettit'} has not collected any keepsakes yet.`
+    );
+    this.hallOverlayArchiveTitleText.setText('Collected Keepsakes');
+    this.hallOverlayArchiveBodyText.setText(
+      inventory.length > 0
+        ? 'Choose a keepsake below to see its details.'
+        : 'A future gift vote will fill this collection.'
+    );
+    this.hallOverlayPageText.setText('');
+    this.hallOverlayPrevButton.disableInteractive().setAlpha(0.45);
+    this.hallOverlayNextButton.disableInteractive().setAlpha(0.45);
+
+    this.overlayInventoryButtons.forEach((button, index) => {
+      const item = [...inventory].reverse()[index];
+      if (!item) {
+        button.setVisible(false);
+        return;
+      }
+
+      button.setData('giftId', item.id);
+      button.setText(this.truncateText(item.canonName ?? item.name, 18));
+      button.setStyle({
+        backgroundColor: selected?.id === item.id ? '#f6c453' : '#1e2832',
+        color: selected?.id === item.id ? '#142028' : '#f7f3e8',
+      });
+      button.setVisible(true);
+    });
+  }
+
+  private renderStatsOverlayContent(): void {
+    if (!this.pettitState) {
+      return;
+    }
+
+    const { pettit, communityStats, seasonal, pendingNamingTargets, communityContributions } = this.pettitState;
+    this.hallOverlayTitleText.setText('Stats & Community');
+    this.hallOverlayHighlightedTitleText.setText('Pettit’s Traits');
+    this.hallOverlayHighlightedBodyText.setText(
+      [
+        `Curiosity: ${pettit.traits.curiosity}%`,
+        `Chaos: ${pettit.traits.chaos}%`,
+        `Trust: ${pettit.traits.trust}%`,
+        `Courage: ${pettit.traits.courage}%`,
+        `Mood: ${this.capitalize(pettit.mood)}`,
+      ].join('\n')
+    );
+    this.hallOverlayArchiveTitleText.setText('Community Snapshot');
+    this.hallOverlayArchiveBodyText.setText(
+      [
+        `${communityStats.totalVotes} votes cast`,
+        `${communityStats.encountersCompleted} shared stories`,
+        `${communityStats.memoriesCreated} memories kept`,
+        seasonal.activeEvent ? `${seasonal.activeEvent.title} is shaping today.` : 'No holiday is shaping today.',
+        communityContributions.pendingGiftBallot
+          ? communityContributions.pendingGiftBallot.isReady
+            ? 'A community gift vote is ready.'
+            : `${communityContributions.pendingGiftBallot.submissionCount}/3 gift ideas waiting.`
+          : 'No community gift ballot yet.',
+        pendingNamingTargets.length > 0
+          ? `${pendingNamingTargets.length} naming stories are waiting.`
+          : 'No naming stories are waiting right now.',
+      ].join('\n')
+    );
+    this.hallOverlayPageText.setText('');
+    this.hallOverlayPrevButton.disableInteractive().setAlpha(0.45);
+    this.hallOverlayNextButton.disableInteractive().setAlpha(0.45);
+    this.overlayInventoryButtons.forEach((button) => button.setVisible(false));
   }
 
   private applyOptionState(button: Phaser.GameObjects.Text, optionId: string): void {
@@ -1825,10 +2042,10 @@ export class Game extends Scene {
       this.syncOptionButtons();
       this.renderState();
       if (response.outcome === 'resolved') {
-        this.flashPanel(this.journalPanel, 0xd89a48);
-        this.flashPanel(this.memoryPanel, 0x63c19d);
+        this.flashPanel(this.resolvePanel, 0xd89a48);
+        this.flashPanel(this.topActionPanel, 0x63c19d);
         if (response.unlockedAchievements.length > 0) {
-          this.flashPanel(this.achievementPanel, 0x8fa95d);
+          this.flashPanel(this.rootPanel, 0x8fa95d);
         }
       }
     } catch (error) {
@@ -2136,13 +2353,6 @@ export class Game extends Scene {
     return `${this.getMemoryIcon(normalized)} ${compactTitle}`;
   }
 
-  private formatHallPreview(memory: PettitMemory): string {
-    return `${this.getMemoryIcon(memory.title)} ${this.truncateText(memory.title, 26)}\n${this.truncateText(
-      memory.description,
-      42
-    )}`;
-  }
-
   private formatHallDetailLine(memory: PettitMemory, maxLength: number): string {
     return `${this.getMemoryIcon(memory.title)} ${this.truncateText(memory.title, 28)} - ${this.truncateText(
       memory.description,
@@ -2200,13 +2410,13 @@ export class Game extends Scene {
     if (!accentColor) {
       this.rootPanel.setStrokeStyle(2, 0x263846, 0.48);
       this.creatureArtFrame.setFillStyle(0x223243, 0.96);
-      this.seasonalPanel.setStrokeStyle(1, 0x2b3d49, 0.42);
+      this.topActionPanel.setStrokeStyle(1, 0x2b3d49, 0.42);
       return;
     }
 
     this.rootPanel.setStrokeStyle(2, accent, 0.22);
     this.creatureArtFrame.setFillStyle(accent, 0.16);
-    this.seasonalPanel.setStrokeStyle(1, accent, 0.32);
+    this.topActionPanel.setStrokeStyle(1, accent, 0.32);
   }
 
   private applyMoodBadgeStyle(mood: PettitViewModel['pettit']['mood']): void {
@@ -2246,10 +2456,6 @@ export class Game extends Scene {
       .split('-')
       .map((part) => this.capitalize(part))
       .join(' ');
-  }
-
-  private formatAchievementCategory(category: string): string {
-    return this.capitalize(category);
   }
 
   private capitalize(value: string): string {
