@@ -141,6 +141,7 @@ export class Game extends Scene {
   private hallOverlayPrevButton!: Phaser.GameObjects.Text;
   private hallOverlayNextButton!: Phaser.GameObjects.Text;
   private navRailPanel!: Phaser.GameObjects.Rectangle;
+  private mobileNavRailPanel!: Phaser.GameObjects.Rectangle;
   private navBrandText!: Phaser.GameObjects.Text;
   private navBrandSubText!: Phaser.GameObjects.Text;
   private desktopNavButtons: Phaser.GameObjects.Text[] = [];
@@ -195,6 +196,7 @@ export class Game extends Scene {
       color: '#b8c7d3',
     });
     this.navRailPanel = this.createPanel(0x111821, 0x263846);
+    this.mobileNavRailPanel = this.createPanel(0x111821, 0x263846);
     this.navBrandText = this.add.text(0, 0, 'PETTIT', {
       fontFamily: 'Georgia',
       fontSize: '24px',
@@ -666,10 +668,6 @@ export class Game extends Scene {
       this.actionPanel,
       this.actionTitleText,
       this.voteSummaryText,
-      this.resolvePanel,
-      this.statusText,
-      this.traitFeedbackText,
-      this.resolveButton,
       this.traitPanel,
       this.traitPanelTitle,
     ];
@@ -704,6 +702,10 @@ export class Game extends Scene {
       this.inventoryPanel,
       this.inventoryTitleText,
       this.inventoryBodyText,
+      this.resolvePanel,
+      this.statusText,
+      this.traitFeedbackText,
+      this.resolveButton,
     ];
 
     this.setObjectVisibility(desktopOnly, mode === 'desktop');
@@ -731,13 +733,16 @@ export class Game extends Scene {
       mode === 'desktop'
         ? clamp(Math.min(width / 1280, height / 900), 0.72, 1)
         : clamp(Math.min(width / 430, height / 820), 0.92, 1);
-    const padding = Math.round((mode === 'desktop' ? 24 : 18) * scaleFactor);
+    const padding = Math.round((mode === 'desktop' ? 24 : 12) * scaleFactor);
     const gap = Math.round((mode === 'desktop' ? 22 : 16) * scaleFactor);
     const frameWidth = Math.min(width - padding * 2, mode === 'desktop' ? 1320 : 860);
-    const frameHeight = Math.min(height - padding * 2, 900);
+    const frameHeight =
+      mode === 'desktop'
+        ? Math.min(height - padding * 2, 900)
+        : Math.min(height - Math.max(8, Math.round(padding * 0.6)), 980);
     const frameLeft = (width - frameWidth) / 2;
-    const frameTop = (height - frameHeight) / 2;
-    const contentTop = frameTop + (mode === 'desktop' ? 98 : 82) * scaleFactor;
+    const frameTop = mode === 'desktop' ? (height - frameHeight) / 2 : Math.max(6, Math.round(padding * 0.45));
+    const contentTop = frameTop + (mode === 'desktop' ? 98 : 70) * scaleFactor;
     const contentBottom = frameTop + frameHeight - padding;
     const leftColumnWidth = mode === 'desktop' ? Math.round(frameWidth * 0.54) : frameWidth - padding * 2;
     const rightColumnWidth =
@@ -847,6 +852,33 @@ export class Game extends Scene {
   private layoutDashboard(metrics: LayoutMetrics): void {
     this.rootPanel.setPosition(metrics.frameLeft, metrics.frameTop);
     this.rootPanel.setSize(metrics.frameWidth, metrics.frameHeight);
+    if (metrics.mode === 'desktop') {
+      this.rootPanel.setFillStyle(0x10171f, 0.96).setStrokeStyle(1, 0x263846, 0.42);
+      this.navRailPanel.setFillStyle(0x111821, 0.96).setStrokeStyle(1, 0x263846, 0.42);
+      this.mobileNavRailPanel.setFillStyle(0x111821, 0.96).setStrokeStyle(1, 0x263846, 0.42);
+      this.creaturePanel.setFillStyle(0x17202a, 0.96).setStrokeStyle(1, 0x324759, 0.42);
+      this.creatureArtFrame.setFillStyle(0x223243, 0.96).setStrokeStyle(1, 0x48657b, 0.42);
+      this.actionPanel.setFillStyle(0x1a222c, 0.96).setStrokeStyle(1, 0x2d3f4d, 0.42);
+      this.traitPanel.setFillStyle(0x162029, 0.96).setStrokeStyle(1, 0x2b3d49, 0.42);
+      this.topActionPanel.setFillStyle(0x1a222b, 0.96).setStrokeStyle(1, 0x2b3d49, 0.42);
+      this.memoryPanel.setFillStyle(0x18212a, 0.96).setStrokeStyle(1, 0x2b3c48, 0.42);
+      this.titleText.setColor('#f6ecd1');
+      this.summaryText.setColor('#cfd9e3');
+      this.subtitleText.setColor('#f0e4ff');
+    } else {
+      this.rootPanel.setFillStyle(0x0d1017, 0.985).setStrokeStyle(2, 0x45364e, 0.74);
+      this.navRailPanel.setFillStyle(0x111821, 0.96).setStrokeStyle(1, 0x263846, 0.42);
+      this.mobileNavRailPanel.setFillStyle(0x131118, 0.99).setStrokeStyle(2, 0x504657, 0.78);
+      this.creaturePanel.setFillStyle(0x18141b, 0.985).setStrokeStyle(2, 0x4b3958, 0.7);
+      this.creatureArtFrame.setFillStyle(0x6b92bf, 0.99).setStrokeStyle(2, 0x775783, 0.8);
+      this.actionPanel.setFillStyle(0x1b1820, 0.985).setStrokeStyle(2, 0x493a4f, 0.64);
+      this.traitPanel.setFillStyle(0x17161b, 0.985).setStrokeStyle(1, 0x463c49, 0.64);
+      this.topActionPanel.setFillStyle(0x17161b, 0.985).setStrokeStyle(1, 0x463c49, 0.64);
+      this.memoryPanel.setFillStyle(0x17161b, 0.985).setStrokeStyle(1, 0x463c49, 0.64);
+      this.titleText.setColor('#f6ecd1');
+      this.summaryText.setColor('#d7d0c3');
+      this.subtitleText.setColor('#f0e4ff');
+    }
     this.setMainLayoutVisibility(metrics.mode);
 
     const railWidth =
@@ -865,7 +897,14 @@ export class Game extends Scene {
       this.summaryText.setPosition(headerLeft, headerTop + this.titleText.height + 10);
     } else {
       this.subtitleText.setVisible(false);
+      this.summaryText.setWordWrapWidth(
+        Math.max(140, metrics.frameWidth - metrics.padding * 2 - this.moodBadgeText.width - metrics.gap - 6)
+      );
       this.summaryText.setPosition(headerLeft, headerTop + this.titleText.height + 6);
+      this.moodBadgeText.setPosition(
+        metrics.frameLeft + metrics.frameWidth - metrics.padding - this.moodBadgeText.width,
+        headerTop + 8
+      );
     }
 
     this.layoutNavigation(metrics, railWidth);
@@ -879,9 +918,10 @@ export class Game extends Scene {
 
   private layoutNavigation(metrics: LayoutMetrics, railWidth: number): void {
     const desktopVisible = metrics.mode === 'desktop';
-    this.navRailPanel.setVisible(desktopVisible);
-    this.navBrandText.setVisible(desktopVisible);
-    this.navBrandSubText.setVisible(desktopVisible);
+    this.navRailPanel.setVisible(desktopVisible).setAlpha(desktopVisible ? 1 : 0);
+    this.mobileNavRailPanel.setVisible(!desktopVisible).setAlpha(!desktopVisible ? 1 : 0);
+    this.navBrandText.setVisible(desktopVisible).setAlpha(desktopVisible ? 1 : 0);
+    this.navBrandSubText.setVisible(desktopVisible).setAlpha(desktopVisible ? 1 : 0);
     this.desktopNavButtons.forEach((button) => {
       button.setVisible(desktopVisible);
       button.setAlpha(desktopVisible ? 1 : 0);
@@ -914,17 +954,30 @@ export class Game extends Scene {
         button.setFixedSize(railWidth - 32, button.height);
         button.setAlign('center');
       });
+      this.mobileNavRailPanel.setPosition(-2000, -2000);
       return;
     }
 
-    const contentX = metrics.frameLeft + metrics.padding;
-    const buttonWidth = Math.floor((metrics.frameWidth - metrics.padding * 2 - metrics.gap * 2) / 3);
-    const buttonY = metrics.frameTop + metrics.frameHeight - metrics.padding - 42;
+    const railX = metrics.frameLeft + metrics.padding;
+    const railY = metrics.frameTop + metrics.frameHeight - metrics.padding - 64;
+    const railWidthMobile = metrics.frameWidth - metrics.padding * 2;
+    const railHeight = 64;
+    const innerPadding = 10;
+    const buttonWidth = Math.floor((railWidthMobile - innerPadding * 2 - metrics.gap * 2) / 3);
+    const buttonY = railY + 11;
+    this.mobileNavRailPanel.setPosition(railX, railY);
+    this.mobileNavRailPanel.setSize(railWidthMobile, railHeight);
     this.mobileNavButtons.forEach((button, index) => {
-      button.setPosition(contentX + index * (buttonWidth + metrics.gap), buttonY);
+      const color = index === 2 ? '#586f97' : '#8c6b43';
+      button.setStyle({
+        backgroundColor: color,
+        color: '#f7efda',
+      });
+      button.setPosition(railX + innerPadding + index * (buttonWidth + metrics.gap), buttonY);
       button.setFixedSize(buttonWidth, 42);
       button.setAlign('center');
     });
+    this.navRailPanel.setPosition(-2000, -2000);
   }
 
   private layoutDesktopDashboard(metrics: LayoutMetrics, railWidth: number): void {
@@ -939,14 +992,9 @@ export class Game extends Scene {
     const rightX = leftX + mainWidth + metrics.gap;
     const creatureHeight = clamp(Math.round(topAreaHeight * (compactDesktop ? 0.23 : 0.31)), compactDesktop ? 126 : 170, compactDesktop ? 176 : 254);
     const measuredActionHeight = this.measureActionPanelHeight(metrics, mainWidth);
-    const actionHeight = clamp(
-      Math.max(measuredActionHeight, Math.round(topAreaHeight * (compactDesktop ? 0.3 : 0.34))),
-      compactDesktop ? 216 : 236,
-      compactDesktop ? 306 : 328
-    );
-    const resolveHeight = compactDesktop
-      ? clamp(this.measureResolvePanelHeight(metrics, mainWidth), 82, 108)
-      : Math.max(topAreaHeight - creatureHeight - actionHeight - metrics.gap * 2, 92);
+    const actionHeight = compactDesktop
+      ? clamp(Math.max(measuredActionHeight, Math.round(topAreaHeight * 0.3)), 216, 306)
+      : Math.max(measuredActionHeight, topAreaHeight - creatureHeight - metrics.gap);
 
     const creatureFrame: PanelFrame = { x: leftX, y: top, width: mainWidth, height: creatureHeight };
     const actionFrame: PanelFrame = {
@@ -957,9 +1005,9 @@ export class Game extends Scene {
     };
     const resolveFrame: PanelFrame = {
       x: leftX,
-      y: actionFrame.y + actionFrame.height + metrics.gap,
+      y: actionFrame.y + actionFrame.height,
       width: mainWidth,
-      height: resolveHeight,
+      height: 0,
     };
 
     this.layoutCreaturePanel(metrics, creatureFrame);
@@ -967,7 +1015,7 @@ export class Game extends Scene {
     this.layoutResolveArea(metrics, resolveFrame);
 
     if (compactDesktop) {
-      const summaryTop = resolveFrame.y + resolveFrame.height + metrics.gap;
+      const summaryTop = actionFrame.y + actionFrame.height + metrics.gap;
       const summaryWidth = Math.floor((mainWidth - metrics.gap) / 2);
       const summaryHeight = Math.max(metrics.contentBottom - summaryTop, 96);
       const traitFrame: PanelFrame = {
@@ -1027,72 +1075,75 @@ export class Game extends Scene {
   }
 
   private layoutMobileDashboard(metrics: LayoutMetrics): void {
-    const contentX = metrics.frameLeft + metrics.padding;
-    const contentWidth = metrics.leftColumnWidth;
-    const navHeight = 42;
-    const navTop = metrics.frameTop + metrics.frameHeight - metrics.padding - navHeight;
-    const bottomLimit = navTop - metrics.gap;
+    const mobileInset = Math.max(10, metrics.padding - 10);
+    const contentX = metrics.frameLeft + mobileInset;
+    const contentWidth = metrics.frameWidth - mobileInset * 2;
+    const frameBottom = metrics.frameTop + metrics.frameHeight - mobileInset;
     const mobileContentTop = this.summaryText.y + this.summaryText.height + metrics.gap;
-    let gap = Math.max(6, metrics.gap - 6);
-    let traitHeight = 56;
-    let creatureHeight = 82;
-    let resolveHeight = 70;
-    const availableHeight = bottomLimit - mobileContentTop;
-    let actionHeight = availableHeight - creatureHeight - resolveHeight - traitHeight - gap * 3;
+    const gap = Math.max(6, metrics.gap - 6);
+    const availableHeight = frameBottom - mobileContentTop;
+    const traitWidth = clamp(Math.round(contentWidth * 0.34), 108, 136);
+    const heroWidth = contentWidth - traitWidth - gap;
+    let topRowHeight = 114;
+    let traitHeight = topRowHeight;
+    const measuredActionHeight = this.measureActionPanelHeight(metrics, contentWidth);
+    let actionHeight = measuredActionHeight;
 
-    if (actionHeight < 196) {
-      creatureHeight = 74;
-      traitHeight = 52;
-      resolveHeight = 66;
-      gap = 6;
-      actionHeight = availableHeight - creatureHeight - resolveHeight - traitHeight - gap * 3;
+    let requiredHeight = topRowHeight + actionHeight + 64 + gap;
+    if (requiredHeight > availableHeight) {
+      topRowHeight = 104;
+      traitHeight = topRowHeight;
+      requiredHeight = topRowHeight + actionHeight + 60 + gap;
     }
 
-    if (actionHeight < 172) {
-      creatureHeight = 68;
-      traitHeight = 48;
-      resolveHeight = 62;
-      gap = 5;
-      actionHeight = availableHeight - creatureHeight - resolveHeight - traitHeight - gap * 3;
+    if (requiredHeight > availableHeight) {
+      topRowHeight = 96;
+      traitHeight = topRowHeight;
+      actionHeight = availableHeight - topRowHeight - 58 - gap;
     }
 
-    actionHeight = Math.max(164, actionHeight);
-
-    let currentTop = mobileContentTop;
+    actionHeight = clamp(actionHeight, 160, Math.max(160, availableHeight - topRowHeight - 58 - gap));
 
     const creatureFrame: PanelFrame = {
       x: contentX,
-      y: currentTop,
-      width: contentWidth,
-      height: creatureHeight,
+      y: mobileContentTop,
+      width: heroWidth,
+      height: topRowHeight,
     };
-    this.layoutCreaturePanel(metrics, creatureFrame);
-    currentTop += creatureHeight + gap;
-
+    const traitFrame: PanelFrame = {
+      x: contentX + heroWidth + gap,
+      y: mobileContentTop,
+      width: traitWidth,
+      height: traitHeight,
+    };
     const actionFrame: PanelFrame = {
       x: contentX,
-      y: currentTop,
+      y: mobileContentTop + topRowHeight + gap,
       width: contentWidth,
       height: actionHeight,
     };
-    this.layoutActionPanel(metrics, actionFrame);
-    currentTop += actionHeight + gap;
 
-    const resolveFrame: PanelFrame = {
-      x: contentX,
-      y: currentTop,
-      width: contentWidth,
-      height: resolveHeight,
-    };
-    this.layoutResolveArea(metrics, resolveFrame);
-
-    const traitFrame: PanelFrame = {
-      x: contentX,
-      y: bottomLimit - traitHeight,
-      width: contentWidth,
-      height: traitHeight,
-    };
+    this.layoutCreaturePanel(metrics, creatureFrame);
     this.layoutTraitPanel(metrics, traitFrame);
+    this.layoutActionPanel(metrics, actionFrame);
+    this.layoutResolveArea(metrics, {
+      x: contentX,
+      y: actionFrame.y + actionFrame.height,
+      width: contentWidth,
+      height: 0,
+    });
+
+    const railY = actionFrame.y + actionFrame.height;
+    const railHeight = Math.max(54, frameBottom - railY);
+    const innerPadding = 8;
+    const buttonWidth = Math.floor((contentWidth - innerPadding * 2 - gap * 2) / 3);
+    const buttonY = railY + Math.max(6, Math.floor((railHeight - 42) / 2));
+    this.mobileNavRailPanel.setPosition(contentX, railY);
+    this.mobileNavRailPanel.setSize(contentWidth, railHeight);
+    this.mobileNavButtons.forEach((button, index) => {
+      button.setPosition(contentX + innerPadding + index * (buttonWidth + gap), buttonY);
+      button.setFixedSize(buttonWidth, 42);
+    });
   }
 
   private measureActionPanelHeight(metrics: LayoutMetrics, panelWidth: number): number {
@@ -1114,27 +1165,16 @@ export class Game extends Scene {
     );
   }
 
-  private measureResolvePanelHeight(metrics: LayoutMetrics, panelWidth: number): number {
-    const innerWidth = panelWidth - metrics.cardInsetX * 2;
-    this.statusText.setWordWrapWidth(innerWidth);
-    this.traitFeedbackText.setWordWrapWidth(innerWidth);
-    return Math.ceil(
-      metrics.cardInsetY * 2 +
-        this.statusText.height +
-        (this.traitFeedbackText.text ? this.traitFeedbackText.height + 10 : 0) +
-        this.resolveButton.height +
-        26
-    );
-  }
-
   private layoutCreaturePanel(metrics: LayoutMetrics, frame: PanelFrame): void {
     this.creaturePanel.setPosition(frame.x, frame.y);
     this.creaturePanel.setSize(frame.width, frame.height);
 
-    const innerX = frame.x + metrics.cardInsetX;
-    const innerY = frame.y + metrics.cardInsetY;
-    const innerWidth = frame.width - metrics.cardInsetX * 2;
-    const artHeight = frame.height - metrics.cardInsetY * 2;
+    const insetX = metrics.mode === 'desktop' ? metrics.cardInsetX : 14;
+    const insetY = metrics.mode === 'desktop' ? metrics.cardInsetY : 14;
+    const innerX = frame.x + insetX;
+    const innerY = frame.y + insetY;
+    const innerWidth = frame.width - insetX * 2;
+    const artHeight = frame.height - insetY * 2;
     const dna = this.pettitState?.pettit.appearanceDna ?? this.getFallbackAppearanceDna();
     const traits = this.pettitState?.pettit.traits ?? {
       curiosity: 50,
@@ -1151,9 +1191,9 @@ export class Game extends Scene {
     this.creatureArtFrame.setPosition(innerX, innerY);
     this.creatureArtFrame.setSize(innerWidth, artHeight);
     const creatureCenterX = innerX + innerWidth * (metrics.mode === 'desktop' ? 0.48 : 0.5) + (chaosWeight - 0.5) * 8;
-    const creatureCenterY = innerY + artHeight * ((metrics.mode === 'desktop' ? 0.6 : 0.6) - courageWeight * 0.04);
-    const bodyWidth = Math.min(innerWidth * 0.26, artHeight * 0.72) * (dna.bodyWidthScale + trustWeight * 0.08);
-    const bodyHeight = Math.min(artHeight * 0.7, bodyWidth * 1.12) * (dna.bodyHeightScale + courageWeight * 0.06);
+    const creatureCenterY = innerY + artHeight * ((metrics.mode === 'desktop' ? 0.6 : 0.52) - courageWeight * 0.04);
+    const bodyWidth = Math.min(innerWidth * (metrics.mode === 'desktop' ? 0.26 : 0.34), artHeight * (metrics.mode === 'desktop' ? 0.72 : 0.82)) * (dna.bodyWidthScale + trustWeight * 0.08);
+    const bodyHeight = Math.min(artHeight * (metrics.mode === 'desktop' ? 0.7 : 0.8), bodyWidth * 1.12) * (dna.bodyHeightScale + courageWeight * 0.06);
     const eyeOffsetX = bodyWidth * 0.16 * dna.eyeSpacing * (1 + curiosityWeight * 0.08);
     const eyeY = creatureCenterY - bodyHeight * (0.12 + curiosityWeight * 0.03);
     const blushOffsetX = bodyWidth * 0.22;
@@ -1197,8 +1237,8 @@ export class Game extends Scene {
     this.layoutCreatureAccessories(creatureCenterX, creatureCenterY, bodyWidth, bodyHeight);
     const compactDesktop = metrics.mode === 'desktop' && frame.width < 620;
     const portraitSize = Math.min(
-      innerWidth * (metrics.mode === 'desktop' ? (compactDesktop ? 0.36 : 0.46) : 0.2),
-      artHeight * (metrics.mode === 'desktop' ? (compactDesktop ? 0.78 : 0.92) : 0.56)
+      innerWidth * (metrics.mode === 'desktop' ? (compactDesktop ? 0.36 : 0.46) : 0.64),
+      artHeight * (metrics.mode === 'desktop' ? (compactDesktop ? 0.78 : 0.92) : 1.04)
     );
     this.creatureSnapshot.setPosition(creatureCenterX, creatureCenterY - bodyHeight * 0.02);
     this.creatureSnapshot.setDisplaySize(portraitSize, portraitSize);
@@ -1207,7 +1247,9 @@ export class Game extends Scene {
     this.creatureCaptionText.setWordWrapWidth(
       innerWidth * (metrics.mode === 'desktop' ? (compactDesktop ? 0.34 : 0.44) : 0.5)
     );
-    this.moodBadgeText.setPosition(innerX + innerWidth - this.moodBadgeText.width - 18, innerY + 14);
+    if (metrics.mode === 'desktop') {
+      this.moodBadgeText.setPosition(innerX + innerWidth - this.moodBadgeText.width - 18, innerY + 14);
+    }
     this.futureSlotText.setWordWrapWidth(
       Math.max(metrics.mode === 'desktop' ? 180 : 128, innerWidth * (metrics.mode === 'desktop' ? 0.28 : 0.24))
     );
@@ -1284,20 +1326,22 @@ export class Game extends Scene {
     this.actionPanel.setPosition(frame.x, frame.y);
     this.actionPanel.setSize(frame.width, frame.height);
 
-    const innerX = frame.x + metrics.cardInsetX;
-    const innerY = frame.y + metrics.cardInsetY;
-    const innerWidth = frame.width - metrics.cardInsetX * 2;
+    const mobileInsetX = metrics.mode === 'desktop' ? metrics.cardInsetX : metrics.cardInsetX + 2;
+    const mobileInsetY = metrics.mode === 'desktop' ? metrics.cardInsetY : metrics.cardInsetY + 2;
+    const innerX = frame.x + mobileInsetX;
+    const innerY = frame.y + mobileInsetY;
+    const innerWidth = frame.width - mobileInsetX * 2;
     const buttonCount = Math.max(this.optionButtons.length, 1);
     const useSingleRow = metrics.mode === 'desktop' && frame.width >= 720;
     const columns = useSingleRow ? buttonCount : Math.min(2, buttonCount);
-    const buttonGap = metrics.mode === 'desktop' ? metrics.buttonGap : Math.max(8, metrics.buttonGap - 4);
+    const buttonGap = metrics.mode === 'desktop' ? metrics.buttonGap : Math.max(10, metrics.buttonGap - 2);
 
     this.actionTitleText.setPosition(innerX, innerY + 4);
     this.actionTitleText.setWordWrapWidth(innerWidth);
-    this.voteSummaryText.setPosition(innerX, innerY + this.actionTitleText.height + (metrics.mode === 'desktop' ? 20 : 12));
+    this.voteSummaryText.setPosition(innerX, innerY + this.actionTitleText.height + (metrics.mode === 'desktop' ? 20 : 14));
     this.voteSummaryText.setWordWrapWidth(innerWidth);
 
-    const buttonTop = this.voteSummaryText.y + this.voteSummaryText.height + (metrics.mode === 'desktop' ? 24 : 14);
+    const buttonTop = this.voteSummaryText.y + this.voteSummaryText.height + (metrics.mode === 'desktop' ? 24 : 18);
     const buttonWidth = Math.floor((innerWidth - buttonGap * (columns - 1)) / columns);
 
     this.optionButtons.forEach((button, index) => {
@@ -1321,13 +1365,13 @@ export class Game extends Scene {
       return;
     }
 
-    const labelWidth = clamp(Math.round(frame.width * (metrics.mode === 'desktop' ? 0.24 : 0.18)), 52, 100);
+    const labelWidth = clamp(Math.round(frame.width * (metrics.mode === 'desktop' ? 0.24 : 0.2)), 52, 100);
     const valueWidth = 34;
     const barTrackWidth = frame.width - metrics.cardInsetX * 2 - labelWidth - valueWidth - 14;
     const startY = metrics.mode === 'desktop' ? this.traitPanelTitle.y + this.traitPanelTitle.height + 16 : frame.y + metrics.cardInsetY + 4;
     const rowGap =
       metrics.mode === 'desktop' ? clamp(Math.round(frame.height * 0.16), 26, 34) : 12;
-    const trackHeight = metrics.mode === 'desktop' ? 10 : 5;
+    const trackHeight = metrics.mode === 'desktop' ? 10 : 6;
     const barKeys: TraitKey[] = ['curiosity', 'chaos', 'trust', 'courage'];
 
     barKeys.forEach((traitKey, index) => {
@@ -1371,6 +1415,20 @@ export class Game extends Scene {
   }
 
   private layoutResolveArea(metrics: LayoutMetrics, frame: PanelFrame): void {
+    if (frame.height <= 1) {
+      this.resolvePanel.setVisible(false);
+      this.statusText.setVisible(false);
+      this.traitFeedbackText.setVisible(false);
+      this.resolveButton.setVisible(false);
+      this.resolveButton.disableInteractive();
+      return;
+    }
+
+    this.resolvePanel.setVisible(true);
+    this.statusText.setVisible(true);
+    this.traitFeedbackText.setVisible(true);
+    this.resolveButton.setVisible(true);
+    this.resolveButton.setInteractive({ useHandCursor: true });
     this.resolvePanel.setPosition(frame.x, frame.y);
     this.resolvePanel.setSize(frame.width, frame.height);
 
@@ -2419,6 +2477,12 @@ export class Game extends Scene {
   }
 
   private applyMoodBadgeStyle(mood: PettitViewModel['pettit']['mood']): void {
+    if (this.scale.width < 620) {
+      this.moodBadgeText.setBackgroundColor('#5c3d88');
+      this.moodBadgeText.setColor('#f8edc8');
+      return;
+    }
+
     switch (mood) {
       case 'excited':
         this.moodBadgeText.setBackgroundColor('#f6b14b');

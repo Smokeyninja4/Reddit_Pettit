@@ -44,6 +44,13 @@
         "location": "subreddit",
         "forUserType": "moderator",
         "endpoint": "/internal/menu/reset-world"
+      },
+      {
+        "label": "Resolve current encounter (Dev Only)",
+        "description": "Advance Pettit's current encounter for playtesting",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/resolve-encounter"
       }
     ]
   },

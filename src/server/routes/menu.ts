@@ -11,6 +11,7 @@ import {
 } from '../core/pettit-store';
 import { buildPendingCommunityGiftBallot } from '../core/pettit-contributions';
 import { getPendingNamingTargetOptions } from '../core/pettit-naming';
+import { resolveVote } from '../core/pettit-loop';
 
 export const menu = new Hono();
 
@@ -249,6 +250,56 @@ menu.post('/reset-world', async (c) => {
     return c.json<UiResponse>(
       {
         showToast: 'Failed to reset Pettit for this subreddit',
+      },
+      400
+    );
+  }
+});
+
+menu.post('/resolve-encounter', async (c) => {
+  const subredditName = context.subredditName;
+
+  try {
+    if (!subredditName) {
+      return c.json<UiResponse>(
+        {
+          showToast: 'No subreddit context was available',
+        },
+        400
+      );
+    }
+
+    const username = await reddit.getCurrentUsername();
+
+    // TODO: Remove this submission-testing helper before a real public launch.
+    if (!isDevSubmissionUser(username)) {
+      return c.json<UiResponse>(
+        {
+          showToast: 'That resolve tool is reserved for submission playtesting.',
+        },
+        403
+      );
+    }
+
+    const result = await resolveVote(subredditName, username ?? null);
+
+    return c.json<UiResponse>(
+      {
+        showToast: {
+          text:
+            result.outcome === 'advanced'
+              ? 'No votes came in, so Pettit moved on to a fresh encounter. Refresh the post to see it.'
+              : 'Pettit resolved the current encounter. Refresh the post to see the next story.',
+          appearance: 'success',
+        },
+      },
+      200
+    );
+  } catch (error) {
+    console.error(`Error resolving current encounter: ${error}`);
+    return c.json<UiResponse>(
+      {
+        showToast: 'Failed to resolve the current encounter',
       },
       400
     );
