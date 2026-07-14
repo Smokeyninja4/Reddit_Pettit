@@ -8,6 +8,10 @@
 
 Reference list for gift voting.
 
+Representative only.
+
+The live gift library is broader than the short examples here and now includes more keepsakes with stronger category identity.
+
 
 
 \---
@@ -27,6 +31,10 @@ Reference list for gift voting.
 \* Backpack
 
 \* Boots
+
+\* Explorer Hat
+
+\* Patchwork Scarf
 
 
 
@@ -48,6 +56,10 @@ Reference list for gift voting.
 
 \* Notebook
 
+\* Picnic Basket
+
+\* Pocket Torch
+
 
 
 \---
@@ -65,6 +77,10 @@ Reference list for gift voting.
 \* Wooden Sword
 
 \* Music Box
+
+\* Toy Boat
+
+\* Teddy Bear
 
 
 
@@ -84,6 +100,8 @@ Reference list for gift voting.
 
 \* Plant Guide
 
+\* Puzzle Book
+
 
 
 \---
@@ -101,6 +119,10 @@ Reference list for gift voting.
 \* Friendship Bracelet
 
 \* Founder's Coin
+
+\* Wooden Charm
+
+\* Painted Pebble
 
 
 
@@ -121,6 +143,8 @@ Reference list for gift voting.
 \* Giant Spoon
 
 \* Mystery Box
+
+\* Squeaky Duck
 
 
 

@@ -216,6 +216,13 @@ const makeEncounterSeed = (
 
 const buildCuriosityEncounter = (title: string): EncounterSeed => {
   const lowerTitle = sentenceCaseTitle(title);
+  const discoveredLandmarkIdByTitle: Partial<Record<string, string>> = {
+    'Bee Hollow': 'bee-hollow',
+    'Sunken Sundial': 'sunken-sundial',
+    'Glass Orchard': 'glass-orchard',
+    'Silent Aviary': 'silent-aviary',
+  };
+  const discoveredLandmarkId = discoveredLandmarkIdByTitle[title];
   return makeEncounterSeed(
     'curiosity',
     title,
@@ -232,6 +239,7 @@ const buildCuriosityEncounter = (title: string): EncounterSeed => {
         importance: 3,
         mood: 'curious',
         traitEffects: { curiosity: 3, courage: 1 },
+        discoveredLandmarkId,
       },
       {
         optionId: 'observe',
@@ -242,6 +250,7 @@ const buildCuriosityEncounter = (title: string): EncounterSeed => {
         importance: 3,
         mood: 'thoughtful',
         traitEffects: { curiosity: 2 },
+        discoveredLandmarkId,
       },
       {
         optionId: 'ask',
@@ -252,6 +261,7 @@ const buildCuriosityEncounter = (title: string): EncounterSeed => {
         importance: 3,
         mood: 'curious',
         traitEffects: { curiosity: 2, trust: 1 },
+        discoveredLandmarkId,
       },
       {
         optionId: 'return-note',
@@ -262,6 +272,7 @@ const buildCuriosityEncounter = (title: string): EncounterSeed => {
         importance: 2,
         mood: 'thoughtful',
         traitEffects: { curiosity: 1, trust: 1 },
+        discoveredLandmarkId,
       },
     ]
   );
@@ -269,6 +280,13 @@ const buildCuriosityEncounter = (title: string): EncounterSeed => {
 
 const buildTrustEncounter = (title: string): EncounterSeed => {
   const lowerTitle = sentenceCaseTitle(title);
+  const discoveredLandmarkIdByTitle: Partial<Record<string, string>> = {
+    'Host Supper': 'shared-supper',
+    'Tend Community Garden': 'community-garden',
+    'Help The Beekeeper': 'beekeeper-yard',
+    'Walk A Friend Home': 'lantern-lane',
+  };
+  const discoveredLandmarkId = discoveredLandmarkIdByTitle[title];
   return makeEncounterSeed(
     'trust',
     title,
@@ -285,6 +303,7 @@ const buildTrustEncounter = (title: string): EncounterSeed => {
         importance: 3,
         mood: 'excited',
         traitEffects: { trust: 3, courage: 1 },
+        discoveredLandmarkId,
       },
       {
         optionId: 'share',
@@ -295,6 +314,7 @@ const buildTrustEncounter = (title: string): EncounterSeed => {
         importance: 3,
         mood: 'curious',
         traitEffects: { trust: 2 },
+        discoveredLandmarkId,
       },
       {
         optionId: 'stay',
@@ -305,6 +325,7 @@ const buildTrustEncounter = (title: string): EncounterSeed => {
         importance: 4,
         mood: 'thoughtful',
         traitEffects: { trust: 2, courage: 1 },
+        discoveredLandmarkId,
       },
       {
         optionId: 'support',
@@ -315,6 +336,7 @@ const buildTrustEncounter = (title: string): EncounterSeed => {
         importance: 2,
         mood: 'thoughtful',
         traitEffects: { trust: 1, curiosity: 1 },
+        discoveredLandmarkId,
       },
     ]
   );

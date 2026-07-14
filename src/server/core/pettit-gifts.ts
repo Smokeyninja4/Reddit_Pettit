@@ -56,6 +56,30 @@ const GIFT_LIBRARY: readonly GiftDefinition[] = [
     traitEffects: { curiosity: 1 },
   },
   {
+    id: 'story-collection',
+    name: 'Story Collection',
+    description: 'A thick little stack of favorite tales gathered from many soft-hearted evenings.',
+    category: 'books',
+    moodLine: 'Pettit opened the story collection carefully, like each page might be introducing an old friend.',
+    traitEffects: { trust: 1, curiosity: 1 },
+  },
+  {
+    id: 'adventure-journal',
+    name: 'Adventure Journal',
+    description: 'A sturdy journal with plenty of room for routes, sketches, and future discoveries.',
+    category: 'books',
+    moodLine: 'Pettit turned through the empty pages of the adventure journal and immediately started imagining what should fill them first.',
+    traitEffects: { courage: 1, curiosity: 1 },
+  },
+  {
+    id: 'plant-guide',
+    name: 'Plant Guide',
+    description: 'A leaf-pressed guidebook full of stems, petals, and very patient explanations.',
+    category: 'books',
+    moodLine: 'Pettit studied the plant guide with a focused little squint, then kept looking outside as though the garden had become a puzzle.',
+    traitEffects: { curiosity: 1, trust: 1 },
+  },
+  {
     id: 'straw-hat',
     name: 'Straw Hat',
     description: 'A sunny little hat that makes every walk feel softer and friendlier.',
@@ -120,6 +144,22 @@ const GIFT_LIBRARY: readonly GiftDefinition[] = [
     category: 'clothing',
     moodLine: 'Pettit wiggled happily into the backpack straps and immediately started planning adventures.',
     traitEffects: { courage: 1 },
+  },
+  {
+    id: 'rain-coat',
+    name: 'Rain Coat',
+    description: 'A bright little rain coat for puddles, drizzle, and determined outdoor plans.',
+    category: 'clothing',
+    moodLine: 'Pettit slipped into the rain coat and instantly looked convinced that weather was now just part of the fun.',
+    traitEffects: { courage: 1, trust: 1 },
+  },
+  {
+    id: 'patchwork-scarf',
+    name: 'Patchwork Scarf',
+    description: 'A cheerful scarf stitched from many colors, like a keepsake made from shared attention.',
+    category: 'clothing',
+    moodLine: 'Pettit wrapped the patchwork scarf around itself and looked touched by how much personality could fit into one cozy thing.',
+    traitEffects: { trust: 1, chaos: 1 },
   },
   {
     id: 'lantern',
@@ -297,6 +337,30 @@ const GIFT_LIBRARY: readonly GiftDefinition[] = [
     traitEffects: { courage: 1 },
   },
   {
+    id: 'fishing-rod',
+    name: 'Fishing Rod',
+    description: 'A simple little fishing rod for creek banks, waiting well, and listening to the water think.',
+    category: 'tools',
+    moodLine: 'Pettit tested the fishing rod with careful excitement, like patience had suddenly become a very interesting adventure.',
+    traitEffects: { trust: 1, curiosity: 1 },
+  },
+  {
+    id: 'notebook',
+    name: 'Notebook',
+    description: 'A pocket notebook for observations, half-ideas, and important little clues.',
+    category: 'tools',
+    moodLine: 'Pettit opened the notebook right away and looked relieved by the thought that no good idea would have to stay loose for long.',
+    traitEffects: { curiosity: 1, trust: 1 },
+  },
+  {
+    id: 'picnic-basket',
+    name: 'Picnic Basket',
+    description: 'A woven picnic basket that makes every outing feel a little more communal and deliberate.',
+    category: 'tools',
+    moodLine: 'Pettit peered into the picnic basket and immediately started imagining who might sit nearby once it was full.',
+    traitEffects: { trust: 1, courage: 1 },
+  },
+  {
     id: 'rubber-chicken',
     name: 'Rubber Chicken',
     description: 'A gloriously silly rubber chicken that nobody can take entirely seriously.',
@@ -335,6 +399,30 @@ const GIFT_LIBRARY: readonly GiftDefinition[] = [
     category: 'funny',
     moodLine: 'Pettit booped the squeaky duck once and then stared at it with the delighted betrayal of someone who found exactly what they hoped for.',
     traitEffects: { chaos: 1, trust: 1 },
+  },
+  {
+    id: 'suspicious-hat',
+    name: 'Suspicious Hat',
+    description: 'A hat so questionable that wearing it automatically feels like a decision somebody should probably document.',
+    category: 'funny',
+    moodLine: 'Pettit put on the suspicious hat with great confidence, which did nothing to make the hat less suspicious.',
+    traitEffects: { chaos: 1, curiosity: 1 },
+  },
+  {
+    id: 'giant-spoon',
+    name: 'Giant Spoon',
+    description: 'A wildly oversized spoon that seems built for either soup or extremely poor judgment.',
+    category: 'funny',
+    moodLine: 'Pettit dragged the giant spoon around for a while and looked delighted by how unnecessary it was.',
+    traitEffects: { chaos: 1, courage: 1 },
+  },
+  {
+    id: 'mystery-box',
+    name: 'Mystery Box',
+    description: 'A sealed little box that feels like it was specifically designed to provoke questions.',
+    category: 'funny',
+    moodLine: 'Pettit shook the mystery box near one ear, then the other, and became instantly invested in the possibility of nonsense.',
+    traitEffects: { curiosity: 1, chaos: 1 },
   },
   {
     id: 'friendship-bracelet',
@@ -376,6 +464,30 @@ const GIFT_LIBRARY: readonly GiftDefinition[] = [
     moodLine: 'Pettit planted the tiny flag nearby and seemed delighted by the idea that togetherness could look so cheerful.',
     traitEffects: { trust: 1 },
   },
+  {
+    id: 'festival-badge',
+    name: 'Festival Badge',
+    description: 'A bright badge that feels like proof of having belonged to a particularly good shared day.',
+    category: 'community',
+    moodLine: 'Pettit turned the festival badge over in the light and looked very pleased by the idea that celebrations could leave something behind.',
+    traitEffects: { trust: 1, chaos: 1 },
+  },
+  {
+    id: 'founders-coin',
+    name: "Founder's Coin",
+    description: 'A small commemorative coin that makes shared history feel tangible in the paw.',
+    category: 'community',
+    moodLine: 'Pettit held the founder\'s coin with surprising reverence, as though history had just decided to become portable.',
+    traitEffects: { trust: 1, courage: 1 },
+  },
+  {
+    id: 'music-box',
+    name: 'Music Box',
+    description: 'A tiny music box with a tune gentle enough to make the whole room slow down and listen.',
+    category: 'community',
+    moodLine: 'Pettit listened to the music box in complete stillness, like the melody had opened a little pocket of safety all by itself.',
+    traitEffects: { trust: 1, curiosity: 1 },
+  },
 ];
 
 const LEGACY_GIFT_DEFINITIONS: readonly GiftDefinition[] = [
@@ -400,6 +512,19 @@ const LEGACY_GIFT_NAME_ALIASES: Readonly<Record<string, string>> = {
   lantern: 'lantern',
   'star guide': 'star-map',
   'star map': 'star-map',
+  'plant guide': 'plant-guide',
+  'story collection': 'story-collection',
+  'adventure journal': 'adventure-journal',
+  'rain coat': 'rain-coat',
+  'fishing rod': 'fishing-rod',
+  notebook: 'notebook',
+  'festival badge': 'festival-badge',
+  "founder's coin": 'founders-coin',
+  'founders coin': 'founders-coin',
+  'music box': 'music-box',
+  'suspicious hat': 'suspicious-hat',
+  'giant spoon': 'giant-spoon',
+  'mystery box': 'mystery-box',
   'friendship bracelet': 'friendship-bracelet',
   kite: 'kite',
   'tiny crown': 'tiny-crown',
@@ -578,13 +703,27 @@ export const selectGiftEncounterIds = (inventory: PettitInventoryItem[], optionC
     .slice(offset)
     .concat(GIFT_LIBRARY.filter((gift) => !gift.seasonalOnly).slice(0, offset));
   const selected: string[] = [];
+  const selectedCategories = new Set<GiftCategory>();
+
+  const trySelectGift = (gift: GiftDefinition, preferNewCategory: boolean): void => {
+    if (selected.length >= optionCount || selected.includes(gift.id) || ownedCanonicalIds.has(gift.id)) {
+      return;
+    }
+
+    if (preferNewCategory && selectedCategories.has(gift.category)) {
+      return;
+    }
+
+    selected.push(gift.id);
+    selectedCategories.add(gift.category);
+  };
 
   for (const gift of unowned) {
     if (selected.length >= optionCount) {
       break;
     }
 
-    selected.push(gift.id);
+    trySelectGift(gift, true);
   }
 
   for (const gift of orderedAll) {
@@ -592,9 +731,23 @@ export const selectGiftEncounterIds = (inventory: PettitInventoryItem[], optionC
       break;
     }
 
-    if (!selected.includes(gift.id) && !ownedCanonicalIds.has(gift.id)) {
-      selected.push(gift.id);
+    trySelectGift(gift, true);
+  }
+
+  for (const gift of unowned) {
+    if (selected.length >= optionCount) {
+      break;
     }
+
+    trySelectGift(gift, false);
+  }
+
+  for (const gift of orderedAll) {
+    if (selected.length >= optionCount) {
+      break;
+    }
+
+    trySelectGift(gift, false);
   }
 
   return selected;

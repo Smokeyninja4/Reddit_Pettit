@@ -59,6 +59,62 @@ const LANDMARKS: readonly LandmarkDefinition[] = [
     sourceEncounterTemplateId: 'encounter-traveller',
     referenceLabel: 'the road',
   },
+  {
+    id: 'bee-hollow',
+    baseName: 'Bee Hollow',
+    description: 'A tucked-away hollow where the air hums softly and every flower seems busy.',
+    sourceEncounterTemplateId: 'encounter-curiosity-bee-hollow',
+    referenceLabel: 'the hollow',
+  },
+  {
+    id: 'sunken-sundial',
+    baseName: 'Sunken Sundial',
+    description: 'An old sundial half claimed by the earth, still trying to keep time for anyone patient enough to notice.',
+    sourceEncounterTemplateId: 'encounter-curiosity-sunken-sundial',
+    referenceLabel: 'the sundial',
+  },
+  {
+    id: 'glass-orchard',
+    baseName: 'Glass Orchard',
+    description: 'A strange little orchard where light catches every branch like it has somewhere important to be.',
+    sourceEncounterTemplateId: 'encounter-curiosity-glass-orchard',
+    referenceLabel: 'the orchard',
+  },
+  {
+    id: 'silent-aviary',
+    baseName: 'Silent Aviary',
+    description: 'A hushed aviary where even stillness seems to be listening back.',
+    sourceEncounterTemplateId: 'encounter-curiosity-silent-aviary',
+    referenceLabel: 'the aviary',
+  },
+  {
+    id: 'shared-supper',
+    baseName: 'Shared Supper',
+    description: 'The gathering place where the community keeps proving that food can feel like welcome.',
+    sourceEncounterTemplateId: 'encounter-trust-host-supper',
+    referenceLabel: 'the supper place',
+  },
+  {
+    id: 'community-garden',
+    baseName: 'Community Garden',
+    description: 'A garden shaped by many small hands and the decision to keep tending together.',
+    sourceEncounterTemplateId: 'encounter-trust-tend-community-garden',
+    referenceLabel: 'the garden',
+  },
+  {
+    id: 'beekeeper-yard',
+    baseName: 'Beekeeper Yard',
+    description: 'A warm little yard full of hives, careful work, and the sort of patience Pettit notices right away.',
+    sourceEncounterTemplateId: 'encounter-trust-help-the-beekeeper',
+    referenceLabel: 'the yard',
+  },
+  {
+    id: 'lantern-lane',
+    baseName: 'Lantern Lane',
+    description: 'A path that feels safest when walked together, especially after the light starts thinning out.',
+    sourceEncounterTemplateId: 'encounter-trust-walk-a-friend-home',
+    referenceLabel: 'the lane',
+  },
 ];
 
 const DEV_MULTI_SUBMIT_USERNAME = 'Smokeyninja04';
