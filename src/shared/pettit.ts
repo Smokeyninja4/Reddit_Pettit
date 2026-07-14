@@ -95,6 +95,11 @@ export type PettitSeasonalProgress = {
   pettitDayGiftGrantedYears: string[];
 };
 
+export type PettitRareProgress = {
+  lastEncounterResolvedCount: number | null;
+  recentTemplateIds: string[];
+};
+
 export type PettitAppearanceDna = {
   seedVersion: 1;
   paletteKey: PettitPaletteKey;
@@ -289,6 +294,7 @@ export type PettitState = {
   latestJournalId: string | null;
   dailyCycle: PettitDailyCycle;
   seasonalProgress: PettitSeasonalProgress;
+  rareProgress: PettitRareProgress;
 };
 
 export type PettitStats = {

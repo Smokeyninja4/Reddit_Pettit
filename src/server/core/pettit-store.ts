@@ -10,6 +10,7 @@ import type {
   PettitLandmark,
   PettitMemory,
   PettitNameSubmission,
+  PettitRareProgress,
   PettitSeasonalProgress,
   PettitState,
   PettitStats,
@@ -34,6 +35,7 @@ type LegacyState = PettitState & {
   activeEncounterId?: string;
   dailyCycle?: PettitDailyCycle;
   seasonalProgress?: Partial<PettitSeasonalProgress>;
+  rareProgress?: Partial<PettitRareProgress>;
 };
 
 type LegacyStats = PettitStats & {
@@ -110,6 +112,13 @@ const normalizeSeasonalProgress = (
   pettitDayGiftGrantedYears: seasonalProgress?.pettitDayGiftGrantedYears ?? [],
 });
 
+const normalizeRareProgress = (
+  rareProgress?: Partial<PettitRareProgress>
+): PettitRareProgress => ({
+  lastEncounterResolvedCount: rareProgress?.lastEncounterResolvedCount ?? null,
+  recentTemplateIds: rareProgress?.recentTemplateIds ?? [],
+});
+
 const normalizeLandmark = (landmark: PettitLandmark & { sourceQuestTemplateId?: string }): PettitLandmark => {
   return {
     ...landmark,
@@ -164,6 +173,7 @@ const normalizeState = (storedState: LegacyState): PettitState => {
     latestJournalId: storedState.latestJournalId ?? null,
     dailyCycle: normalizeDailyCycle(storedState.dailyCycle),
     seasonalProgress: normalizeSeasonalProgress(storedState.seasonalProgress),
+    rareProgress: normalizeRareProgress(storedState.rareProgress),
   };
 };
 

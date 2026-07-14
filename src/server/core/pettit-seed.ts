@@ -25,6 +25,7 @@ type EncounterSeed = {
   affinity: EncounterAffinity;
   season?: EncounterSeason;
   isRare?: boolean;
+  preferredTraits?: readonly TraitKey[];
   options: ReadonlyArray<{
     id: string;
     label: string;
@@ -117,19 +118,6 @@ const chaosTitles = [
   'Press Glowing Rune',
 ] as const;
 
-const rareTitles = [
-  'Golden Egg',
-  'Sleeping Giant',
-  'Fallen Star',
-  'Ghost Lantern',
-  'Time Capsule',
-  'Talking Tree',
-  'Moon Rabbit',
-  'Dragon Footprint',
-  'Secret Door Beneath Pond',
-  'Whispering Crown',
-] as const;
-
 const seasonalSeeds: ReadonlyArray<{ season: EncounterSeason; titles: readonly string[] }> = [
   { season: 'spring', titles: ['First Blossom', 'Singing Frogs', 'Bee Rescue'] },
   { season: 'summer', titles: ['Beach Treasure', 'Heatwave Shelter', 'Berry Harvest'] },
@@ -193,7 +181,7 @@ const makeEncounterSeed = (
   affinity: EncounterAffinity,
   options: typeof curiosityOptions | typeof trustOptions | typeof courageOptions | typeof chaosOptions | typeof rareOptions | typeof seasonalOptions,
   outcomes: EncounterTemplate['outcomes'],
-  extras?: Pick<EncounterSeed, 'isRare' | 'season'>
+  extras?: Pick<EncounterSeed, 'isRare' | 'season' | 'preferredTraits'>
 ): EncounterSeed => ({
   id: `encounter-${familyId}-${slugify(title)}`,
   title,
@@ -201,6 +189,7 @@ const makeEncounterSeed = (
   affinity,
   season: extras?.season,
   isRare: extras?.isRare,
+  preferredTraits: extras?.preferredTraits,
   options,
   outcomes,
 });
@@ -417,7 +406,7 @@ const buildChaosEncounter = (title: string): EncounterSeed => {
   );
 };
 
-const buildRareEncounter = (title: string): EncounterSeed => {
+const buildRareEncounter = (title: string, preferredTraits: readonly TraitKey[]): EncounterSeed => {
   const lowerTitle = sentenceCaseTitle(title);
   return makeEncounterSeed(
     'rare',
@@ -462,12 +451,12 @@ const buildRareEncounter = (title: string): EncounterSeed => {
         memoryTitle: `Left ${title} Unsolved`,
         memoryDescription: `Not every mystery needed conquering. Pettit let the rare moment stay a little wild.`,
         memoryType: 'special',
-        importance: 4,
+        importance: 5,
         mood: 'thoughtful',
         traitEffects: { chaos: 1, curiosity: 1 },
       },
     ],
-    { isRare: true }
+    { isRare: true, preferredTraits }
   );
 };
 
@@ -683,7 +672,18 @@ const STANDARD_ENCOUNTER_LIBRARY: readonly EncounterSeed[] = [
   ...chaosTitles.map((title) => buildChaosEncounter(title)),
 ];
 
-const RARE_ENCOUNTER_LIBRARY: readonly EncounterSeed[] = rareTitles.map((title) => buildRareEncounter(title));
+const RARE_ENCOUNTER_LIBRARY: readonly EncounterSeed[] = [
+  buildRareEncounter('Golden Egg', ['trust', 'curiosity']),
+  buildRareEncounter('Sleeping Giant', ['courage', 'trust']),
+  buildRareEncounter('Fallen Star', ['curiosity', 'courage']),
+  buildRareEncounter('Ghost Lantern', ['curiosity', 'chaos']),
+  buildRareEncounter('Time Capsule', ['curiosity', 'trust']),
+  buildRareEncounter('Talking Tree', ['trust', 'curiosity']),
+  buildRareEncounter('Moon Rabbit', ['curiosity', 'chaos']),
+  buildRareEncounter('Dragon Footprint', ['courage', 'curiosity']),
+  buildRareEncounter('Secret Door Beneath Pond', ['curiosity', 'courage']),
+  buildRareEncounter('Whispering Crown', ['chaos', 'curiosity']),
+];
 
 const SEASONAL_ENCOUNTER_LIBRARY: readonly EncounterSeed[] = seasonalSeeds.flatMap((seasonSeed) =>
   seasonSeed.titles.map((title) => buildSeasonalEncounter(seasonSeed.season, title))
@@ -736,6 +736,10 @@ export const createDefaultPettitState = (subredditName: string): PettitState => 
     legendaryEventYear: {},
     pettitDayGiftGrantedYears: [],
   },
+  rareProgress: {
+    lastEncounterResolvedCount: null,
+    recentTemplateIds: [],
+  },
 });
 
 export const createDefaultStats = (): PettitStats => ({
@@ -754,6 +758,15 @@ export const getTopTraits = (traits: PettitTraits, limit: number): TraitKey[] =>
 
 export const canonicalizeEncounterTemplateId = (templateId: string): string => {
   return LEGACY_TEMPLATE_ID_ALIASES[templateId] ?? templateId;
+};
+
+const filterRepeatedEncounter = <T extends EncounterTemplate>(
+  candidates: readonly T[],
+  currentTemplateId: string
+): T[] => {
+  const canonicalCurrentId = canonicalizeEncounterTemplateId(currentTemplateId);
+  const filteredCandidates = candidates.filter((template) => template.id !== canonicalCurrentId);
+  return filteredCandidates.length > 0 ? filteredCandidates : [...candidates];
 };
 
 export const getCurrentSeason = (date = new Date()): EncounterSeason => {
@@ -806,6 +819,57 @@ export const getEncounterTemplateById = (templateId: string): EncounterTemplate 
 export const getStandardEncounterTemplates = (): readonly EncounterTemplate[] => STANDARD_ENCOUNTER_LIBRARY;
 
 export const getRareEncounterTemplates = (): readonly EncounterTemplate[] => RARE_ENCOUNTER_LIBRARY;
+
+export const selectRareEncounterTemplate = (
+  state: PettitState,
+  currentTemplateId: string,
+  recentTemplateIds: readonly string[] = []
+): EncounterTemplate => {
+  const canonicalCurrentId = canonicalizeEncounterTemplateId(currentTemplateId);
+  const recentIdSet = new Set(recentTemplateIds.map((templateId) => canonicalizeEncounterTemplateId(templateId)));
+  const filteredCandidates = RARE_ENCOUNTER_LIBRARY.filter(
+    (template) => template.id !== canonicalCurrentId && !recentIdSet.has(template.id)
+  );
+  const safeCandidates =
+    filteredCandidates.length > 0
+      ? filteredCandidates
+      : filterRepeatedEncounter(RARE_ENCOUNTER_LIBRARY, currentTemplateId);
+
+  if (safeCandidates.length === 0) {
+    throw new Error('Rare encounter library is empty');
+  }
+
+  const [leadingTrait = 'curiosity', trailingTrait] = getTopTraits(state.traits, 2);
+  const weightedCandidates = safeCandidates.map((template) => {
+    let weight = 1;
+
+    if (template.preferredTraits?.includes(leadingTrait)) {
+      weight += 5;
+    }
+
+    if (trailingTrait && template.preferredTraits?.includes(trailingTrait)) {
+      weight += 2;
+    }
+
+    return {
+      template,
+      weight,
+    };
+  });
+
+  const totalWeight = weightedCandidates.reduce((sum, entry) => sum + entry.weight, 0);
+  let roll = Math.random() * totalWeight;
+
+  for (const entry of weightedCandidates) {
+    roll -= entry.weight;
+
+    if (roll <= 0) {
+      return entry.template;
+    }
+  }
+
+  return weightedCandidates[weightedCandidates.length - 1]?.template ?? safeCandidates[0]!;
+};
 
 export const getSeasonalEncounterTemplates = (date = new Date()): readonly EncounterTemplate[] => {
   const season = getCurrentSeason(date);

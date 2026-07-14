@@ -59,10 +59,10 @@ import {
   canonicalizeEncounterTemplateId,
   createEncounterInstanceFromTemplate,
   getEncounterTemplateById,
-  getRareEncounterTemplates,
   getSeasonalEncounterTemplates,
   getStandardEncounterTemplates,
   getTopTraits,
+  selectRareEncounterTemplate,
 } from './pettit-seed';
 import {
   getSeasonalEncounterModifier,
@@ -347,12 +347,12 @@ const createInventoryItem = (
   };
 };
 
-const isRareEncounterTurn = (resolvedEncounterCount: number): boolean => {
-  return resolvedEncounterCount > 0 && resolvedEncounterCount % 20 === 0;
-};
-
 const SEASONAL_ENCOUNTER_CHANCE = 0.14;
 const ENCOUNTER_WEIGHT_FLOOR = 5;
+const RARE_ENCOUNTER_BASELINE_INTERVAL = 20;
+const RARE_ENCOUNTER_MIN_GAP = 8;
+const RARE_ENCOUNTER_BASE_CHANCE = 0.12;
+const RARE_ENCOUNTER_RECENT_MEMORY_LIMIT = 3;
 
 const filterRepeatedEncounter = (
   candidates: readonly EncounterTemplate[],
@@ -447,6 +447,52 @@ const pickWeightedStandardEncounter = (
   return pickRandomEncounter(familyCandidates, currentTemplateId);
 };
 
+const getRareEncountersSinceLastResolved = (
+  state: PettitState,
+  resolvedEncounterCount: number
+): number => {
+  const lastRareResolvedCount = state.rareProgress.lastEncounterResolvedCount;
+
+  if (lastRareResolvedCount === null) {
+    return resolvedEncounterCount;
+  }
+
+  return Math.max(0, resolvedEncounterCount - lastRareResolvedCount);
+};
+
+const shouldGuaranteeRareEncounter = (
+  state: PettitState,
+  resolvedEncounterCount: number
+): boolean => {
+  if (resolvedEncounterCount <= 0) {
+    return false;
+  }
+
+  return getRareEncountersSinceLastResolved(state, resolvedEncounterCount) >= RARE_ENCOUNTER_BASELINE_INTERVAL;
+};
+
+const canAttemptRareEncounter = (
+  state: PettitState,
+  resolvedEncounterCount: number
+): boolean => {
+  if (resolvedEncounterCount <= 0) {
+    return false;
+  }
+
+  return getRareEncountersSinceLastResolved(state, resolvedEncounterCount) >= RARE_ENCOUNTER_MIN_GAP;
+};
+
+const recordResolvedRareEncounter = (
+  state: PettitState,
+  templateId: string,
+  resolvedEncounterCount: number
+): PettitState['rareProgress'] => ({
+  lastEncounterResolvedCount: resolvedEncounterCount,
+  recentTemplateIds: [...state.rareProgress.recentTemplateIds, canonicalizeEncounterTemplateId(templateId)].slice(
+    -RARE_ENCOUNTER_RECENT_MEMORY_LIMIT
+  ),
+});
+
 const selectNextEncounterTemplate = (
   state: PettitState,
   resolvedEncounterCount: number,
@@ -477,11 +523,16 @@ const selectNextEncounterTemplate = (
     return buildGiftEncounterTemplate(giftIds);
   }
 
-  if (
-    isRareEncounterTurn(resolvedEncounterCount) ||
-    (seasonalModifier.rareChanceBonus > 0 && Math.random() < seasonalModifier.rareChanceBonus)
-  ) {
-    return pickRandomEncounter(getRareEncounterTemplates(), currentTemplateId);
+  const shouldForceRareEncounter = shouldGuaranteeRareEncounter(state, resolvedEncounterCount);
+  const canTryRareEncounter = canAttemptRareEncounter(state, resolvedEncounterCount);
+  const rareEncounterChance = Math.min(0.45, RARE_ENCOUNTER_BASE_CHANCE + seasonalModifier.rareChanceBonus);
+
+  if (shouldForceRareEncounter || (canTryRareEncounter && Math.random() < rareEncounterChance)) {
+    return selectRareEncounterTemplate(
+      state,
+      currentTemplateId,
+      state.rareProgress.recentTemplateIds
+    );
   }
 
   const activeSeasonalCandidates = getActiveSeasonalEncounterTemplates(state);
@@ -648,6 +699,7 @@ const processEncounterTransition = async (
     inventory: nextInventory,
     landmarks: state.landmarks,
     ageDays: state.ageDays,
+    rareProgress: state.rareProgress,
   };
   nextStateBeforeJournal = discoverLandmark(nextStateBeforeJournal, outcome.discoveredLandmarkId);
 
@@ -689,6 +741,18 @@ const processEncounterTransition = async (
     activeEncounter.templateId,
     personalizedOutcome
   );
+
+  if (activeEncounter.isRare) {
+    nextStateBeforeJournal = {
+      ...nextStateBeforeJournal,
+      rareProgress: recordResolvedRareEncounter(
+        nextStateBeforeJournal,
+        activeEncounter.templateId,
+        achievementResult.stats.resolvedEncounterCount
+      ),
+    };
+  }
+
   const memory = createMemoryRecord(personalizedOutcome, achievementResult.stats.memoryCount);
   const previousMemory = pickJournalCallbackMemory(memories, nextStateBeforeJournal);
   const minorEvent = selectMinorEvent(
