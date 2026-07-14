@@ -134,6 +134,24 @@ Recommended rule:
 
 \* authorization logic should live in a shared helper rather than being duplicated across routes
 
+\* the shared state returned to the client may mirror moderator permissions for UI visibility, but the server remains the real enforcement point
+
+
+
+\---
+
+
+
+\# State Recovery
+
+
+
+Stored subreddit data should be treated as recoverable input, not as guaranteed-correct source code.
+
+
+
+If an older stored encounter references a malformed or unsupported template ID, Pettit should recover to a safe valid encounter instead of crashing the full state load.
+
 
 
 \---

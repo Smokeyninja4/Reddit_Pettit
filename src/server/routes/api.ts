@@ -3,6 +3,7 @@ import { context, reddit } from '@devvit/web/server';
 import {
   MODERATOR_ACCESS_DENIED,
   MODERATOR_ACCESS_DENIED_MESSAGE,
+  hasSubredditModeratorAccess,
   requireSubredditModerator,
 } from '../auth/ModeratorAccess';
 import type {
@@ -39,7 +40,8 @@ api.get('/state', async (c) => {
     }
 
     const username = await reddit.getCurrentUsername();
-    const state = await getPettitViewModel(subredditName, username ?? null);
+    const isModerator = await hasSubredditModeratorAccess(subredditName, username ?? null);
+    const state = await getPettitViewModel(subredditName, username ?? null, isModerator);
 
     return c.json<GetPettitStateResponse>({
       type: 'state',
@@ -104,6 +106,7 @@ api.post('/vote', async (c) => {
     }
 
     const username = await reddit.getCurrentUsername();
+    const isModerator = await hasSubredditModeratorAccess(subredditName, username);
 
     if (!username) {
       return c.json<ErrorResponse>(
@@ -127,7 +130,7 @@ api.post('/vote', async (c) => {
       );
     }
 
-    const state = await submitVote(subredditName, username, body.optionId);
+    const state = await submitVote(subredditName, username, body.optionId, isModerator);
     return c.json<SubmitVoteResponse>({
       type: 'vote-recorded',
       state,
@@ -283,8 +286,8 @@ api.post('/resolve', async (c) => {
       );
     }
 
-    const username = await requireSubredditModerator(subredditName);
-    const result = await resolveVote(subredditName, username ?? null);
+    await requireSubredditModerator(subredditName);
+    const result = await resolveVote(subredditName, true);
 
     return c.json<ResolveVoteResponse>({
       type: 'vote-resolved',

@@ -195,24 +195,39 @@ const normalizeStats = (storedStats: LegacyStats): PettitStats => ({
   achievements: (storedStats.achievements ?? []) as PettitAchievement[],
 });
 
-const normalizeActiveEncounter = (storedEncounter: LegacyActiveEncounter): ActiveEncounter => {
-  const template = getEncounterTemplateById(storedEncounter.templateId);
+const readEncounterSequenceNumber = (encounterId: string | null | undefined): number => {
+  const match = encounterId?.match(/-(\d+)$/);
+  const parsed = match ? Number.parseInt(match[1] ?? '', 10) : Number.NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+};
 
-  return {
-    ...storedEncounter,
-    templateId: template.id,
-    title: storedEncounter.title ?? template.title,
-    description: storedEncounter.description ?? template.description,
-    affinity: storedEncounter.affinity ?? template.affinity,
-    season: storedEncounter.season ?? template.season,
-    isRare: storedEncounter.isRare ?? template.isRare,
-    options:
-      storedEncounter.options?.map((option) => ({
-        id: option.id,
-        label: option.label,
-        votes: option.votes ?? 0,
-      })) ?? template.options.map((option) => ({ id: option.id, label: option.label, votes: 0 })),
-  };
+const normalizeActiveEncounter = (storedEncounter: LegacyActiveEncounter): ActiveEncounter => {
+  try {
+    const template = getEncounterTemplateById(storedEncounter.templateId);
+
+    return {
+      ...storedEncounter,
+      templateId: template.id,
+      title: storedEncounter.title ?? template.title,
+      description: storedEncounter.description ?? template.description,
+      affinity: storedEncounter.affinity ?? template.affinity,
+      season: storedEncounter.season ?? template.season,
+      isRare: storedEncounter.isRare ?? template.isRare,
+      options:
+        storedEncounter.options?.map((option) => ({
+          id: option.id,
+          label: option.label,
+          votes: option.votes ?? 0,
+        })) ?? template.options.map((option) => ({ id: option.id, label: option.label, votes: 0 })),
+    };
+  } catch (error) {
+    console.warn(`Recovering from invalid stored encounter template: ${storedEncounter.templateId}`, error);
+    const fallbackTemplate = getEncounterTemplateById('encounter-cave');
+    return createEncounterInstanceFromTemplate(
+      fallbackTemplate,
+      readEncounterSequenceNumber(storedEncounter.id)
+    );
+  }
 };
 
 export const createEncounterInstance = (templateId: string, sequenceNumber: number): ActiveEncounter => {

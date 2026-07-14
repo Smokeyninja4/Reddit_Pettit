@@ -259,7 +259,14 @@ const getOutcomeForOption = (template: EncounterTemplate, optionId: string): Enc
   return outcome;
 };
 
-const buildViewModel = (snapshot: WorldSnapshot): PettitViewModel => {
+const buildViewerPermissions = (isModerator: boolean): PettitViewModel['viewer'] => ({
+  isModerator,
+  canCreatePost: isModerator,
+  canResetWorld: isModerator,
+  canResolveCurrentEncounter: isModerator,
+});
+
+const buildViewModel = (snapshot: WorldSnapshot, viewerIsModerator = false): PettitViewModel => {
   const latestJournal = snapshot.journals.length > 0 ? snapshot.journals[snapshot.journals.length - 1] ?? null : null;
   const recentMemories = snapshot.memories.slice(-3).reverse();
   const recentAchievements = snapshot.stats.achievements.slice(-3).reverse();
@@ -302,6 +309,7 @@ const buildViewModel = (snapshot: WorldSnapshot): PettitViewModel => {
       pendingGiftBallot: buildPendingCommunityGiftBallot(snapshot.giftIdeaSubmissions),
       recentCommunityGifts: getRecentCommunityGiftSummaries(snapshot.state.inventory),
     },
+    viewer: buildViewerPermissions(viewerIsModerator),
   };
 };
 
@@ -720,7 +728,8 @@ const buildEmptyAdvanceFeedback = (state: PettitState) => {
 
 const processEncounterTransition = async (
   subredditName: string,
-  mode: TransitionMode
+  mode: TransitionMode,
+  viewerIsModerator = false
 ): Promise<ResolveResult> => {
   const [state, activeEncounter, memories, journals, stats, nameSubmissions, giftIdeaSubmissions] = await Promise.all([
     syncSeasonalWorldState(subredditName).then((result) => result.state),
@@ -768,7 +777,7 @@ const processEncounterTransition = async (
         selectedOptionId: null,
         pendingNamingTargets: getPendingNamingTargets(nextState, nameSubmissions, stats.resolvedEncounterCount),
         giftIdeaSubmissions,
-      }),
+      }, viewerIsModerator),
       outcome: 'advanced',
       resolution: {
         winningOptionId: null,
@@ -936,7 +945,7 @@ const processEncounterTransition = async (
         achievementResult.stats.resolvedEncounterCount
       ),
       giftIdeaSubmissions: nextGiftIdeaSubmissions,
-    }),
+    }, viewerIsModerator),
     outcome: 'resolved',
     resolution: {
       winningOptionId: winningOption.id,
@@ -981,19 +990,21 @@ const syncPassiveAchievements = async (subredditName: string): Promise<void> => 
 
 export const getPettitViewModel = async (
   subredditName: string,
-  username: string | null
+  username: string | null,
+  viewerIsModerator = false
 ): Promise<PettitViewModel> => {
   await advanceWorldToCurrentDay(subredditName);
   await syncSeasonalWorldState(subredditName);
   await syncPassiveAchievements(subredditName);
   const snapshot = await loadWorldSnapshot(subredditName, username);
-  return buildViewModel(snapshot);
+  return buildViewModel(snapshot, viewerIsModerator);
 };
 
 export const submitVote = async (
   subredditName: string,
   username: string,
-  optionId: string
+  optionId: string,
+  viewerIsModerator = false
 ): Promise<PettitViewModel> => {
   await advanceWorldToCurrentDay(subredditName);
   const seasonalState = await syncSeasonalWorldState(subredditName);
@@ -1050,7 +1061,7 @@ export const submitVote = async (
     selectedOptionId: optionId,
     pendingNamingTargets: getPendingNamingTargets(state, nameSubmissions, nextStats.resolvedEncounterCount),
     giftIdeaSubmissions,
-  });
+  }, viewerIsModerator);
 };
 
 export const submitName = async (
@@ -1127,11 +1138,11 @@ export const submitGiftIdea = async (
   };
 };
 
-export const resolveVote = async (subredditName: string, _username: string | null): Promise<ResolveResult> => {
+export const resolveVote = async (subredditName: string, viewerIsModerator = false): Promise<ResolveResult> => {
   await advanceWorldToCurrentDay(subredditName);
   await syncSeasonalWorldState(subredditName);
   await syncPassiveAchievements(subredditName);
-  return processEncounterTransition(subredditName, 'manual');
+  return processEncounterTransition(subredditName, 'manual', viewerIsModerator);
 };
 
 export const processScheduledDailyResolve = async (subredditName: string): Promise<void> => {

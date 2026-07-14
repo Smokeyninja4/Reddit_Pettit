@@ -289,9 +289,9 @@ menu.post('/resolve-encounter', async (c) => {
       );
     }
 
-    const username = await requireSubredditModerator(subredditName);
+    await requireSubredditModerator(subredditName);
 
-    const result = await resolveVote(subredditName, username ?? null);
+    const result = await resolveVote(subredditName, true);
 
     return c.json<UiResponse>(
       {

@@ -311,6 +311,13 @@ export type PettitStats = {
   achievements: PettitAchievement[];
 };
 
+export type PettitViewerPermissions = {
+  isModerator: boolean;
+  canCreatePost: boolean;
+  canResetWorld: boolean;
+  canResolveCurrentEncounter: boolean;
+};
+
 export type PettitViewModel = {
   pettit: {
     name: string;
@@ -347,4 +354,5 @@ export type PettitViewModel = {
     pendingGiftBallot: PendingCommunityGiftBallot | null;
     recentCommunityGifts: RecentCommunityGiftSummary[];
   };
+  viewer: PettitViewerPermissions;
 };

@@ -117,11 +117,6 @@ const LANDMARKS: readonly LandmarkDefinition[] = [
   },
 ];
 
-const DEV_MULTI_SUBMIT_USERNAME = 'Smokeyninja04';
-
-const isDevMultiSubmitUser = (username: string): boolean =>
-  username.trim().toLowerCase() === DEV_MULTI_SUBMIT_USERNAME.toLowerCase();
-
 const normalizeName = (value: string): string => value.trim().replace(/\s+/g, ' ');
 
 const sortByDiscovery = (left: NamingTarget, right: NamingTarget): number => {
@@ -515,10 +510,7 @@ export const submitNameForTarget = (
 
   const submissions = submissionMap[targetKey] ?? [];
 
-  // TODO: Remove this submission-testing override after multi-user naming flow has been playtested on Reddit.
-  const allowRepeatSubmissionsForUser = isDevMultiSubmitUser(username);
-
-  if (!allowRepeatSubmissionsForUser && submissions.some((submission) => submission.username === username)) {
+  if (submissions.some((submission) => submission.username === username)) {
     throw new Error('DUPLICATE_NAME_SUBMISSION');
   }
 

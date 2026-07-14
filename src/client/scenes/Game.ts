@@ -1460,11 +1460,16 @@ export class Game extends Scene {
       return;
     }
 
+    const canResolveCurrentEncounter = this.pettitState?.viewer.canResolveCurrentEncounter ?? false;
     this.resolvePanel.setVisible(true);
     this.statusText.setVisible(true);
     this.traitFeedbackText.setVisible(true);
-    this.resolveButton.setVisible(true);
-    this.resolveButton.setInteractive({ useHandCursor: true });
+    this.resolveButton.setVisible(canResolveCurrentEncounter);
+    if (canResolveCurrentEncounter) {
+      this.resolveButton.setInteractive({ useHandCursor: true });
+    } else {
+      this.resolveButton.disableInteractive();
+    }
     this.resolvePanel.setPosition(frame.x, frame.y);
     this.resolvePanel.setSize(frame.width, frame.height);
 
@@ -1480,15 +1485,17 @@ export class Game extends Scene {
     this.statusText.setPosition(innerX, innerY);
     this.traitFeedbackText.setWordWrapWidth(statusWidth);
     this.traitFeedbackText.setPosition(innerX, this.statusText.y + this.statusText.height + (metrics.mode === 'desktop' ? 10 : 6));
-    this.resolveButton.setPosition(
-      frame.x + (frame.width - buttonWidth) / 2,
-      Math.max(
-        this.traitFeedbackText.y + this.traitFeedbackText.height + (metrics.mode === 'desktop' ? 20 : 14),
-        frame.y + frame.height - this.resolveButton.height - metrics.cardInsetY
-      )
-    );
-    this.resolveButton.setFixedSize(buttonWidth, this.resolveButton.height);
-    this.resolveButton.setAlign('center');
+    if (canResolveCurrentEncounter) {
+      this.resolveButton.setPosition(
+        frame.x + (frame.width - buttonWidth) / 2,
+        Math.max(
+          this.traitFeedbackText.y + this.traitFeedbackText.height + (metrics.mode === 'desktop' ? 20 : 14),
+          frame.y + frame.height - this.resolveButton.height - metrics.cardInsetY
+        )
+      );
+      this.resolveButton.setFixedSize(buttonWidth, this.resolveButton.height);
+      this.resolveButton.setAlign('center');
+    }
   }
 
   private layoutHallOverlay(metrics: LayoutMetrics): void {

@@ -60,9 +60,8 @@ This file defines the intended V1 scope for Pettit.
 
 ## Included For Playtest / Admin Support
 
-- Manual resolve endpoint and button for playtesting.
-- Dev reset menu action for the authorized submission-testing user only.
-- Temporary naming multi-submit override for the authorized submission-testing user only.
+- Manual resolve endpoint and button for subreddit moderators.
+- Moderator reset menu action for subreddit moderators.
 - Release notes and README notes for current submission-candidate behavior.
 
 ## Not Included In V1

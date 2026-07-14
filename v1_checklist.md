@@ -40,7 +40,7 @@ Use this as the final manual sign-off sheet for the V1 submission candidate.
 - [ ] Duplicate candidate names are rejected.
 - [ ] After three valid submissions, the naming ballot becomes eligible in the main encounter loop.
 - [ ] Resolving a naming encounter writes the canon name into the world and persists it after refresh.
-- [ ] The temporary multi-submit override works only for the authorized testing username.
+- [ ] Naming submissions allow one submission per user per target.
 
 ## Community Gift Contributions
 
@@ -75,9 +75,9 @@ Use this as the final manual sign-off sheet for the V1 submission candidate.
 
 ## Dev-Only Helper Verification
 
-- [ ] Reset Pettit works for the authorized submission-testing username.
+- [ ] Reset Pettit works for subreddit moderators.
 - [ ] Reset Pettit is safely blocked for other users.
-- [ ] The naming multi-submit override is active only for the authorized submission-testing username.
+- [ ] The client does not show moderator-only resolve controls to non-moderators.
 
 ## Known Harmless Warnings
 
