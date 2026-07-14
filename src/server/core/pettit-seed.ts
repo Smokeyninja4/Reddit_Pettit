@@ -17,6 +17,7 @@ import {
 import { getGiftEncounterTemplateById, isGiftEncounterTemplateId } from './pettit-gifts';
 import { getNamingEncounterTemplateById, isNamingEncounterTemplateId } from './pettit-naming';
 import { getSeasonalEncounterTemplateById } from './pettit-seasonal';
+import { getStoryArcEncounterTemplateById, isStoryArcEncounterTemplateId } from './pettit-story-arcs';
 
 type EncounterSeed = {
   id: string;
@@ -790,6 +791,10 @@ export const createDefaultPettitState = (subredditName: string): PettitState => 
     lastEncounterResolvedCount: null,
     recentTemplateIds: [],
   },
+  storyArcProgress: {
+    lastArcResolvedCount: null,
+    recentArcKeys: [],
+  },
 });
 
 export const createDefaultStats = (): PettitStats => ({
@@ -848,6 +853,14 @@ export const getEncounterTemplateById = (templateId: string): EncounterTemplate 
 
   if (isGiftEncounterTemplateId(templateId)) {
     return getGiftEncounterTemplateById(templateId);
+  }
+
+  if (isStoryArcEncounterTemplateId(templateId)) {
+    const storyArcEncounter = getStoryArcEncounterTemplateById(templateId);
+
+    if (storyArcEncounter) {
+      return storyArcEncounter;
+    }
   }
 
   const seasonalEncounter = getSeasonalEncounterTemplateById(templateId);

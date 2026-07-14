@@ -100,6 +100,11 @@ export type PettitRareProgress = {
   recentTemplateIds: string[];
 };
 
+export type PettitStoryArcProgress = {
+  lastArcResolvedCount: number | null;
+  recentArcKeys: string[];
+};
+
 export type PettitAppearanceDna = {
   seedVersion: 1;
   paletteKey: PettitPaletteKey;
@@ -295,6 +300,7 @@ export type PettitState = {
   dailyCycle: PettitDailyCycle;
   seasonalProgress: PettitSeasonalProgress;
   rareProgress: PettitRareProgress;
+  storyArcProgress: PettitStoryArcProgress;
 };
 
 export type PettitStats = {

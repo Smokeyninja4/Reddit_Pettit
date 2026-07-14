@@ -308,6 +308,42 @@ Optional:
 
 
 
+\# Story Arcs
+
+
+
+Some encounters may lead to a follow-up on the next day.
+
+
+
+These are short story arcs.
+
+
+
+Examples:
+
+
+
+\* the cave leads to a lantern mystery
+
+\* a traveller returns later
+
+\* a star observation becomes a deeper sky event
+
+
+
+Story arcs should still use the same normal vote flow.
+
+
+
+They are continuation encounters, not a separate system.
+
+
+
+\---
+
+
+
 \# Failure
 
 

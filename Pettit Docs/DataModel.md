@@ -52,6 +52,8 @@ current\_quest
 
 journal\_count
 
+story\_arc\_progress
+
 ```
 
 
@@ -339,6 +341,44 @@ completed
 failed
 
 ```
+
+
+
+\---
+
+
+
+\# Story Arc Progress
+
+
+
+Represents lightweight continuity tracking for short follow-up encounter chains.
+
+
+
+\## Fields
+
+
+
+```text
+
+last\_arc\_resolved\_count
+
+recent\_arc\_keys
+
+```
+
+
+
+This exists to:
+
+
+
+\* avoid repeating the same arc too quickly
+
+\* keep story arcs feeling uncommon
+
+\* support continuation encounters without a heavy quest-log system
 
 
 

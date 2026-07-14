@@ -71,6 +71,7 @@ import {
   getSeasonalProgressView,
   syncSeasonalState,
 } from './pettit-seasonal';
+import { getStoryArcEncounterTemplate, recordResolvedStoryArc } from './pettit-story-arcs';
 import {
   appendJournal,
   appendMemory,
@@ -498,7 +499,9 @@ const selectNextEncounterTemplate = (
   resolvedEncounterCount: number,
   nameSubmissions: Record<string, PettitNameSubmission[]>,
   giftIdeaSubmissions: PettitGiftIdeaSubmission[],
-  currentTemplateId: string
+  currentTemplateId: string,
+  resolvedTemplateId?: string,
+  resolvedOutcome?: EncounterOptionOutcome
 ): EncounterTemplate => {
   const seasonalModifier = getSeasonalEncounterModifier(state);
   const resolvedCount = resolvedEncounterCount;
@@ -513,6 +516,19 @@ const selectNextEncounterTemplate = (
 
   if (communityGiftEncounterTemplate) {
     return communityGiftEncounterTemplate;
+  }
+
+  if (resolvedTemplateId && resolvedOutcome) {
+    const storyArcEncounterTemplate = getStoryArcEncounterTemplate(
+      state,
+      resolvedTemplateId,
+      resolvedOutcome,
+      resolvedEncounterCount
+    );
+
+    if (storyArcEncounterTemplate) {
+      return storyArcEncounterTemplate;
+    }
   }
 
   if (resolvedEncounterCount > 0 && resolvedEncounterCount % 3 === 0) {
@@ -785,6 +801,7 @@ const processEncounterTransition = async (
     landmarks: state.landmarks,
     ageDays: state.ageDays,
     rareProgress: state.rareProgress,
+    storyArcProgress: state.storyArcProgress,
   };
   nextStateBeforeJournal = discoverLandmark(nextStateBeforeJournal, outcome.discoveredLandmarkId);
 
@@ -838,6 +855,15 @@ const processEncounterTransition = async (
     };
   }
 
+  nextStateBeforeJournal = {
+    ...nextStateBeforeJournal,
+    storyArcProgress: recordResolvedStoryArc(
+      nextStateBeforeJournal,
+      activeEncounter.templateId,
+      achievementResult.stats.resolvedEncounterCount
+    ),
+  };
+
   const memory = createMemoryRecord(personalizedOutcome, achievementResult.stats.memoryCount);
   const previousMemory = pickJournalCallbackMemory(
     memories,
@@ -867,7 +893,9 @@ const processEncounterTransition = async (
     achievementResult.stats.resolvedEncounterCount,
     nextNameSubmissions,
     nextGiftIdeaSubmissions,
-    activeEncounter.templateId
+    activeEncounter.templateId,
+    activeEncounter.templateId,
+    personalizedOutcome
   );
   const nextEncounter = createEncounterInstanceFromTemplate(
     nextEncounterTemplate,
