@@ -76,6 +76,10 @@ Examples:
 
 \* First Festival
 
+\* First Keepsake
+
+\* A Name That Stuck
+
 
 
 \---
@@ -95,6 +99,8 @@ Examples:
 \* 10 Discoveries
 
 \* 50 Discoveries
+
+\* Rare Wonder
 
 
 
@@ -133,6 +139,10 @@ Examples:
 \* Fell In River
 
 \* Accidentally Became Wizard
+
+\* Found Suspicious Hat
+
+\* Claimed Giant Spoon
 
 
 

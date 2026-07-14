@@ -76,10 +76,13 @@ export const JOURNAL_STYLE_TEMPLATES: Record<JournalStyleKey, JournalStyleTempla
         `I kept thinking about ${buildMemoryReference(context.previousMemory ?? context.memory)}, and it made today feel connected to everything that came before it.`,
       (context) =>
         `Remembering ${buildMemoryReference(context.previousMemory ?? context.memory)} helped this day settle into place beside the others.`,
+      (context) =>
+        `Some part of today kept echoing ${buildMemoryReference(context.previousMemory ?? context.memory)}, and I liked how that made my story feel stitched together instead of scattered.`,
     ],
     closing: [
       'I think I am becoming a little more myself every day.',
       'Maybe that is what growing really feels like.',
+      'It feels good when a day leaves behind something worth carrying forward.',
     ],
   },
   excited: {
@@ -128,10 +131,13 @@ export const JOURNAL_STYLE_TEMPLATES: Record<JournalStyleKey, JournalStyleTempla
         `It even reminded me of ${buildMemoryReference(context.previousMemory ?? context.memory)}, which somehow made everything feel bigger in the best way.`,
       (context) =>
         `I keep thinking about ${buildMemoryReference(context.previousMemory ?? context.memory)} too, so today feels like part of a growing adventure trail.`,
+      (context) =>
+        `It also pulled ${buildMemoryReference(context.previousMemory ?? context.memory)} back into my head, which made the whole day feel like a sequel I was very happy to get.`,
     ],
     closing: [
       'I already want to see what happens next.',
       'If tomorrow is half this lively, I am going to love it.',
+      'It is hard not to like a life that keeps surprising me like this.',
     ],
   },
   funny: {
@@ -180,10 +186,13 @@ export const JOURNAL_STYLE_TEMPLATES: Record<JournalStyleKey, JournalStyleTempla
         `It also made me think about ${buildMemoryReference(context.previousMemory ?? context.memory)}, which means I might be building a suspicious pattern.`,
       (context) =>
         `Honestly, remembering ${buildMemoryReference(context.previousMemory ?? context.memory)} should have prepared me better than it did.`,
+      (context) =>
+        `It even brought ${buildMemoryReference(context.previousMemory ?? context.memory)} back to mind, which is either charming continuity or a sign that I should make calmer choices.`,
     ],
     closing: [
       'I am choosing to believe this all counts as character growth.',
       'If nothing else, future me is going to have a very entertaining journal.',
+      'At the very least, nobody can accuse today of lacking personality.',
     ],
   },
   curious: {
@@ -232,10 +241,13 @@ export const JOURNAL_STYLE_TEMPLATES: Record<JournalStyleKey, JournalStyleTempla
         `It also reminded me of ${buildMemoryReference(context.previousMemory ?? context.memory)}. Is that coincidence, or is my world beginning to rhyme?`,
       (context) =>
         `I cannot stop comparing it to ${buildMemoryReference(context.previousMemory ?? context.memory)} and wondering what the connection might be.`,
+      (context) =>
+        `It made ${buildMemoryReference(context.previousMemory ?? context.memory)} feel newly important again, as though old clues can wait patiently for better timing.`,
     ],
     closing: [
       'I feel like there are still more secrets waiting for me.',
       'I hope tomorrow leaves me with even better questions.',
+      'It is comforting to know the world is still larger than whatever I understood this morning.',
     ],
   },
   childlike: {
@@ -284,10 +296,13 @@ export const JOURNAL_STYLE_TEMPLATES: Record<JournalStyleKey, JournalStyleTempla
         `It made me remember ${buildMemoryReference(context.previousMemory ?? context.memory)}, and that made today feel extra cozy in my mind.`,
       (context) =>
         `I also thought about ${buildMemoryReference(context.previousMemory ?? context.memory)}. I like when my memories feel like friends.`,
+      (context) =>
+        `Remembering ${buildMemoryReference(context.previousMemory ?? context.memory)} made today feel less lonely somehow, even before anything else happened.`,
     ],
     closing: [
       'I think today will stay with me for a while.',
       'I hope I get to keep growing like this.',
+      'Some days feel small while they are happening and big only afterward. I think this was one of those.',
     ],
   },
 };
