@@ -62,6 +62,11 @@ const curiosityTitles = [
   'Floating Lights',
   'Old Journal',
   'Hidden Garden',
+  'Bee Hollow',
+  'Sunken Sundial',
+  'Glass Orchard',
+  'Mossy Stairway',
+  'Silent Aviary',
 ] as const;
 
 const trustTitles = [
@@ -80,6 +85,11 @@ const trustTitles = [
   'Plant New Tree',
   'Repair Broken Fence',
   'Welcome New Friend',
+  'Host Supper',
+  'Prepare Guest Room',
+  'Walk A Friend Home',
+  'Help The Beekeeper',
+  'Tend Community Garden',
 ] as const;
 
 const courageTitles = [
@@ -98,6 +108,11 @@ const courageTitles = [
   'Night Watch',
   'Cross Rope Bridge',
   'Enter Dark Woods',
+  'Investigate Avalanche Echo',
+  'Climb Watchtower',
+  'Cross Thorn Field',
+  'Follow Distant Drum',
+  'Test Crumbling Stair',
 ] as const;
 
 const chaosTitles = [
@@ -116,6 +131,11 @@ const chaosTitles = [
   'Drink Bubbling Potion',
   'Throw Stick Into Portal',
   'Press Glowing Rune',
+  'Shake Glitter Jar',
+  'Borrow Parade Mask',
+  'Wake Snoring Bush',
+  'Juggle Glowing Fruit',
+  'Race The Windmill',
 ] as const;
 
 const seasonalSeeds: ReadonlyArray<{ season: EncounterSeason; titles: readonly string[] }> = [
@@ -683,6 +703,14 @@ const RARE_ENCOUNTER_LIBRARY: readonly EncounterSeed[] = [
   buildRareEncounter('Dragon Footprint', ['courage', 'curiosity']),
   buildRareEncounter('Secret Door Beneath Pond', ['curiosity', 'courage']),
   buildRareEncounter('Whispering Crown', ['chaos', 'curiosity']),
+  buildRareEncounter('Ancient Door', ['curiosity', 'trust']),
+  buildRareEncounter('Travelling Giant', ['courage', 'trust']),
+  buildRareEncounter('Golden Feather', ['trust', 'curiosity']),
+  buildRareEncounter('Whispering Wind', ['curiosity', 'chaos']),
+  buildRareEncounter('Clockwork Bird', ['curiosity', 'trust']),
+  buildRareEncounter('Mirror Lake At Midnight', ['trust', 'curiosity']),
+  buildRareEncounter('Buried Moon Dial', ['curiosity', 'courage']),
+  buildRareEncounter('Festival Mask In The Woods', ['chaos', 'trust']),
 ];
 
 const SEASONAL_ENCOUNTER_LIBRARY: readonly EncounterSeed[] = seasonalSeeds.flatMap((seasonSeed) =>

@@ -8,6 +8,10 @@
 
 Reference list of event ideas.
 
+Representative only.
+
+The live encounter and minor-event libraries now cover a wider set of story moments than this short reference list.
+
 
 
 \---
@@ -34,6 +38,14 @@ Reference list of event ideas.
 
 \* Empty Campfire
 
+\* Bee Hollow
+
+\* Sunken Sundial
+
+\* Glass Orchard
+
+\* Silent Aviary
+
 
 
 \---
@@ -58,6 +70,14 @@ Reference list of event ideas.
 
 \* Explorer
 
+\* Host Supper
+
+\* Community Gardener
+
+\* Helpful Beekeeper
+
+\* Walk Home Together
+
 
 
 \---
@@ -79,6 +99,12 @@ Reference list of event ideas.
 \* Founder's Day
 
 \* Storytelling Evening
+
+\* Shared Supper
+
+\* Lantern Preparation
+
+\* Garden Tending Day
 
 
 
@@ -102,6 +128,12 @@ Reference list of event ideas.
 
 \* Found Different Hat
 
+\* Borrowed Parade Mask
+
+\* Juggled Glowing Fruit
+
+\* Raced The Windmill
+
 
 
 \---
@@ -123,6 +155,16 @@ Reference list of event ideas.
 \* Time Capsule
 
 \* Whispering Wind
+
+\* Ancient Door
+
+\* Clockwork Bird
+
+\* Mirror Lake At Midnight
+
+\* Buried Moon Dial
+
+\* Festival Mask In The Woods
 
 
 

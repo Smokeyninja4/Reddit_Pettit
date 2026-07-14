@@ -8,6 +8,10 @@
 
 Prototype quest library.
 
+Representative only.
+
+The live game now uses a broader encounter pool than the examples listed here.
+
 
 
 \---
@@ -74,6 +78,34 @@ Choices:
 
 \* Investigate
 
+\---
+
+\## Bee Hollow
+
+Choices:
+
+\* Investigate Closely
+
+\* Observe Quietly
+
+\* Ask Around
+
+\* Return With Notes
+
+\---
+
+\## Sunken Sundial
+
+Choices:
+
+\* Investigate Closely
+
+\* Observe Quietly
+
+\* Ask Around
+
+\* Return With Notes
+
 
 
 \---
@@ -117,6 +149,20 @@ Choices:
 \* Talk To Beekeeper
 
 \* Research
+
+\---
+
+\## Silent Aviary
+
+Choices:
+
+\* Investigate Closely
+
+\* Observe Quietly
+
+\* Ask Around
+
+\* Return With Notes
 
 
 
@@ -162,6 +208,20 @@ Choices:
 
 \* Wild Garden
 
+\---
+
+\## Tend Community Garden
+
+Choices:
+
+\* Offer Help
+
+\* Share Something
+
+\* Stay Together
+
+\* Support From Nearby
+
 
 
 \---
@@ -206,6 +266,20 @@ Choices:
 
 \* Ignore
 
+\---
+
+\## Host Supper
+
+Choices:
+
+\* Offer Help
+
+\* Share Something
+
+\* Stay Together
+
+\* Support From Nearby
+
 
 
 \---
@@ -249,6 +323,50 @@ Choices:
 \* Record
 
 \* Avoid
+
+\---
+
+\# Rare
+
+\## Ancient Door
+
+Choices:
+
+\* Approach Carefully
+
+\* Be Bold
+
+\* Call The Community
+
+\* Leave Some Mystery
+
+\---
+
+\## Clockwork Bird
+
+Choices:
+
+\* Approach Carefully
+
+\* Be Bold
+
+\* Call The Community
+
+\* Leave Some Mystery
+
+\---
+
+\## Mirror Lake At Midnight
+
+Choices:
+
+\* Approach Carefully
+
+\* Be Bold
+
+\* Call The Community
+
+\* Leave Some Mystery
 
 
 
