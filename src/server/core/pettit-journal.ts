@@ -288,7 +288,7 @@ export const createJournalEntry = (
     date: new Date().toISOString(),
     title: encounter.title,
     content,
-    relatedMemoryIds: [memory.id],
+    relatedMemoryIds: previousMemory ? [memory.id, previousMemory.id] : [memory.id],
     relatedEncounterId: encounter.id,
   };
 };

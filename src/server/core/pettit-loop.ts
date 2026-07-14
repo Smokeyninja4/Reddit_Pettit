@@ -566,26 +566,111 @@ const syncSeasonalWorldState = async (subredditName: string): Promise<SeasonalSn
   };
 };
 
-const pickJournalCallbackMemory = (
-  memories: PettitMemory[],
-  state: PettitState
-): PettitMemory | null => {
-  const seasonalContext = getSeasonalJournalContext(state);
+const MEMORY_RECALL_RECENT_JOURNAL_WINDOW = 3;
 
-  if (seasonalContext?.preferOldMemories) {
-    const olderImportantMemory =
-      [...memories]
-        .reverse()
-        .find((memory) => memory.importance >= 4) ??
-      memories[0] ??
-      null;
-
-    if (olderImportantMemory) {
-      return olderImportantMemory;
-    }
+const getMemoryTypeAffinityBonus = (
+  memory: PettitMemory,
+  outcome: EncounterOptionOutcome
+): number => {
+  if (memory.type === outcome.memoryType) {
+    return 9;
   }
 
-  return memories.length > 0 ? memories[memories.length - 1] ?? null : null;
+  if (
+    (memory.type === 'community' || memory.type === 'friendship' || memory.type === 'gift') &&
+    (outcome.memoryType === 'community' || outcome.memoryType === 'friendship' || outcome.memoryType === 'gift')
+  ) {
+    return 6;
+  }
+
+  if (
+    (memory.type === 'learning' || memory.type === 'special') &&
+    (outcome.memoryType === 'learning' || outcome.memoryType === 'special')
+  ) {
+    return 5;
+  }
+
+  if (
+    (memory.type === 'adventure' || memory.type === 'funny') &&
+    (outcome.memoryType === 'adventure' || outcome.memoryType === 'funny')
+  ) {
+    return 4;
+  }
+
+  return 0;
+};
+
+const getRecentRecalledMemoryIds = (journals: PettitJournalEntry[]): Set<string> => {
+  const recentJournals = journals.slice(-MEMORY_RECALL_RECENT_JOURNAL_WINDOW);
+  const recalledIds = recentJournals
+    .flatMap((journal) => journal.relatedMemoryIds.slice(1))
+    .filter((memoryId) => Boolean(memoryId));
+
+  return new Set(recalledIds);
+};
+
+const pickJournalCallbackMemory = (
+  memories: PettitMemory[],
+  journals: PettitJournalEntry[],
+  state: PettitState,
+  outcome: EncounterOptionOutcome
+): PettitMemory | null => {
+  const seasonalContext = getSeasonalJournalContext(state);
+  const recentRecalledIds = getRecentRecalledMemoryIds(journals);
+
+  if (memories.length === 0) {
+    return null;
+  }
+
+  const scoredCandidates = memories.map((memory, index) => {
+    const ageFromLatest = memories.length - 1 - index;
+    let score = memory.importance * 12;
+
+    if (ageFromLatest === 0) {
+      score -= 16;
+    } else if (ageFromLatest === 1) {
+      score -= 4;
+    } else if (ageFromLatest >= 2 && ageFromLatest <= 6) {
+      score += 4;
+    } else if (ageFromLatest > 6) {
+      score += Math.min(10, ageFromLatest);
+    }
+
+    score += getMemoryTypeAffinityBonus(memory, outcome);
+
+    if (memory.importance >= 4) {
+      score += 6;
+    }
+
+    if (recentRecalledIds.has(memory.id)) {
+      score -= 18;
+    }
+
+    if (seasonalContext?.preferOldMemories) {
+      if (memory.importance >= 4) {
+        score += 12;
+      }
+
+      if (ageFromLatest >= 3) {
+        score += 8;
+      }
+    }
+
+    return {
+      memory,
+      score,
+    };
+  });
+
+  scoredCandidates.sort((left, right) => {
+    if (right.score !== left.score) {
+      return right.score - left.score;
+    }
+
+    return left.memory.timestamp.localeCompare(right.memory.timestamp);
+  });
+
+  return scoredCandidates[0]?.memory ?? null;
 };
 
 const getEncounterVoteTotal = (encounter: ActiveEncounter): number =>
@@ -754,7 +839,12 @@ const processEncounterTransition = async (
   }
 
   const memory = createMemoryRecord(personalizedOutcome, achievementResult.stats.memoryCount);
-  const previousMemory = pickJournalCallbackMemory(memories, nextStateBeforeJournal);
+  const previousMemory = pickJournalCallbackMemory(
+    memories,
+    journals,
+    nextStateBeforeJournal,
+    personalizedOutcome
+  );
   const minorEvent = selectMinorEvent(
     nextStateBeforeJournal,
     activeEncounter,
