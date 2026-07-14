@@ -27,6 +27,10 @@ export class Preloader extends Scene {
     this.load.setPath('../assets');
 
     this.load.image('logo', 'logo.png');
+    this.load.image('ui-panel-grey', 'ui/panels/grey.png');
+    this.load.image('ui-panel-grey-inlay', 'ui/panels/grey_inlay.png');
+    this.load.image('ui-panel-tan', 'ui/panels/tan.png');
+    this.load.image('ui-panel-tan-inlay', 'ui/panels/tan_inlay.png');
   }
 
   create() {

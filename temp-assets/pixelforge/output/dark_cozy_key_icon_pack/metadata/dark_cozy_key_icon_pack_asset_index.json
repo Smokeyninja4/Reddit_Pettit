@@ -1,0 +1,20 @@
+[
+  {
+    "asset_id": "key",
+    "asset_path": "./exports/dark_cozy_key_icon_pack/assets/dark_cozy_key_icon.png",
+    "metadata_path": "./exports/dark_cozy_key_icon_pack/metadata/dark_cozy_key_icon_metadata.json",
+    "recipe": "key",
+    "intended_use": "inventory_icon",
+    "semantic_role": "Key",
+    "size_tier": "128px",
+    "native_width_px": 128,
+    "native_height_px": 128,
+    "import_tags": [
+      "icon-gen",
+      "key",
+      "bronze",
+      "common",
+      "128px"
+    ]
+  }
+]

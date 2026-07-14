@@ -1,0 +1,45 @@
+{
+  "metadata_version": "m26c",
+  "asset_id": "key",
+  "asset_path": "./exports/dark_cozy_key_icon_pack/assets/dark_cozy_key_icon.png",
+  "module": "icon-gen",
+  "recipe": "key",
+  "style": "cozy_pixel",
+  "theme": "dark_cozy",
+  "seed": "pettit-icon-key-001",
+  "semantic_role": "Key",
+  "handoff": {
+    "recipe": "key",
+    "rarity": "common",
+    "material": "bronze",
+    "size_tier": "128px",
+    "native_width_px": 128,
+    "native_height_px": 128,
+    "pixel_scale": 4,
+    "outline": true,
+    "silhouette_weight": "bold",
+    "detail_density": "standard",
+    "finish_style": "polished",
+    "presentation_mode": "inventory_card",
+    "intended_use": "quest_item",
+    "semantic_tags": [
+      "bronze",
+      "common",
+      "dark_cozy",
+      "generator",
+      "icon",
+      "inventory_card",
+      "key"
+    ],
+    "import_hints": [
+      "theme:dark_cozy",
+      "style:cozy_pixel",
+      "alpha:true",
+      "presentation:preview_only"
+    ]
+  },
+  "import_hints": [
+    "Import the paired PNG as the runtime asset and keep the metadata JSON for handoff context.",
+    "Nominal size tier: 128px."
+  ]
+}

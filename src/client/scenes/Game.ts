@@ -63,10 +63,12 @@ export class Game extends Scene {
   private camera!: Phaser.Cameras.Scene2D.Camera;
   private background!: Phaser.GameObjects.Image;
   private rootPanel!: Phaser.GameObjects.Rectangle;
+  private mobileRootSkin!: Phaser.GameObjects.Image;
   private titleText!: Phaser.GameObjects.Text;
   private subtitleText!: Phaser.GameObjects.Text;
   private summaryText!: Phaser.GameObjects.Text;
   private creaturePanel!: Phaser.GameObjects.Rectangle;
+  private mobileCreatureSkin!: Phaser.GameObjects.Image;
   private creatureArtFrame!: Phaser.GameObjects.Rectangle;
   private creatureSnapshot!: Phaser.GameObjects.Image;
   private creatureEarLeft!: Phaser.GameObjects.Ellipse;
@@ -96,9 +98,11 @@ export class Game extends Scene {
   private moodBadgeText!: Phaser.GameObjects.Text;
   private futureSlotText!: Phaser.GameObjects.Text;
   private actionPanel!: Phaser.GameObjects.Rectangle;
+  private mobileActionSkin!: Phaser.GameObjects.Image;
   private actionTitleText!: Phaser.GameObjects.Text;
   private voteSummaryText!: Phaser.GameObjects.Text;
   private traitPanel!: Phaser.GameObjects.Rectangle;
+  private mobileTraitSkin!: Phaser.GameObjects.Image;
   private traitPanelTitle!: Phaser.GameObjects.Text;
   private topActionPanel!: Phaser.GameObjects.Rectangle;
   private topActionTitle!: Phaser.GameObjects.Text;
@@ -142,6 +146,7 @@ export class Game extends Scene {
   private hallOverlayNextButton!: Phaser.GameObjects.Text;
   private navRailPanel!: Phaser.GameObjects.Rectangle;
   private mobileNavRailPanel!: Phaser.GameObjects.Rectangle;
+  private mobileNavSkin!: Phaser.GameObjects.Image;
   private navBrandText!: Phaser.GameObjects.Text;
   private navBrandSubText!: Phaser.GameObjects.Text;
   private desktopNavButtons: Phaser.GameObjects.Text[] = [];
@@ -177,6 +182,7 @@ export class Game extends Scene {
       .rectangle(0, 0, 100, 100, 0x10171f, 0.98)
       .setOrigin(0)
       .setStrokeStyle(2, 0x263846, 0.48);
+    this.mobileRootSkin = this.add.image(0, 0, 'ui-panel-grey').setOrigin(0).setDepth(-3).setVisible(false);
 
     this.titleText = this.add.text(0, 0, '', {
       fontFamily: 'Georgia',
@@ -197,6 +203,7 @@ export class Game extends Scene {
     });
     this.navRailPanel = this.createPanel(0x111821, 0x263846);
     this.mobileNavRailPanel = this.createPanel(0x111821, 0x263846);
+    this.mobileNavSkin = this.add.image(0, 0, 'ui-panel-grey').setOrigin(0).setDepth(-2).setVisible(false);
     this.navBrandText = this.add.text(0, 0, 'PETTIT', {
       fontFamily: 'Georgia',
       fontSize: '24px',
@@ -209,6 +216,7 @@ export class Game extends Scene {
     });
 
     this.creaturePanel = this.createPanel(0x17202a, 0x324759);
+    this.mobileCreatureSkin = this.add.image(0, 0, 'ui-panel-grey').setOrigin(0).setDepth(-2).setVisible(false);
     this.creatureArtFrame = this.createPanel(0x223243, 0x48657b);
     this.creatureSnapshot = this.add.image(0, 0, 'background').setVisible(false).setDepth(4);
     this.creatureEarLeft = this.add.ellipse(0, 0, 32, 56, 0xfff1d8, 1).setStrokeStyle(2, 0x4e3a2f, 0.9).setDepth(-0.5);
@@ -258,6 +266,7 @@ export class Game extends Scene {
     });
 
     this.actionPanel = this.createPanel(0x1a222c, 0x2d3f4d);
+    this.mobileActionSkin = this.add.image(0, 0, 'ui-panel-grey').setOrigin(0).setDepth(-2).setVisible(false);
     this.actionTitleText = this.add.text(0, 0, '', {
       fontFamily: 'Georgia',
       fontSize: '24px',
@@ -272,6 +281,7 @@ export class Game extends Scene {
     });
 
     this.traitPanel = this.createPanel(0x162029, 0x2b3d49);
+    this.mobileTraitSkin = this.add.image(0, 0, 'ui-panel-grey-inlay').setOrigin(0).setDepth(-2).setVisible(false);
     this.traitPanelTitle = this.add.text(0, 0, 'Traits', {
       fontFamily: 'Georgia',
       fontSize: '24px',
@@ -852,7 +862,17 @@ export class Game extends Scene {
   private layoutDashboard(metrics: LayoutMetrics): void {
     this.rootPanel.setPosition(metrics.frameLeft, metrics.frameTop);
     this.rootPanel.setSize(metrics.frameWidth, metrics.frameHeight);
+    this.mobileRootSkin.setVisible(false);
+    this.mobileCreatureSkin.setVisible(false);
+    this.mobileActionSkin.setVisible(false);
+    this.mobileTraitSkin.setVisible(false);
+    this.mobileNavSkin.setVisible(false);
     if (metrics.mode === 'desktop') {
+      this.rootPanel.setAlpha(1);
+      this.creaturePanel.setAlpha(1);
+      this.actionPanel.setAlpha(1);
+      this.traitPanel.setAlpha(1);
+      this.mobileNavRailPanel.setAlpha(1);
       this.rootPanel.setFillStyle(0x10171f, 0.96).setStrokeStyle(1, 0x263846, 0.42);
       this.navRailPanel.setFillStyle(0x111821, 0.96).setStrokeStyle(1, 0x263846, 0.42);
       this.mobileNavRailPanel.setFillStyle(0x111821, 0.96).setStrokeStyle(1, 0x263846, 0.42);
@@ -866,6 +886,12 @@ export class Game extends Scene {
       this.summaryText.setColor('#cfd9e3');
       this.subtitleText.setColor('#f0e4ff');
     } else {
+      this.rootPanel.setAlpha(0.1);
+      this.creaturePanel.setAlpha(0.12);
+      this.actionPanel.setAlpha(0.12);
+      this.traitPanel.setAlpha(0.08);
+      this.mobileNavRailPanel.setAlpha(0.08);
+      this.mobileRootSkin.setPosition(metrics.frameLeft, metrics.frameTop).setDisplaySize(metrics.frameWidth, metrics.frameHeight);
       this.rootPanel.setFillStyle(0x0d1017, 0.985).setStrokeStyle(2, 0x45364e, 0.74);
       this.navRailPanel.setFillStyle(0x111821, 0.96).setStrokeStyle(1, 0x263846, 0.42);
       this.mobileNavRailPanel.setFillStyle(0x131118, 0.99).setStrokeStyle(2, 0x504657, 0.78);
@@ -1138,6 +1164,7 @@ export class Game extends Scene {
     const innerPadding = 8;
     const buttonWidth = Math.floor((contentWidth - innerPadding * 2 - gap * 2) / 3);
     const buttonY = railY + Math.max(6, Math.floor((railHeight - 42) / 2));
+    this.mobileNavSkin.setPosition(contentX, railY).setDisplaySize(contentWidth, railHeight);
     this.mobileNavRailPanel.setPosition(contentX, railY);
     this.mobileNavRailPanel.setSize(contentWidth, railHeight);
     this.mobileNavButtons.forEach((button, index) => {
@@ -1166,6 +1193,9 @@ export class Game extends Scene {
   }
 
   private layoutCreaturePanel(metrics: LayoutMetrics, frame: PanelFrame): void {
+    if (metrics.mode === 'mobile') {
+      this.mobileCreatureSkin.setPosition(frame.x, frame.y).setDisplaySize(frame.width, frame.height);
+    }
     this.creaturePanel.setPosition(frame.x, frame.y);
     this.creaturePanel.setSize(frame.width, frame.height);
 
@@ -1323,6 +1353,9 @@ export class Game extends Scene {
   }
 
   private layoutActionPanel(metrics: LayoutMetrics, frame: PanelFrame): void {
+    if (metrics.mode === 'mobile') {
+      this.mobileActionSkin.setPosition(frame.x, frame.y).setDisplaySize(frame.width, frame.height);
+    }
     this.actionPanel.setPosition(frame.x, frame.y);
     this.actionPanel.setSize(frame.width, frame.height);
 
@@ -1356,6 +1389,9 @@ export class Game extends Scene {
   }
 
   private layoutTraitPanel(metrics: LayoutMetrics, frame: PanelFrame): void {
+    if (metrics.mode === 'mobile') {
+      this.mobileTraitSkin.setPosition(frame.x, frame.y).setDisplaySize(frame.width, frame.height);
+    }
     this.traitPanel.setPosition(frame.x, frame.y);
     this.traitPanel.setSize(frame.width, frame.height);
     this.traitPanelTitle.setVisible(metrics.mode === 'desktop');

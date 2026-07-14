@@ -6,6 +6,10 @@ import type {
   PettitState,
   TraitKey,
 } from '../../shared/pettit';
+import {
+  renderMinorEventJournalLine,
+  type SelectedMinorEvent,
+} from './pettit-minor-events';
 import { getTopTraits } from './pettit-seed';
 import type { SeasonalJournalContext } from './pettit-seasonal';
 import {
@@ -190,6 +194,7 @@ export const createJournalEntry = (
   outcome: EncounterOptionOutcome,
   memory: PettitMemory,
   previousMemory: PettitMemory | null,
+  minorEvent: SelectedMinorEvent | null,
   sequenceNumber: number,
   celebrationLine?: string | null,
   seasonalContext?: SeasonalJournalContext | null
@@ -236,6 +241,9 @@ export const createJournalEntry = (
     context,
     `${encounter.id}|memory|${style}|${previousMemory?.id ?? 'none'}`
   );
+  const minorEventLine = minorEvent
+    ? renderMinorEventJournalLine(minorEvent, style, `${encounter.id}|minor|${style}|${minorEvent.key}`)
+    : null;
   let closing = renderLineTemplate(
     templates.closing,
     context,
@@ -265,6 +273,7 @@ export const createJournalEntry = (
   const content = [
     opening,
     mainEvent,
+    minorEventLine,
     leadingReflection,
     trailingReflection ?? memoryCallback,
     trailingReflection ? memoryCallback : closing,

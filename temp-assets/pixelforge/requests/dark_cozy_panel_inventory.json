@@ -1,0 +1,24 @@
+{
+  "version": "0.1",
+  "module": "ui-gen",
+  "recipe": "panel-kit",
+  "style": "cozy_pixel",
+  "theme": "dark_cozy",
+  "seed": "pettit-ui-panel-001",
+  "output": {
+    "path": "./exports",
+    "filename": "dark_cozy_panel_inventory",
+    "format": "png",
+    "metadata": true
+  },
+  "options": {
+    "size_tier": "384px",
+    "density": "compact",
+    "corner_style": "bevel",
+    "trim": "bronze",
+    "shadow": true,
+    "variation": "high",
+    "preview_layout": "settings_panel",
+    "export_mode": "zip"
+  }
+}

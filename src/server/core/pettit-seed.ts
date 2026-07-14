@@ -16,6 +16,7 @@ import {
 } from './pettit-contributions';
 import { getGiftEncounterTemplateById, isGiftEncounterTemplateId } from './pettit-gifts';
 import { getNamingEncounterTemplateById, isNamingEncounterTemplateId } from './pettit-naming';
+import { getSeasonalEncounterTemplateById } from './pettit-seasonal';
 
 type EncounterSeed = {
   id: string;
@@ -784,6 +785,12 @@ export const getEncounterTemplateById = (templateId: string): EncounterTemplate 
 
   if (isGiftEncounterTemplateId(templateId)) {
     return getGiftEncounterTemplateById(templateId);
+  }
+
+  const seasonalEncounter = getSeasonalEncounterTemplateById(templateId);
+
+  if (seasonalEncounter) {
+    return seasonalEncounter;
   }
 
   const canonicalId = canonicalizeEncounterTemplateId(templateId);

@@ -1,0 +1,24 @@
+{
+  "version": "0.1",
+  "module": "icon-gen",
+  "recipe": "key",
+  "style": "cozy_pixel",
+  "theme": "dark_cozy",
+  "seed": "pettit-icon-key-001",
+  "output": {
+    "path": "./exports",
+    "filename": "dark_cozy_key_icon",
+    "format": "png",
+    "metadata": true
+  },
+  "options": {
+    "size_tier": "128px",
+    "material": "bronze",
+    "rarity": "common",
+    "outline": true,
+    "silhouette_weight": "bold",
+    "detail_density": "standard",
+    "finish_style": "polished",
+    "presentation_mode": "inventory_card"
+  }
+}

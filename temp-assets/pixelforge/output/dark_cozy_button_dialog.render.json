@@ -1,0 +1,37 @@
+{
+  "metadata_version": "m26a",
+  "renderer": "pixel-renderer",
+  "width": 384,
+  "height": 288,
+  "pixel_scale": 4,
+  "color_model": "rgba8888",
+  "has_alpha": true,
+  "output_bytes": 442368,
+  "render_output": {
+    "renderer": "pixel-renderer",
+    "width": 384,
+    "height": 288,
+    "pixel_scale": 4,
+    "color_model": "rgba8888",
+    "has_alpha": true,
+    "output_bytes": 442368
+  },
+  "generation": {
+    "module": "ui-gen",
+    "recipe": "button-kit",
+    "style": "cozy_pixel",
+    "theme": "dark_cozy",
+    "seed": "pettit-ui-button-001",
+    "output_path": "./exports/dark_cozy_button_dialog.png"
+  },
+  "request_options": {
+    "corner_style": "bevel",
+    "density": "cozy",
+    "export_mode": "zip",
+    "preview_layout": "button_states",
+    "shadow": true,
+    "size_tier": "384px",
+    "trim": "bronze",
+    "variation": "high"
+  }
+}

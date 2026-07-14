@@ -1,0 +1,338 @@
+[
+  {
+    "asset_id": "button_primary_disabled",
+    "filename": "dark_cozy_button_primary_disabled.png",
+    "recipe": "button-kit",
+    "theme": "dark_cozy",
+    "category": "button",
+    "intended_use": "primary button disabled state",
+    "state": "disabled",
+    "scale_hint": 4,
+    "size_tier": "192px",
+    "native_width_px": 96,
+    "native_height_px": 36,
+    "semantic_role": "interactive-control",
+    "state_group": "interaction",
+    "composition_group": "button-stack",
+    "slice_hint": {
+      "left": 3,
+      "top": 3,
+      "right": 3,
+      "bottom": 3,
+      "tile_center": false,
+      "stretch_center": true
+    },
+    "inset_hint": {
+      "left": 3,
+      "top": 2,
+      "right": 3,
+      "bottom": 2
+    },
+    "import_tags": [
+      "button-kit",
+      "button",
+      "192px",
+      "window_showcase",
+      "bronze",
+      "disabled",
+      "button"
+    ],
+    "preview_layouts": [
+      "window_showcase"
+    ]
+  },
+  {
+    "asset_id": "button_primary_hover",
+    "filename": "dark_cozy_button_primary_hover.png",
+    "recipe": "button-kit",
+    "theme": "dark_cozy",
+    "category": "button",
+    "intended_use": "primary button hover state",
+    "state": "hover",
+    "scale_hint": 4,
+    "size_tier": "192px",
+    "native_width_px": 96,
+    "native_height_px": 36,
+    "semantic_role": "interactive-control",
+    "state_group": "interaction",
+    "composition_group": "button-stack",
+    "slice_hint": {
+      "left": 3,
+      "top": 3,
+      "right": 3,
+      "bottom": 3,
+      "tile_center": false,
+      "stretch_center": true
+    },
+    "inset_hint": {
+      "left": 3,
+      "top": 2,
+      "right": 3,
+      "bottom": 2
+    },
+    "import_tags": [
+      "button-kit",
+      "button",
+      "192px",
+      "window_showcase",
+      "bronze",
+      "hover",
+      "button"
+    ],
+    "preview_layouts": [
+      "window_showcase"
+    ]
+  },
+  {
+    "asset_id": "button_primary_idle",
+    "filename": "dark_cozy_button_primary_idle.png",
+    "recipe": "button-kit",
+    "theme": "dark_cozy",
+    "category": "button",
+    "intended_use": "primary button idle state",
+    "state": "idle",
+    "scale_hint": 4,
+    "size_tier": "192px",
+    "native_width_px": 96,
+    "native_height_px": 36,
+    "semantic_role": "interactive-control",
+    "state_group": "interaction",
+    "composition_group": "button-stack",
+    "slice_hint": {
+      "left": 3,
+      "top": 3,
+      "right": 3,
+      "bottom": 3,
+      "tile_center": false,
+      "stretch_center": true
+    },
+    "inset_hint": {
+      "left": 3,
+      "top": 2,
+      "right": 3,
+      "bottom": 2
+    },
+    "import_tags": [
+      "button-kit",
+      "button",
+      "192px",
+      "window_showcase",
+      "bronze",
+      "idle",
+      "button"
+    ],
+    "preview_layouts": [
+      "window_showcase"
+    ]
+  },
+  {
+    "asset_id": "button_primary_pressed",
+    "filename": "dark_cozy_button_primary_pressed.png",
+    "recipe": "button-kit",
+    "theme": "dark_cozy",
+    "category": "button",
+    "intended_use": "primary button pressed state",
+    "state": "pressed",
+    "scale_hint": 4,
+    "size_tier": "192px",
+    "native_width_px": 96,
+    "native_height_px": 36,
+    "semantic_role": "interactive-control",
+    "state_group": "interaction",
+    "composition_group": "button-stack",
+    "slice_hint": {
+      "left": 3,
+      "top": 3,
+      "right": 3,
+      "bottom": 3,
+      "tile_center": false,
+      "stretch_center": true
+    },
+    "inset_hint": {
+      "left": 3,
+      "top": 2,
+      "right": 3,
+      "bottom": 2
+    },
+    "import_tags": [
+      "button-kit",
+      "button",
+      "192px",
+      "window_showcase",
+      "bronze",
+      "pressed",
+      "button"
+    ],
+    "preview_layouts": [
+      "window_showcase"
+    ]
+  },
+  {
+    "asset_id": "button_secondary_disabled",
+    "filename": "dark_cozy_button_secondary_disabled.png",
+    "recipe": "button-kit",
+    "theme": "dark_cozy",
+    "category": "button",
+    "intended_use": "secondary button disabled state",
+    "state": "disabled",
+    "scale_hint": 4,
+    "size_tier": "192px",
+    "native_width_px": 96,
+    "native_height_px": 36,
+    "semantic_role": "interactive-control",
+    "state_group": "interaction",
+    "composition_group": "button-stack",
+    "slice_hint": {
+      "left": 3,
+      "top": 3,
+      "right": 3,
+      "bottom": 3,
+      "tile_center": false,
+      "stretch_center": true
+    },
+    "inset_hint": {
+      "left": 3,
+      "top": 2,
+      "right": 3,
+      "bottom": 2
+    },
+    "import_tags": [
+      "button-kit",
+      "button",
+      "192px",
+      "window_showcase",
+      "bronze",
+      "disabled",
+      "button"
+    ],
+    "preview_layouts": [
+      "window_showcase"
+    ]
+  },
+  {
+    "asset_id": "button_secondary_hover",
+    "filename": "dark_cozy_button_secondary_hover.png",
+    "recipe": "button-kit",
+    "theme": "dark_cozy",
+    "category": "button",
+    "intended_use": "secondary button hover state",
+    "state": "hover",
+    "scale_hint": 4,
+    "size_tier": "192px",
+    "native_width_px": 96,
+    "native_height_px": 36,
+    "semantic_role": "interactive-control",
+    "state_group": "interaction",
+    "composition_group": "button-stack",
+    "slice_hint": {
+      "left": 3,
+      "top": 3,
+      "right": 3,
+      "bottom": 3,
+      "tile_center": false,
+      "stretch_center": true
+    },
+    "inset_hint": {
+      "left": 3,
+      "top": 2,
+      "right": 3,
+      "bottom": 2
+    },
+    "import_tags": [
+      "button-kit",
+      "button",
+      "192px",
+      "window_showcase",
+      "bronze",
+      "hover",
+      "button"
+    ],
+    "preview_layouts": [
+      "window_showcase"
+    ]
+  },
+  {
+    "asset_id": "button_secondary_idle",
+    "filename": "dark_cozy_button_secondary_idle.png",
+    "recipe": "button-kit",
+    "theme": "dark_cozy",
+    "category": "button",
+    "intended_use": "secondary button idle state",
+    "state": "idle",
+    "scale_hint": 4,
+    "size_tier": "192px",
+    "native_width_px": 96,
+    "native_height_px": 36,
+    "semantic_role": "interactive-control",
+    "state_group": "interaction",
+    "composition_group": "button-stack",
+    "slice_hint": {
+      "left": 3,
+      "top": 3,
+      "right": 3,
+      "bottom": 3,
+      "tile_center": false,
+      "stretch_center": true
+    },
+    "inset_hint": {
+      "left": 3,
+      "top": 2,
+      "right": 3,
+      "bottom": 2
+    },
+    "import_tags": [
+      "button-kit",
+      "button",
+      "192px",
+      "window_showcase",
+      "bronze",
+      "idle",
+      "button"
+    ],
+    "preview_layouts": [
+      "window_showcase"
+    ]
+  },
+  {
+    "asset_id": "button_secondary_pressed",
+    "filename": "dark_cozy_button_secondary_pressed.png",
+    "recipe": "button-kit",
+    "theme": "dark_cozy",
+    "category": "button",
+    "intended_use": "secondary button pressed state",
+    "state": "pressed",
+    "scale_hint": 4,
+    "size_tier": "192px",
+    "native_width_px": 96,
+    "native_height_px": 36,
+    "semantic_role": "interactive-control",
+    "state_group": "interaction",
+    "composition_group": "button-stack",
+    "slice_hint": {
+      "left": 3,
+      "top": 3,
+      "right": 3,
+      "bottom": 3,
+      "tile_center": false,
+      "stretch_center": true
+    },
+    "inset_hint": {
+      "left": 3,
+      "top": 2,
+      "right": 3,
+      "bottom": 2
+    },
+    "import_tags": [
+      "button-kit",
+      "button",
+      "192px",
+      "window_showcase",
+      "bronze",
+      "pressed",
+      "button"
+    ],
+    "preview_layouts": [
+      "window_showcase"
+    ]
+  }
+]

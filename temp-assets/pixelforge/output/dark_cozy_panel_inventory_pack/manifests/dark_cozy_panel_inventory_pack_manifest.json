@@ -1,0 +1,241 @@
+{
+  "bundle_version": "0.1.0",
+  "generated_at_utc": "1784020623Z",
+  "export_mode": "zip",
+  "module": "ui-gen",
+  "theme": "dark_cozy",
+  "recipes": [
+    "panel-kit"
+  ],
+  "size_tier": "160px",
+  "preview_layout": null,
+  "control_selections": [
+    {
+      "id": "corner_style",
+      "value": "bevel"
+    }
+  ],
+  "bundle_root": "./exports/dark_cozy_panel_inventory_pack",
+  "request_path": "C:\\Users\\mitch\\PycharmProjects\\Reddit_Pettit\\pettit-together\\temp-assets\\pixelforge\\requests\\dark_cozy_panel_inventory.json",
+  "environment_path": "examples\\environments\\local.json",
+  "asset_manifest_path": "./exports/dark_cozy_panel_inventory_pack/manifests/dark_cozy_panel_kit_manifest.json",
+  "contact_sheets": [
+    {
+      "role": "recipe",
+      "path": "./exports/dark_cozy_panel_inventory_pack/previews/panel_kit_contact_sheet.png"
+    },
+    {
+      "role": "pack",
+      "path": "./exports/dark_cozy_panel_inventory_pack/previews/dark_cozy_panel_inventory_pack_pack_contact_sheet.png"
+    }
+  ],
+  "showcase_previews": [
+    {
+      "role": "showcase",
+      "path": "./exports/dark_cozy_panel_inventory_pack/previews/dark_cozy_panel_inventory_pack_showcase_preview.png"
+    },
+    {
+      "role": "detail",
+      "path": "./exports/dark_cozy_panel_inventory_pack/previews/dark_cozy_panel_inventory_pack_detail_preview.png"
+    }
+  ],
+  "readme_path": "./exports/dark_cozy_panel_inventory_pack/docs/README.txt",
+  "import_hints": [
+    "Start in /assets for raw reusable PNG parts grouped by category.",
+    "Use /manifests for state, slicing, size-tier, and import-tag metadata before wiring assets into an engine.",
+    "Use /previews for inspection only; raw production assets remain the main truth."
+  ],
+  "file_inventory": [
+    {
+      "role": "production-asset/card_frame",
+      "path": "./exports/dark_cozy_panel_inventory_pack/assets/card/dark_cozy_card_frame.png",
+      "format": "png",
+      "category": "card",
+      "metadata": false,
+      "size_bytes": 36464
+    },
+    {
+      "role": "production-asset/card_frame_hover",
+      "path": "./exports/dark_cozy_panel_inventory_pack/assets/card/dark_cozy_card_frame_hover.png",
+      "format": "png",
+      "category": "card",
+      "metadata": false,
+      "size_bytes": 36464
+    },
+    {
+      "role": "production-asset/card_frame_selected",
+      "path": "./exports/dark_cozy_panel_inventory_pack/assets/card/dark_cozy_card_frame_selected.png",
+      "format": "png",
+      "category": "card",
+      "metadata": false,
+      "size_bytes": 36464
+    },
+    {
+      "role": "production-asset/inventory_slot",
+      "path": "./exports/dark_cozy_panel_inventory_pack/assets/slot/dark_cozy_inventory_slot.png",
+      "format": "png",
+      "category": "slot",
+      "metadata": false,
+      "size_bytes": 9332
+    },
+    {
+      "role": "production-asset/inventory_slot_hover",
+      "path": "./exports/dark_cozy_panel_inventory_pack/assets/slot/dark_cozy_inventory_slot_hover.png",
+      "format": "png",
+      "category": "slot",
+      "metadata": false,
+      "size_bytes": 9332
+    },
+    {
+      "role": "production-asset/inventory_slot_selected",
+      "path": "./exports/dark_cozy_panel_inventory_pack/assets/slot/dark_cozy_inventory_slot_selected.png",
+      "format": "png",
+      "category": "slot",
+      "metadata": false,
+      "size_bytes": 9332
+    },
+    {
+      "role": "production-asset/panel_corner_bl",
+      "path": "./exports/dark_cozy_panel_inventory_pack/assets/panel/dark_cozy_panel_corner_bl.png",
+      "format": "png",
+      "category": "panel",
+      "metadata": false,
+      "size_bytes": 1688
+    },
+    {
+      "role": "production-asset/panel_corner_br",
+      "path": "./exports/dark_cozy_panel_inventory_pack/assets/panel/dark_cozy_panel_corner_br.png",
+      "format": "png",
+      "category": "panel",
+      "metadata": false,
+      "size_bytes": 1688
+    },
+    {
+      "role": "production-asset/panel_corner_tl",
+      "path": "./exports/dark_cozy_panel_inventory_pack/assets/panel/dark_cozy_panel_corner_tl.png",
+      "format": "png",
+      "category": "panel",
+      "metadata": false,
+      "size_bytes": 1688
+    },
+    {
+      "role": "production-asset/panel_corner_tr",
+      "path": "./exports/dark_cozy_panel_inventory_pack/assets/panel/dark_cozy_panel_corner_tr.png",
+      "format": "png",
+      "category": "panel",
+      "metadata": false,
+      "size_bytes": 1688
+    },
+    {
+      "role": "production-asset/panel_divider",
+      "path": "./exports/dark_cozy_panel_inventory_pack/assets/divider/dark_cozy_panel_divider.png",
+      "format": "png",
+      "category": "divider",
+      "metadata": false,
+      "size_bytes": 2380
+    },
+    {
+      "role": "production-asset/panel_edge_bottom",
+      "path": "./exports/dark_cozy_panel_inventory_pack/assets/panel/dark_cozy_panel_edge_bottom.png",
+      "format": "png",
+      "category": "panel",
+      "metadata": false,
+      "size_bytes": 2384
+    },
+    {
+      "role": "production-asset/panel_edge_left",
+      "path": "./exports/dark_cozy_panel_inventory_pack/assets/panel/dark_cozy_panel_edge_left.png",
+      "format": "png",
+      "category": "panel",
+      "metadata": false,
+      "size_bytes": 2420
+    },
+    {
+      "role": "production-asset/panel_edge_right",
+      "path": "./exports/dark_cozy_panel_inventory_pack/assets/panel/dark_cozy_panel_edge_right.png",
+      "format": "png",
+      "category": "panel",
+      "metadata": false,
+      "size_bytes": 2420
+    },
+    {
+      "role": "production-asset/panel_edge_top",
+      "path": "./exports/dark_cozy_panel_inventory_pack/assets/panel/dark_cozy_panel_edge_top.png",
+      "format": "png",
+      "category": "panel",
+      "metadata": false,
+      "size_bytes": 2384
+    },
+    {
+      "role": "production-asset/panel_fill",
+      "path": "./exports/dark_cozy_panel_inventory_pack/assets/panel/dark_cozy_panel_fill.png",
+      "format": "png",
+      "category": "panel",
+      "metadata": false,
+      "size_bytes": 9332
+    },
+    {
+      "role": "production-asset/panel_shadow",
+      "path": "./exports/dark_cozy_panel_inventory_pack/assets/shadow/dark_cozy_panel_shadow.png",
+      "format": "png",
+      "category": "shadow",
+      "metadata": false,
+      "size_bytes": 14528
+    },
+    {
+      "role": "production-manifest",
+      "path": "./exports/dark_cozy_panel_inventory_pack/manifests/dark_cozy_panel_kit_manifest.json",
+      "format": "json",
+      "category": null,
+      "metadata": true,
+      "size_bytes": 12009
+    },
+    {
+      "role": "production-contact-sheet/recipe",
+      "path": "./exports/dark_cozy_panel_inventory_pack/previews/panel_kit_contact_sheet.png",
+      "format": "png",
+      "category": null,
+      "metadata": false,
+      "size_bytes": 1830283
+    },
+    {
+      "role": "production-contact-sheet/pack",
+      "path": "./exports/dark_cozy_panel_inventory_pack/previews/dark_cozy_panel_inventory_pack_pack_contact_sheet.png",
+      "format": "png",
+      "category": null,
+      "metadata": false,
+      "size_bytes": 1535241
+    },
+    {
+      "role": "production-showcase",
+      "path": "./exports/dark_cozy_panel_inventory_pack/previews/dark_cozy_panel_inventory_pack_showcase_preview.png",
+      "format": "png",
+      "category": null,
+      "metadata": false,
+      "size_bytes": 110809
+    },
+    {
+      "role": "production-showcase/detail",
+      "path": "./exports/dark_cozy_panel_inventory_pack/previews/dark_cozy_panel_inventory_pack_detail_preview.png",
+      "format": "png",
+      "category": null,
+      "metadata": false,
+      "size_bytes": 27788
+    },
+    {
+      "role": "production-readme",
+      "path": "./exports/dark_cozy_panel_inventory_pack/docs/README.txt",
+      "format": "txt",
+      "category": null,
+      "metadata": true,
+      "size_bytes": 1023
+    },
+    {
+      "role": "production-pack-manifest",
+      "path": "./exports/dark_cozy_panel_inventory_pack/manifests/dark_cozy_panel_inventory_pack_manifest.json",
+      "format": "json",
+      "category": null,
+      "metadata": true
+    }
+  ]
+}

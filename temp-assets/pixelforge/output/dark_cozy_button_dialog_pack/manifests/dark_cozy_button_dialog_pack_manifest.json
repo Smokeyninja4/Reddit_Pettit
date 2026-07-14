@@ -1,0 +1,169 @@
+{
+  "bundle_version": "0.1.0",
+  "generated_at_utc": "1784020624Z",
+  "export_mode": "zip",
+  "module": "ui-gen",
+  "theme": "dark_cozy",
+  "recipes": [
+    "button-kit"
+  ],
+  "size_tier": "160px",
+  "preview_layout": null,
+  "control_selections": [
+    {
+      "id": "corner_style",
+      "value": "bevel"
+    }
+  ],
+  "bundle_root": "./exports/dark_cozy_button_dialog_pack",
+  "request_path": "C:\\Users\\mitch\\PycharmProjects\\Reddit_Pettit\\pettit-together\\temp-assets\\pixelforge\\requests\\dark_cozy_button_dialog.json",
+  "environment_path": "examples\\environments\\local.json",
+  "asset_manifest_path": "./exports/dark_cozy_button_dialog_pack/manifests/dark_cozy_button_kit_manifest.json",
+  "contact_sheets": [
+    {
+      "role": "recipe",
+      "path": "./exports/dark_cozy_button_dialog_pack/previews/button_kit_contact_sheet.png"
+    },
+    {
+      "role": "pack",
+      "path": "./exports/dark_cozy_button_dialog_pack/previews/dark_cozy_button_dialog_pack_pack_contact_sheet.png"
+    }
+  ],
+  "showcase_previews": [
+    {
+      "role": "showcase",
+      "path": "./exports/dark_cozy_button_dialog_pack/previews/dark_cozy_button_dialog_pack_showcase_preview.png"
+    },
+    {
+      "role": "detail",
+      "path": "./exports/dark_cozy_button_dialog_pack/previews/dark_cozy_button_dialog_pack_detail_preview.png"
+    }
+  ],
+  "readme_path": "./exports/dark_cozy_button_dialog_pack/docs/README.txt",
+  "import_hints": [
+    "Start in /assets for raw reusable PNG parts grouped by category.",
+    "Use /manifests for state, slicing, size-tier, and import-tag metadata before wiring assets into an engine.",
+    "Use /previews for inspection only; raw production assets remain the main truth."
+  ],
+  "file_inventory": [
+    {
+      "role": "production-asset/button_primary_disabled",
+      "path": "./exports/dark_cozy_button_dialog_pack/assets/button/dark_cozy_button_primary_disabled.png",
+      "format": "png",
+      "category": "button",
+      "metadata": false,
+      "size_bytes": 13928
+    },
+    {
+      "role": "production-asset/button_primary_hover",
+      "path": "./exports/dark_cozy_button_dialog_pack/assets/button/dark_cozy_button_primary_hover.png",
+      "format": "png",
+      "category": "button",
+      "metadata": false,
+      "size_bytes": 13928
+    },
+    {
+      "role": "production-asset/button_primary_idle",
+      "path": "./exports/dark_cozy_button_dialog_pack/assets/button/dark_cozy_button_primary_idle.png",
+      "format": "png",
+      "category": "button",
+      "metadata": false,
+      "size_bytes": 13928
+    },
+    {
+      "role": "production-asset/button_primary_pressed",
+      "path": "./exports/dark_cozy_button_dialog_pack/assets/button/dark_cozy_button_primary_pressed.png",
+      "format": "png",
+      "category": "button",
+      "metadata": false,
+      "size_bytes": 13928
+    },
+    {
+      "role": "production-asset/button_secondary_disabled",
+      "path": "./exports/dark_cozy_button_dialog_pack/assets/button/dark_cozy_button_secondary_disabled.png",
+      "format": "png",
+      "category": "button",
+      "metadata": false,
+      "size_bytes": 13928
+    },
+    {
+      "role": "production-asset/button_secondary_hover",
+      "path": "./exports/dark_cozy_button_dialog_pack/assets/button/dark_cozy_button_secondary_hover.png",
+      "format": "png",
+      "category": "button",
+      "metadata": false,
+      "size_bytes": 13928
+    },
+    {
+      "role": "production-asset/button_secondary_idle",
+      "path": "./exports/dark_cozy_button_dialog_pack/assets/button/dark_cozy_button_secondary_idle.png",
+      "format": "png",
+      "category": "button",
+      "metadata": false,
+      "size_bytes": 13928
+    },
+    {
+      "role": "production-asset/button_secondary_pressed",
+      "path": "./exports/dark_cozy_button_dialog_pack/assets/button/dark_cozy_button_secondary_pressed.png",
+      "format": "png",
+      "category": "button",
+      "metadata": false,
+      "size_bytes": 13928
+    },
+    {
+      "role": "production-manifest",
+      "path": "./exports/dark_cozy_button_dialog_pack/manifests/dark_cozy_button_kit_manifest.json",
+      "format": "json",
+      "category": null,
+      "metadata": true,
+      "size_bytes": 7514
+    },
+    {
+      "role": "production-contact-sheet/recipe",
+      "path": "./exports/dark_cozy_button_dialog_pack/previews/button_kit_contact_sheet.png",
+      "format": "png",
+      "category": null,
+      "metadata": false,
+      "size_bytes": 501399
+    },
+    {
+      "role": "production-contact-sheet/pack",
+      "path": "./exports/dark_cozy_button_dialog_pack/previews/dark_cozy_button_dialog_pack_pack_contact_sheet.png",
+      "format": "png",
+      "category": null,
+      "metadata": false,
+      "size_bytes": 463423
+    },
+    {
+      "role": "production-showcase",
+      "path": "./exports/dark_cozy_button_dialog_pack/previews/dark_cozy_button_dialog_pack_showcase_preview.png",
+      "format": "png",
+      "category": null,
+      "metadata": false,
+      "size_bytes": 110809
+    },
+    {
+      "role": "production-showcase/detail",
+      "path": "./exports/dark_cozy_button_dialog_pack/previews/dark_cozy_button_dialog_pack_detail_preview.png",
+      "format": "png",
+      "category": null,
+      "metadata": false,
+      "size_bytes": 27788
+    },
+    {
+      "role": "production-readme",
+      "path": "./exports/dark_cozy_button_dialog_pack/docs/README.txt",
+      "format": "txt",
+      "category": null,
+      "metadata": true,
+      "size_bytes": 980
+    },
+    {
+      "role": "production-pack-manifest",
+      "path": "./exports/dark_cozy_button_dialog_pack/manifests/dark_cozy_button_dialog_pack_manifest.json",
+      "format": "json",
+      "category": null,
+      "metadata": true
+    }
+  ]
+}

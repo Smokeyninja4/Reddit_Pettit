@@ -1,0 +1,90 @@
+{
+  "bundle_version": "0.1.0",
+  "generated_at_utc": "1784020622Z",
+  "export_mode": "zip",
+  "module": "icon-gen",
+  "recipe": "key",
+  "style": "cozy_pixel",
+  "theme": "dark_cozy",
+  "size_tier": "128px",
+  "presentation_mode": "inventory_card",
+  "bundle_root": "./exports/dark_cozy_key_icon_pack",
+  "request_path": "C:\\Users\\mitch\\PycharmProjects\\Reddit_Pettit\\pettit-together\\temp-assets\\pixelforge\\requests\\dark_cozy_key_icon.json",
+  "environment_path": "examples\\environments\\local.json",
+  "asset_manifest_path": "./exports/dark_cozy_key_icon_pack/metadata/dark_cozy_key_icon_pack_asset_index.json",
+  "contact_sheets": [
+    {
+      "role": "pack",
+      "path": "./exports/dark_cozy_key_icon_pack/previews/dark_cozy_key_icon_pack_contact_sheet.png"
+    }
+  ],
+  "preview_assets": [
+    {
+      "role": "grouped_preview",
+      "path": "./exports/dark_cozy_key_icon_pack/previews/dark_cozy_key_icon_pack_grouped_preview.png"
+    }
+  ],
+  "readme_path": "./exports/dark_cozy_key_icon_pack/docs/README.txt",
+  "import_hints": [
+    "Start in /assets for runtime-ready PNG icons.",
+    "Use /metadata for per-icon role, size, and import-tag context.",
+    "Use /previews for review only; the raw PNG assets remain the main truth."
+  ],
+  "file_inventory": [
+    {
+      "role": "production-asset/key",
+      "path": "./exports/dark_cozy_key_icon_pack/assets/dark_cozy_key_icon.png",
+      "format": "png",
+      "category": "dark_cozy_key_icon.png",
+      "metadata": false,
+      "size_bytes": 65737
+    },
+    {
+      "role": "production-asset-metadata/key",
+      "path": "./exports/dark_cozy_key_icon_pack/metadata/dark_cozy_key_icon_metadata.json",
+      "format": "json",
+      "category": null,
+      "metadata": true,
+      "size_bytes": 1118
+    },
+    {
+      "role": "production-manifest",
+      "path": "./exports/dark_cozy_key_icon_pack/metadata/dark_cozy_key_icon_pack_asset_index.json",
+      "format": "json",
+      "category": null,
+      "metadata": true,
+      "size_bytes": 493
+    },
+    {
+      "role": "production-contact-sheet/pack",
+      "path": "./exports/dark_cozy_key_icon_pack/previews/dark_cozy_key_icon_pack_contact_sheet.png",
+      "format": "png",
+      "category": null,
+      "metadata": false,
+      "size_bytes": 632479
+    },
+    {
+      "role": "production-showcase",
+      "path": "./exports/dark_cozy_key_icon_pack/previews/dark_cozy_key_icon_pack_grouped_preview.png",
+      "format": "png",
+      "category": null,
+      "metadata": false,
+      "size_bytes": 65737
+    },
+    {
+      "role": "production-readme",
+      "path": "./exports/dark_cozy_key_icon_pack/docs/README.txt",
+      "format": "txt",
+      "category": null,
+      "metadata": true,
+      "size_bytes": 899
+    },
+    {
+      "role": "production-pack-manifest",
+      "path": "./exports/dark_cozy_key_icon_pack/metadata/dark_cozy_key_icon_pack_bundle_manifest.json",
+      "format": "json",
+      "category": null,
+      "metadata": true
+    }
+  ]
+}

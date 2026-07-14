@@ -1,0 +1,473 @@
+[
+  {
+    "asset_id": "close_button_hover",
+    "filename": "dark_cozy_close_button_hover.png",
+    "recipe": "window-kit",
+    "theme": "dark_cozy",
+    "category": "control",
+    "intended_use": "window close button hover state",
+    "state": "hover",
+    "scale_hint": 4,
+    "size_tier": "192px",
+    "native_width_px": 48,
+    "native_height_px": 48,
+    "semantic_role": "interactive-control",
+    "state_group": "interaction",
+    "composition_group": "window-controls",
+    "inset_hint": {
+      "left": 2,
+      "top": 3,
+      "right": 2,
+      "bottom": 3
+    },
+    "import_tags": [
+      "window-kit",
+      "control",
+      "192px",
+      "window_showcase",
+      "bronze",
+      "hover",
+      "button"
+    ],
+    "preview_layouts": [
+      "window_showcase"
+    ]
+  },
+  {
+    "asset_id": "close_button_idle",
+    "filename": "dark_cozy_close_button_idle.png",
+    "recipe": "window-kit",
+    "theme": "dark_cozy",
+    "category": "control",
+    "intended_use": "window close button idle state",
+    "state": "idle",
+    "scale_hint": 4,
+    "size_tier": "192px",
+    "native_width_px": 48,
+    "native_height_px": 48,
+    "semantic_role": "interactive-control",
+    "state_group": "interaction",
+    "composition_group": "window-controls",
+    "inset_hint": {
+      "left": 2,
+      "top": 3,
+      "right": 2,
+      "bottom": 3
+    },
+    "import_tags": [
+      "window-kit",
+      "control",
+      "192px",
+      "window_showcase",
+      "bronze",
+      "idle",
+      "button"
+    ],
+    "preview_layouts": [
+      "window_showcase"
+    ]
+  },
+  {
+    "asset_id": "close_button_pressed",
+    "filename": "dark_cozy_close_button_pressed.png",
+    "recipe": "window-kit",
+    "theme": "dark_cozy",
+    "category": "control",
+    "intended_use": "window close button pressed state",
+    "state": "pressed",
+    "scale_hint": 4,
+    "size_tier": "192px",
+    "native_width_px": 48,
+    "native_height_px": 48,
+    "semantic_role": "interactive-control",
+    "state_group": "interaction",
+    "composition_group": "window-controls",
+    "inset_hint": {
+      "left": 2,
+      "top": 3,
+      "right": 2,
+      "bottom": 3
+    },
+    "import_tags": [
+      "window-kit",
+      "control",
+      "192px",
+      "window_showcase",
+      "bronze",
+      "pressed",
+      "button"
+    ],
+    "preview_layouts": [
+      "window_showcase"
+    ]
+  },
+  {
+    "asset_id": "tab_idle",
+    "filename": "dark_cozy_tab_idle.png",
+    "recipe": "window-kit",
+    "theme": "dark_cozy",
+    "category": "control",
+    "intended_use": "window tab idle state",
+    "state": "idle",
+    "scale_hint": 4,
+    "size_tier": "192px",
+    "native_width_px": 84,
+    "native_height_px": 36,
+    "semantic_role": "interactive-control",
+    "state_group": "interaction",
+    "composition_group": "window-controls",
+    "slice_hint": {
+      "left": 3,
+      "top": 2,
+      "right": 3,
+      "bottom": 2,
+      "tile_center": false,
+      "stretch_center": true
+    },
+    "inset_hint": {
+      "left": 2,
+      "top": 2,
+      "right": 2,
+      "bottom": 2
+    },
+    "import_tags": [
+      "window-kit",
+      "control",
+      "192px",
+      "window_showcase",
+      "bronze",
+      "idle"
+    ],
+    "preview_layouts": [
+      "window_showcase"
+    ]
+  },
+  {
+    "asset_id": "tab_selected",
+    "filename": "dark_cozy_tab_selected.png",
+    "recipe": "window-kit",
+    "theme": "dark_cozy",
+    "category": "control",
+    "intended_use": "window tab selected state",
+    "state": "selected",
+    "scale_hint": 4,
+    "size_tier": "192px",
+    "native_width_px": 84,
+    "native_height_px": 36,
+    "semantic_role": "interactive-control",
+    "state_group": "interaction",
+    "composition_group": "window-controls",
+    "slice_hint": {
+      "left": 3,
+      "top": 2,
+      "right": 3,
+      "bottom": 2,
+      "tile_center": false,
+      "stretch_center": true
+    },
+    "inset_hint": {
+      "left": 2,
+      "top": 2,
+      "right": 2,
+      "bottom": 2
+    },
+    "import_tags": [
+      "window-kit",
+      "control",
+      "192px",
+      "window_showcase",
+      "bronze",
+      "selected"
+    ],
+    "preview_layouts": [
+      "window_showcase"
+    ]
+  },
+  {
+    "asset_id": "window_corner_bl",
+    "filename": "dark_cozy_window_corner_bl.png",
+    "recipe": "window-kit",
+    "theme": "dark_cozy",
+    "category": "window",
+    "intended_use": "window corner bottom left",
+    "scale_hint": 4,
+    "size_tier": "192px",
+    "native_width_px": 20,
+    "native_height_px": 20,
+    "semantic_role": "decorative-ui-part",
+    "composition_group": "shared-surface",
+    "import_tags": [
+      "window-kit",
+      "window",
+      "192px",
+      "window_showcase",
+      "bronze"
+    ],
+    "preview_layouts": [
+      "window_showcase"
+    ]
+  },
+  {
+    "asset_id": "window_corner_br",
+    "filename": "dark_cozy_window_corner_br.png",
+    "recipe": "window-kit",
+    "theme": "dark_cozy",
+    "category": "window",
+    "intended_use": "window corner bottom right",
+    "scale_hint": 4,
+    "size_tier": "192px",
+    "native_width_px": 20,
+    "native_height_px": 20,
+    "semantic_role": "decorative-ui-part",
+    "composition_group": "shared-surface",
+    "import_tags": [
+      "window-kit",
+      "window",
+      "192px",
+      "window_showcase",
+      "bronze"
+    ],
+    "preview_layouts": [
+      "window_showcase"
+    ]
+  },
+  {
+    "asset_id": "window_corner_tl",
+    "filename": "dark_cozy_window_corner_tl.png",
+    "recipe": "window-kit",
+    "theme": "dark_cozy",
+    "category": "window",
+    "intended_use": "window corner top left",
+    "scale_hint": 4,
+    "size_tier": "192px",
+    "native_width_px": 20,
+    "native_height_px": 20,
+    "semantic_role": "decorative-ui-part",
+    "composition_group": "shared-surface",
+    "import_tags": [
+      "window-kit",
+      "window",
+      "192px",
+      "window_showcase",
+      "bronze"
+    ],
+    "preview_layouts": [
+      "window_showcase"
+    ]
+  },
+  {
+    "asset_id": "window_corner_tr",
+    "filename": "dark_cozy_window_corner_tr.png",
+    "recipe": "window-kit",
+    "theme": "dark_cozy",
+    "category": "window",
+    "intended_use": "window corner top right",
+    "scale_hint": 4,
+    "size_tier": "192px",
+    "native_width_px": 20,
+    "native_height_px": 20,
+    "semantic_role": "decorative-ui-part",
+    "composition_group": "shared-surface",
+    "import_tags": [
+      "window-kit",
+      "window",
+      "192px",
+      "window_showcase",
+      "bronze"
+    ],
+    "preview_layouts": [
+      "window_showcase"
+    ]
+  },
+  {
+    "asset_id": "window_edge_bottom",
+    "filename": "dark_cozy_window_edge_bottom.png",
+    "recipe": "window-kit",
+    "theme": "dark_cozy",
+    "category": "window",
+    "intended_use": "window bottom edge",
+    "scale_hint": 4,
+    "size_tier": "192px",
+    "native_width_px": 48,
+    "native_height_px": 12,
+    "semantic_role": "decorative-ui-part",
+    "composition_group": "shared-surface",
+    "slice_hint": {
+      "left": 2,
+      "top": 1,
+      "right": 2,
+      "bottom": 1,
+      "tile_center": false,
+      "stretch_center": true
+    },
+    "import_tags": [
+      "window-kit",
+      "window",
+      "192px",
+      "window_showcase",
+      "bronze"
+    ],
+    "preview_layouts": [
+      "window_showcase"
+    ]
+  },
+  {
+    "asset_id": "window_edge_left",
+    "filename": "dark_cozy_window_edge_left.png",
+    "recipe": "window-kit",
+    "theme": "dark_cozy",
+    "category": "window",
+    "intended_use": "window left edge",
+    "scale_hint": 4,
+    "size_tier": "192px",
+    "native_width_px": 12,
+    "native_height_px": 48,
+    "semantic_role": "decorative-ui-part",
+    "composition_group": "shared-surface",
+    "slice_hint": {
+      "left": 1,
+      "top": 2,
+      "right": 1,
+      "bottom": 2,
+      "tile_center": false,
+      "stretch_center": true
+    },
+    "import_tags": [
+      "window-kit",
+      "window",
+      "192px",
+      "window_showcase",
+      "bronze"
+    ],
+    "preview_layouts": [
+      "window_showcase"
+    ]
+  },
+  {
+    "asset_id": "window_edge_right",
+    "filename": "dark_cozy_window_edge_right.png",
+    "recipe": "window-kit",
+    "theme": "dark_cozy",
+    "category": "window",
+    "intended_use": "window right edge",
+    "scale_hint": 4,
+    "size_tier": "192px",
+    "native_width_px": 12,
+    "native_height_px": 48,
+    "semantic_role": "decorative-ui-part",
+    "composition_group": "shared-surface",
+    "slice_hint": {
+      "left": 1,
+      "top": 2,
+      "right": 1,
+      "bottom": 2,
+      "tile_center": false,
+      "stretch_center": true
+    },
+    "import_tags": [
+      "window-kit",
+      "window",
+      "192px",
+      "window_showcase",
+      "bronze"
+    ],
+    "preview_layouts": [
+      "window_showcase"
+    ]
+  },
+  {
+    "asset_id": "window_edge_top",
+    "filename": "dark_cozy_window_edge_top.png",
+    "recipe": "window-kit",
+    "theme": "dark_cozy",
+    "category": "window",
+    "intended_use": "window top edge",
+    "scale_hint": 4,
+    "size_tier": "192px",
+    "native_width_px": 48,
+    "native_height_px": 12,
+    "semantic_role": "decorative-ui-part",
+    "composition_group": "shared-surface",
+    "slice_hint": {
+      "left": 2,
+      "top": 1,
+      "right": 2,
+      "bottom": 1,
+      "tile_center": false,
+      "stretch_center": true
+    },
+    "import_tags": [
+      "window-kit",
+      "window",
+      "192px",
+      "window_showcase",
+      "bronze"
+    ],
+    "preview_layouts": [
+      "window_showcase"
+    ]
+  },
+  {
+    "asset_id": "window_fill",
+    "filename": "dark_cozy_window_fill.png",
+    "recipe": "window-kit",
+    "theme": "dark_cozy",
+    "category": "window",
+    "intended_use": "window fill surface",
+    "scale_hint": 4,
+    "size_tier": "192px",
+    "native_width_px": 48,
+    "native_height_px": 48,
+    "semantic_role": "container-frame",
+    "composition_group": "shared-surface",
+    "slice_hint": {
+      "left": 1,
+      "top": 1,
+      "right": 1,
+      "bottom": 1,
+      "tile_center": true,
+      "stretch_center": false
+    },
+    "inset_hint": {
+      "left": 2,
+      "top": 3,
+      "right": 2,
+      "bottom": 3
+    },
+    "import_tags": [
+      "window-kit",
+      "window",
+      "192px",
+      "window_showcase",
+      "bronze"
+    ],
+    "preview_layouts": [
+      "window_showcase"
+    ]
+  },
+  {
+    "asset_id": "window_shadow",
+    "filename": "dark_cozy_window_shadow.png",
+    "recipe": "window-kit",
+    "theme": "dark_cozy",
+    "category": "shadow",
+    "intended_use": "window shadow plate",
+    "scale_hint": 4,
+    "size_tier": "192px",
+    "native_width_px": 60,
+    "native_height_px": 60,
+    "semantic_role": "depth-shadow",
+    "composition_group": "shared-surface",
+    "import_tags": [
+      "window-kit",
+      "shadow",
+      "192px",
+      "window_showcase",
+      "bronze",
+      "shadow"
+    ],
+    "preview_layouts": [
+      "window_showcase"
+    ]
+  }
+]

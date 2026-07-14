@@ -1455,6 +1455,17 @@ export const getSeasonalEncounterTemplates = (
   return definition ? [buildEncounterTemplate(definition.key, definition.encounter)] : [];
 };
 
+export const getSeasonalEncounterTemplateById = (templateId: string): EncounterTemplate | null => {
+  if (!templateId.startsWith('encounter-seasonal-')) {
+    return null;
+  }
+
+  const eventKey = templateId.slice('encounter-seasonal-'.length) as SeasonalEventKey;
+  const definition = EVENT_MAP.get(eventKey);
+
+  return definition ? buildEncounterTemplate(definition.key, definition.encounter) : null;
+};
+
 export const getSeasonalJournalContext = (
   state: PettitState,
   date: Date = new Date()

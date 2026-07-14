@@ -54,6 +54,7 @@ import {
   getPettitBirthdaySummary,
   personalizePettitText,
 } from './pettit-identity';
+import { selectMinorEvent } from './pettit-minor-events';
 import {
   canonicalizeEncounterTemplateId,
   createEncounterInstanceFromTemplate,
@@ -690,12 +691,19 @@ const processEncounterTransition = async (
   );
   const memory = createMemoryRecord(personalizedOutcome, achievementResult.stats.memoryCount);
   const previousMemory = pickJournalCallbackMemory(memories, nextStateBeforeJournal);
+  const minorEvent = selectMinorEvent(
+    nextStateBeforeJournal,
+    activeEncounter,
+    personalizedOutcome,
+    achievementResult.stats.journalCount
+  );
   const journal = createJournalEntry(
     nextStateBeforeJournal,
     activeEncounter,
     personalizedOutcome,
     memory,
     previousMemory,
+    minorEvent,
     achievementResult.stats.journalCount,
     getAchievementCelebrationLine(achievementResult.unlockedAchievements[0] ?? null),
     getSeasonalJournalContext(nextStateBeforeJournal)

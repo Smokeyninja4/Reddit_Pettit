@@ -1,0 +1,225 @@
+{
+  "bundle_version": "0.1.0",
+  "generated_at_utc": "1784020624Z",
+  "export_mode": "zip",
+  "module": "ui-gen",
+  "theme": "dark_cozy",
+  "recipes": [
+    "window-kit"
+  ],
+  "size_tier": "160px",
+  "preview_layout": null,
+  "control_selections": [
+    {
+      "id": "corner_style",
+      "value": "bevel"
+    }
+  ],
+  "bundle_root": "./exports/dark_cozy_window_kit_pack",
+  "request_path": "C:\\Users\\mitch\\PycharmProjects\\Reddit_Pettit\\pettit-together\\temp-assets\\pixelforge\\requests\\dark_cozy_window_kit.json",
+  "environment_path": "examples\\environments\\local.json",
+  "asset_manifest_path": "./exports/dark_cozy_window_kit_pack/manifests/dark_cozy_window_kit_manifest.json",
+  "contact_sheets": [
+    {
+      "role": "recipe",
+      "path": "./exports/dark_cozy_window_kit_pack/previews/window_kit_contact_sheet.png"
+    },
+    {
+      "role": "pack",
+      "path": "./exports/dark_cozy_window_kit_pack/previews/dark_cozy_window_kit_pack_pack_contact_sheet.png"
+    }
+  ],
+  "showcase_previews": [
+    {
+      "role": "showcase",
+      "path": "./exports/dark_cozy_window_kit_pack/previews/dark_cozy_window_kit_pack_showcase_preview.png"
+    },
+    {
+      "role": "detail",
+      "path": "./exports/dark_cozy_window_kit_pack/previews/dark_cozy_window_kit_pack_detail_preview.png"
+    }
+  ],
+  "readme_path": "./exports/dark_cozy_window_kit_pack/docs/README.txt",
+  "import_hints": [
+    "Start in /assets for raw reusable PNG parts grouped by category.",
+    "Use /manifests for state, slicing, size-tier, and import-tag metadata before wiring assets into an engine.",
+    "Use /previews for inspection only; raw production assets remain the main truth."
+  ],
+  "file_inventory": [
+    {
+      "role": "production-asset/close_button_hover",
+      "path": "./exports/dark_cozy_window_kit_pack/assets/control/dark_cozy_close_button_hover.png",
+      "format": "png",
+      "category": "control",
+      "metadata": false,
+      "size_bytes": 9332
+    },
+    {
+      "role": "production-asset/close_button_idle",
+      "path": "./exports/dark_cozy_window_kit_pack/assets/control/dark_cozy_close_button_idle.png",
+      "format": "png",
+      "category": "control",
+      "metadata": false,
+      "size_bytes": 9332
+    },
+    {
+      "role": "production-asset/close_button_pressed",
+      "path": "./exports/dark_cozy_window_kit_pack/assets/control/dark_cozy_close_button_pressed.png",
+      "format": "png",
+      "category": "control",
+      "metadata": false,
+      "size_bytes": 9332
+    },
+    {
+      "role": "production-asset/tab_idle",
+      "path": "./exports/dark_cozy_window_kit_pack/assets/control/dark_cozy_tab_idle.png",
+      "format": "png",
+      "category": "control",
+      "metadata": false,
+      "size_bytes": 12200
+    },
+    {
+      "role": "production-asset/tab_selected",
+      "path": "./exports/dark_cozy_window_kit_pack/assets/control/dark_cozy_tab_selected.png",
+      "format": "png",
+      "category": "control",
+      "metadata": false,
+      "size_bytes": 12200
+    },
+    {
+      "role": "production-asset/window_corner_bl",
+      "path": "./exports/dark_cozy_window_kit_pack/assets/window/dark_cozy_window_corner_bl.png",
+      "format": "png",
+      "category": "window",
+      "metadata": false,
+      "size_bytes": 1688
+    },
+    {
+      "role": "production-asset/window_corner_br",
+      "path": "./exports/dark_cozy_window_kit_pack/assets/window/dark_cozy_window_corner_br.png",
+      "format": "png",
+      "category": "window",
+      "metadata": false,
+      "size_bytes": 1688
+    },
+    {
+      "role": "production-asset/window_corner_tl",
+      "path": "./exports/dark_cozy_window_kit_pack/assets/window/dark_cozy_window_corner_tl.png",
+      "format": "png",
+      "category": "window",
+      "metadata": false,
+      "size_bytes": 1688
+    },
+    {
+      "role": "production-asset/window_corner_tr",
+      "path": "./exports/dark_cozy_window_kit_pack/assets/window/dark_cozy_window_corner_tr.png",
+      "format": "png",
+      "category": "window",
+      "metadata": false,
+      "size_bytes": 1688
+    },
+    {
+      "role": "production-asset/window_edge_bottom",
+      "path": "./exports/dark_cozy_window_kit_pack/assets/window/dark_cozy_window_edge_bottom.png",
+      "format": "png",
+      "category": "window",
+      "metadata": false,
+      "size_bytes": 2384
+    },
+    {
+      "role": "production-asset/window_edge_left",
+      "path": "./exports/dark_cozy_window_kit_pack/assets/window/dark_cozy_window_edge_left.png",
+      "format": "png",
+      "category": "window",
+      "metadata": false,
+      "size_bytes": 2420
+    },
+    {
+      "role": "production-asset/window_edge_right",
+      "path": "./exports/dark_cozy_window_kit_pack/assets/window/dark_cozy_window_edge_right.png",
+      "format": "png",
+      "category": "window",
+      "metadata": false,
+      "size_bytes": 2420
+    },
+    {
+      "role": "production-asset/window_edge_top",
+      "path": "./exports/dark_cozy_window_kit_pack/assets/window/dark_cozy_window_edge_top.png",
+      "format": "png",
+      "category": "window",
+      "metadata": false,
+      "size_bytes": 2384
+    },
+    {
+      "role": "production-asset/window_fill",
+      "path": "./exports/dark_cozy_window_kit_pack/assets/window/dark_cozy_window_fill.png",
+      "format": "png",
+      "category": "window",
+      "metadata": false,
+      "size_bytes": 9332
+    },
+    {
+      "role": "production-asset/window_shadow",
+      "path": "./exports/dark_cozy_window_kit_pack/assets/shadow/dark_cozy_window_shadow.png",
+      "format": "png",
+      "category": "shadow",
+      "metadata": false,
+      "size_bytes": 14528
+    },
+    {
+      "role": "production-manifest",
+      "path": "./exports/dark_cozy_window_kit_pack/manifests/dark_cozy_window_kit_manifest.json",
+      "format": "json",
+      "category": null,
+      "metadata": true,
+      "size_bytes": 10825
+    },
+    {
+      "role": "production-contact-sheet/recipe",
+      "path": "./exports/dark_cozy_window_kit_pack/previews/window_kit_contact_sheet.png",
+      "format": "png",
+      "category": null,
+      "metadata": false,
+      "size_bytes": 1086758
+    },
+    {
+      "role": "production-contact-sheet/pack",
+      "path": "./exports/dark_cozy_window_kit_pack/previews/dark_cozy_window_kit_pack_pack_contact_sheet.png",
+      "format": "png",
+      "category": null,
+      "metadata": false,
+      "size_bytes": 882889
+    },
+    {
+      "role": "production-showcase",
+      "path": "./exports/dark_cozy_window_kit_pack/previews/dark_cozy_window_kit_pack_showcase_preview.png",
+      "format": "png",
+      "category": null,
+      "metadata": false,
+      "size_bytes": 110809
+    },
+    {
+      "role": "production-showcase/detail",
+      "path": "./exports/dark_cozy_window_kit_pack/previews/dark_cozy_window_kit_pack_detail_preview.png",
+      "format": "png",
+      "category": null,
+      "metadata": false,
+      "size_bytes": 27788
+    },
+    {
+      "role": "production-readme",
+      "path": "./exports/dark_cozy_window_kit_pack/docs/README.txt",
+      "format": "txt",
+      "category": null,
+      "metadata": true,
+      "size_bytes": 978
+    },
+    {
+      "role": "production-pack-manifest",
+      "path": "./exports/dark_cozy_window_kit_pack/manifests/dark_cozy_window_kit_pack_manifest.json",
+      "format": "json",
+      "category": null,
+      "metadata": true
+    }
+  ]
+}

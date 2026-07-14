@@ -1,0 +1,37 @@
+{
+  "metadata_version": "m26a",
+  "renderer": "pixel-renderer",
+  "width": 384,
+  "height": 264,
+  "pixel_scale": 4,
+  "color_model": "rgba8888",
+  "has_alpha": true,
+  "output_bytes": 405504,
+  "render_output": {
+    "renderer": "pixel-renderer",
+    "width": 384,
+    "height": 264,
+    "pixel_scale": 4,
+    "color_model": "rgba8888",
+    "has_alpha": true,
+    "output_bytes": 405504
+  },
+  "generation": {
+    "module": "ui-gen",
+    "recipe": "window-kit",
+    "style": "cozy_pixel",
+    "theme": "dark_cozy",
+    "seed": "pettit-ui-window-001",
+    "output_path": "./exports/dark_cozy_window_kit.png"
+  },
+  "request_options": {
+    "corner_style": "bevel",
+    "density": "cozy",
+    "export_mode": "zip",
+    "preview_layout": "desktop_showcase",
+    "shadow": true,
+    "size_tier": "384px",
+    "trim": "bronze",
+    "variation": "high"
+  }
+}
