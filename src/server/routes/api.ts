@@ -1,5 +1,10 @@
 import { Hono } from 'hono';
 import { context, reddit } from '@devvit/web/server';
+import {
+  MODERATOR_ACCESS_DENIED,
+  MODERATOR_ACCESS_DENIED_MESSAGE,
+  requireSubredditModerator,
+} from '../auth/ModeratorAccess';
 import type {
   ErrorResponse,
   GetMemoriesResponse,
@@ -278,7 +283,7 @@ api.post('/resolve', async (c) => {
       );
     }
 
-    const username = await reddit.getCurrentUsername();
+    const username = await requireSubredditModerator(subredditName);
     const result = await resolveVote(subredditName, username ?? null);
 
     return c.json<ResolveVoteResponse>({
@@ -290,6 +295,16 @@ api.post('/resolve', async (c) => {
       unlockedAchievements: result.unlockedAchievements,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === MODERATOR_ACCESS_DENIED) {
+      return c.json<ErrorResponse>(
+        {
+          status: 'error',
+          message: MODERATOR_ACCESS_DENIED_MESSAGE,
+        },
+        403
+      );
+    }
+
     console.error('API Resolve Error:', error);
     return c.json<ErrorResponse>(
       {

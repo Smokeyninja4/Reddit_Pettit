@@ -162,6 +162,28 @@ If a feature is not listed here, it is not required for submission.
 
 \* Politics
 
+\* Full moderator dashboard
+
+\* Moderator analytics tooling
+
+\* Advanced operations console
+
+
+
+\---
+
+
+
+\# Operational Note
+
+
+
+Expanded moderator tooling is not part of the core competition MVP loop.
+
+
+
+However, any moderator-only action that already exists in the build should use real subreddit moderator authorization rather than a personal developer username.
+
 
 
 \---

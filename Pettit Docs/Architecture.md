@@ -92,9 +92,47 @@ Responsible for:
 
 \* Event generation
 
+\* Authorization for moderator-only operational actions
+
 
 
 This layer contains the majority of Pettit's logic.
+
+
+
+\---
+
+
+
+\# Authorization Boundary
+
+
+
+Moderator-only tooling must be enforced on the server.
+
+
+
+Menu visibility is helpful UX.
+
+
+
+It is not sufficient security.
+
+
+
+If an action can change or reset Pettit's state, the server must verify the caller is allowed to do it.
+
+
+
+Recommended rule:
+
+
+
+\* community actions remain open to normal users
+
+\* operational actions require subreddit moderator access
+
+\* authorization logic should live in a shared helper rather than being duplicated across routes
 
 
 

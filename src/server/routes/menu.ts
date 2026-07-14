@@ -1,6 +1,11 @@
 import { Hono } from 'hono';
 import type { UiResponse } from '@devvit/web/shared';
-import { context, reddit } from '@devvit/web/server';
+import { context } from '@devvit/web/server';
+import {
+  MODERATOR_ACCESS_DENIED,
+  MODERATOR_ACCESS_DENIED_MESSAGE,
+  requireSubredditModerator,
+} from '../auth/ModeratorAccess';
 import { createPost } from '../core/post';
 import {
   getGiftIdeaSubmissions,
@@ -15,13 +20,20 @@ import { resolveVote } from '../core/pettit-loop';
 
 export const menu = new Hono();
 
-const DEV_SUBMISSION_USERNAME = 'Smokeyninja04';
-
-const isDevSubmissionUser = (username: string | null | undefined): boolean =>
-  username?.trim().toLowerCase() === DEV_SUBMISSION_USERNAME.toLowerCase();
-
 menu.post('/post-create', async (c) => {
   try {
+    const subredditName = context.subredditName;
+
+    if (!subredditName) {
+      return c.json<UiResponse>(
+        {
+          showToast: 'No subreddit context was available',
+        },
+        400
+      );
+    }
+
+    await requireSubredditModerator(subredditName);
     const post = await createPost();
 
     return c.json<UiResponse>(
@@ -31,6 +43,15 @@ menu.post('/post-create', async (c) => {
       200
     );
   } catch (error) {
+    if (error instanceof Error && error.message === MODERATOR_ACCESS_DENIED) {
+      return c.json<UiResponse>(
+        {
+          showToast: MODERATOR_ACCESS_DENIED_MESSAGE,
+        },
+        403
+      );
+    }
+
     console.error(`Error creating post: ${error}`);
     return c.json<UiResponse>(
       {
@@ -222,17 +243,7 @@ menu.post('/reset-world', async (c) => {
       );
     }
 
-    const username = await reddit.getCurrentUsername();
-
-    // TODO: Remove this submission-testing helper before a real public launch.
-    if (!isDevSubmissionUser(username)) {
-      return c.json<UiResponse>(
-        {
-          showToast: 'That reset tool is reserved for submission playtesting.',
-        },
-        403
-      );
-    }
+    await requireSubredditModerator(subredditName);
 
     await resetPettitWorld(subredditName);
 
@@ -246,6 +257,15 @@ menu.post('/reset-world', async (c) => {
       200
     );
   } catch (error) {
+    if (error instanceof Error && error.message === MODERATOR_ACCESS_DENIED) {
+      return c.json<UiResponse>(
+        {
+          showToast: MODERATOR_ACCESS_DENIED_MESSAGE,
+        },
+        403
+      );
+    }
+
     console.error(`Error resetting Pettit world: ${error}`);
     return c.json<UiResponse>(
       {
@@ -269,17 +289,7 @@ menu.post('/resolve-encounter', async (c) => {
       );
     }
 
-    const username = await reddit.getCurrentUsername();
-
-    // TODO: Remove this submission-testing helper before a real public launch.
-    if (!isDevSubmissionUser(username)) {
-      return c.json<UiResponse>(
-        {
-          showToast: 'That resolve tool is reserved for submission playtesting.',
-        },
-        403
-      );
-    }
+    const username = await requireSubredditModerator(subredditName);
 
     const result = await resolveVote(subredditName, username ?? null);
 
@@ -296,6 +306,15 @@ menu.post('/resolve-encounter', async (c) => {
       200
     );
   } catch (error) {
+    if (error instanceof Error && error.message === MODERATOR_ACCESS_DENIED) {
+      return c.json<UiResponse>(
+        {
+          showToast: MODERATOR_ACCESS_DENIED_MESSAGE,
+        },
+        403
+      );
+    }
+
     console.error(`Error resolving current encounter: ${error}`);
     return c.json<UiResponse>(
       {
