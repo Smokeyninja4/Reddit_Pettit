@@ -185,7 +185,8 @@ export const submitGiftIdea = (
   username: string,
   name: string,
   description: string,
-  category: GiftCategory
+  category: GiftCategory,
+  allowRepeatSubmissionsForUser = false
 ): GiftIdeaSubmissionList => {
   const normalizedName = normalizeValue(name);
   const normalizedDescription = normalizeValue(description);
@@ -206,7 +207,7 @@ export const submitGiftIdea = (
     throw new Error('GIFT_BALLOT_FULL');
   }
 
-  if (submissions.some((submission) => submission.username === username)) {
+  if (!allowRepeatSubmissionsForUser && submissions.some((submission) => submission.username === username)) {
     throw new Error('DUPLICATE_GIFT_SUBMISSION');
   }
 

@@ -1068,7 +1068,8 @@ export const submitName = async (
   subredditName: string,
   username: string,
   targetKey: string,
-  proposedName: string
+  proposedName: string,
+  allowRepeatSubmissionsForUser = false
 ): Promise<{ pendingNamingTargets: PendingNamingTarget[]; message: string }> => {
   await advanceWorldToCurrentDay(subredditName);
   await syncSeasonalWorldState(subredditName);
@@ -1079,7 +1080,15 @@ export const submitName = async (
   ]);
 
   const stats = await getOrCreateStats(subredditName);
-  const nextSubmissionMap = submitNameForTarget(state, stats, submissionMap, username, targetKey, proposedName);
+  const nextSubmissionMap = submitNameForTarget(
+    state,
+    stats,
+    submissionMap,
+    username,
+    targetKey,
+    proposedName,
+    allowRepeatSubmissionsForUser
+  );
   await saveNameSubmissions(subredditName, nextSubmissionMap);
 
   const { targetType, targetId } = (() => {
@@ -1114,7 +1123,8 @@ export const submitGiftIdea = async (
   username: string,
   name: string,
   description: string,
-  category: PettitGiftIdeaSubmission['category']
+  category: PettitGiftIdeaSubmission['category'],
+  allowRepeatSubmissionsForUser = false
 ): Promise<{ pendingGiftBallot: ReturnType<typeof buildPendingCommunityGiftBallot>; message: string }> => {
   await advanceWorldToCurrentDay(subredditName);
   await syncSeasonalWorldState(subredditName);
@@ -1124,7 +1134,15 @@ export const submitGiftIdea = async (
     getGiftIdeaSubmissions(subredditName),
   ]);
 
-  const nextSubmissions = submitCommunityGiftIdea(state, submissions, username, name, description, category);
+  const nextSubmissions = submitCommunityGiftIdea(
+    state,
+    submissions,
+    username,
+    name,
+    description,
+    category,
+    allowRepeatSubmissionsForUser
+  );
   await saveGiftIdeaSubmissions(subredditName, nextSubmissions);
 
   const pendingGiftBallot = buildPendingCommunityGiftBallot(nextSubmissions);

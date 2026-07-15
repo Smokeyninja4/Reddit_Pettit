@@ -3,6 +3,7 @@ import * as Phaser from 'phaser';
 import { fetchPettitMemories, fetchPettitState, resolvePettitVote, submitPettitVote } from '../pettitApi';
 import { buildPettitPortraitDataUrl, getPettitPortraitSignature } from '../pettitPortrait';
 import type {
+  GiftCategory,
   HallOfMemoriesDetailView,
   PettitAppearanceDna,
   PettitMemory,
@@ -1401,14 +1402,44 @@ export class Game extends Scene {
       return;
     }
 
-    const labelWidth = clamp(Math.round(frame.width * (metrics.mode === 'desktop' ? 0.24 : 0.2)), 52, 100);
+    const barKeys: TraitKey[] = ['curiosity', 'chaos', 'trust', 'courage'];
+
+    if (metrics.mode === 'mobile') {
+      const innerX = frame.x + metrics.cardInsetX;
+      const innerWidth = frame.width - metrics.cardInsetX * 2;
+      const valueWidth = 28;
+      const trackHeight = 7;
+      const labelToBarGap = 4;
+      const groupGap = 6;
+      const startY = frame.y + metrics.cardInsetY;
+
+      barKeys.forEach((traitKey, index) => {
+        const bar = this.traitBars?.[traitKey];
+        if (!bar) {
+          return;
+        }
+
+        const value = this.pettitState?.pettit.traits[traitKey] ?? 0;
+        const rowTop = startY + index * (bar.label.height + trackHeight + labelToBarGap + groupGap);
+        const fillWidth = Math.max(18, Math.round((innerWidth * value) / 100));
+
+        bar.label.setPosition(innerX, rowTop - 2);
+        bar.value.setPosition(innerX + innerWidth - valueWidth, rowTop - 2);
+        bar.track.setPosition(innerX, rowTop + bar.label.height + labelToBarGap);
+        bar.track.setSize(innerWidth, trackHeight);
+        bar.fill.setPosition(innerX, rowTop + bar.label.height + labelToBarGap);
+        bar.fill.setSize(fillWidth, trackHeight);
+      });
+
+      return;
+    }
+
+    const labelWidth = clamp(Math.round(frame.width * 0.24), 52, 100);
     const valueWidth = 34;
     const barTrackWidth = frame.width - metrics.cardInsetX * 2 - labelWidth - valueWidth - 14;
-    const startY = metrics.mode === 'desktop' ? this.traitPanelTitle.y + this.traitPanelTitle.height + 16 : frame.y + metrics.cardInsetY + 4;
-    const rowGap =
-      metrics.mode === 'desktop' ? clamp(Math.round(frame.height * 0.16), 26, 34) : 12;
-    const trackHeight = metrics.mode === 'desktop' ? 10 : 6;
-    const barKeys: TraitKey[] = ['curiosity', 'chaos', 'trust', 'courage'];
+    const startY = this.traitPanelTitle.y + this.traitPanelTitle.height + 16;
+    const rowGap = clamp(Math.round(frame.height * 0.16), 26, 34);
+    const trackHeight = 10;
 
     barKeys.forEach((traitKey, index) => {
       const bar = this.traitBars?.[traitKey];
@@ -2007,7 +2038,7 @@ export class Game extends Scene {
     );
     this.hallOverlayHighlightedBodyText.setText(
       selected
-        ? `${selected.source === 'Community Contribution' ? 'Community gift idea' : this.formatGiftCategory(selected.category)}\n${selected.description}\nUnlocked ${selected.obtainedAt.slice(0, 10)}`
+        ? `${selected.source === 'Community Contribution' ? 'Community gift idea' : this.formatGiftCategory(selected.category)}\n${this.getInventoryItemDisplayDescription(selected)}\nUnlocked ${selected.obtainedAt.slice(0, 10)}`
         : `${this.pettitState?.pettit.name ?? 'Pettit'} has not collected any keepsakes yet.`
     );
     this.hallOverlayArchiveTitleText.setText('Collected Keepsakes');
@@ -2037,6 +2068,55 @@ export class Game extends Scene {
       });
       button.setVisible(true);
     });
+  }
+
+  private getInventoryItemDisplayDescription(
+    item: PettitViewModel['inventory'][number]
+  ): string {
+    if (!item.canonName) {
+      return item.description;
+    }
+
+    const originalName = item.name.trim();
+    const renamedName = item.canonName.trim();
+    if (!originalName || !renamedName) {
+      return item.description;
+    }
+
+    if (item.description.toLowerCase().includes(renamedName.toLowerCase())) {
+      return item.description;
+    }
+
+    const escapedOriginalName = originalName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const replacedDescription = item.description.replace(
+      new RegExp(escapedOriginalName, 'gi'),
+      renamedName
+    );
+
+    if (replacedDescription !== item.description) {
+      return replacedDescription;
+    }
+
+    return this.buildRenamedInventoryDescription(item.category, renamedName);
+  }
+
+  private buildRenamedInventoryDescription(category: GiftCategory, renamedName: string): string {
+    switch (category) {
+      case 'clothing':
+        return `A tiny ${renamedName} that now feels completely part of Pettit's story.`;
+      case 'tools':
+        return `A trusty ${renamedName} that helps Pettit explore with a little more confidence.`;
+      case 'toys':
+        return `A playful ${renamedName} that brings a little extra joy to the day.`;
+      case 'books':
+        return `A well-loved ${renamedName} that fills Pettit's day with new ideas.`;
+      case 'community':
+        return `A community keepsake called ${renamedName}, cherished as part of Pettit's story.`;
+      case 'funny':
+        return `A silly little ${renamedName} that always makes the moment feel brighter.`;
+      default:
+        return `A keepsake called ${renamedName}, now part of Pettit's growing story.`;
+    }
   }
 
   private renderStatsOverlayContent(): void {

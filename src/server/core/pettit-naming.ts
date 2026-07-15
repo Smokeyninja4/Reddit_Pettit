@@ -488,7 +488,8 @@ export const submitNameForTarget = (
   submissionMap: NamingSubmissionMap,
   username: string,
   targetKey: string,
-  proposedName: string
+  proposedName: string,
+  allowRepeatSubmissionsForUser = false
 ): NamingSubmissionMap => {
   const { targetType, targetId } = parseNamingTargetKey(targetKey);
   const target = getNamingTarget(state, targetType, targetId, stats.resolvedEncounterCount);
@@ -509,7 +510,7 @@ export const submitNameForTarget = (
 
   const submissions = submissionMap[targetKey] ?? [];
 
-  if (submissions.some((submission) => submission.username === username)) {
+  if (!allowRepeatSubmissionsForUser && submissions.some((submission) => submission.username === username)) {
     throw new Error('DUPLICATE_NAME_SUBMISSION');
   }
 

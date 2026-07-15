@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import type { UiResponse } from '@devvit/web/shared';
 import { context, reddit } from '@devvit/web/server';
+import { hasSubredditModeratorAccess } from '../auth/ModeratorAccess';
 import { submitGiftIdea, submitName } from '../core/pettit-loop';
 import type { GiftCategory } from '../../shared/pettit';
 
@@ -43,7 +44,14 @@ forms.post('/name-submit', async (c) => {
 
     const { targetKey, proposedName } = await c.req.json<NameFormValues>();
     const selectedTargetKey = Array.isArray(targetKey) ? targetKey[0] ?? '' : targetKey ?? '';
-    const result = await submitName(subredditName, username, selectedTargetKey, proposedName ?? '');
+    const allowRepeatSubmissionsForUser = await hasSubredditModeratorAccess(subredditName, username);
+    const result = await submitName(
+      subredditName,
+      username,
+      selectedTargetKey,
+      proposedName ?? '',
+      allowRepeatSubmissionsForUser
+    );
 
     return c.json<UiResponse>(
       {
@@ -115,12 +123,14 @@ forms.post('/gift-submit', async (c) => {
       throw new Error('INVALID_GIFT_CATEGORY');
     }
 
+    const allowRepeatSubmissionsForUser = await hasSubredditModeratorAccess(subredditName, username);
     const result = await submitGiftIdea(
       subredditName,
       username,
       giftName ?? '',
       giftDescription ?? '',
-      selectedCategory
+      selectedCategory,
+      allowRepeatSubmissionsForUser
     );
 
     return c.json<UiResponse>(
