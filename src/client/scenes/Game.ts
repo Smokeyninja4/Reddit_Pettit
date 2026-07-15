@@ -788,20 +788,21 @@ export class Game extends Scene {
   private updateTextStyles(metrics: LayoutMetrics): void {
     const compact = metrics.mode === 'desktop' ? 1 : 0.9;
     const scale = metrics.scaleFactor * compact;
+    const useReflowDesktop = this.shouldUseReflowDesktopLayout(metrics);
 
     this.titleText.setFontSize(Math.round((metrics.mode === 'desktop' ? 38 : 24) * scale));
     this.subtitleText.setFontSize(Math.round((metrics.mode === 'desktop' ? 15 : 12) * scale));
     this.summaryText.setFontSize(Math.round((metrics.mode === 'desktop' ? 16 : 11) * scale));
     this.navBrandText.setFontSize(Math.round(26 * scale));
-    this.navBrandSubText.setFontSize(Math.round(13 * scale));
+    this.navBrandSubText.setFontSize(Math.round((metrics.mode === 'desktop' ? 12 : 13) * scale));
     this.creatureCaptionText.setFontSize(Math.round((metrics.mode === 'desktop' ? 30 : 18) * scale));
     this.moodBadgeText.setFontSize(Math.round((metrics.mode === 'desktop' ? 13 : 11) * scale));
-    this.futureSlotText.setFontSize(Math.round(13 * scale));
+    this.futureSlotText.setFontSize(Math.round((useReflowDesktop ? 14 : 13) * scale));
     this.actionTitleText.setFontSize(Math.round((metrics.mode === 'desktop' ? 27 : 20) * scale));
     this.voteSummaryText.setFontSize(Math.round((metrics.mode === 'desktop' ? 18 : 13) * scale));
     this.traitPanelTitle.setFontSize(Math.round(21 * scale));
     this.topActionTitle.setFontSize(Math.round(18 * scale));
-    this.topActionBody.setFontSize(Math.round(13 * scale));
+    this.topActionBody.setFontSize(Math.round((useReflowDesktop ? 14 : 13) * scale));
     this.seasonalTitleText.setFontSize(Math.round(18 * scale));
     this.seasonalBodyText.setFontSize(Math.round(13 * scale));
     this.achievementTitleText.setFontSize(Math.round(18 * scale));
@@ -975,7 +976,8 @@ export class Game extends Scene {
       this.navRailPanel.setPosition(railX, railY);
       this.navRailPanel.setSize(railWidth, railHeight);
       this.navBrandText.setPosition(railX + 18, railY + 22);
-      this.navBrandSubText.setPosition(railX + 18, this.navBrandText.y + this.navBrandText.height + 8);
+      this.navBrandSubText.setWordWrapWidth(railWidth - 32);
+      this.navBrandSubText.setPosition(railX + 16, railY + railHeight - this.navBrandSubText.height - 18);
       this.desktopNavButtons.forEach((button, index) => {
         button.setPosition(railX + 16, railY + 92 + index * (button.height + 12));
         button.setFixedSize(railWidth - 32, button.height);
@@ -1007,6 +1009,14 @@ export class Game extends Scene {
     this.navRailPanel.setPosition(-2000, -2000);
   }
 
+  private shouldUseReflowDesktopLayout(metrics: LayoutMetrics): boolean {
+    return metrics.mode === 'desktop' && metrics.frameWidth < 1180;
+  }
+
+  private shouldUseSingleRowActionButtons(metrics: LayoutMetrics, panelWidth: number): boolean {
+    return metrics.mode === 'desktop' && !this.shouldUseReflowDesktopLayout(metrics) && panelWidth >= 720;
+  }
+
   private layoutDesktopDashboard(metrics: LayoutMetrics, railWidth: number): void {
     const compactDesktop = metrics.frameWidth < 980;
     const resolvedRailWidth = compactDesktop ? clamp(Math.round(metrics.frameWidth * 0.11), 108, 128) : railWidth;
@@ -1014,6 +1024,60 @@ export class Game extends Scene {
     const leftX = metrics.frameLeft + metrics.padding + resolvedRailWidth + metrics.gap;
     const top = metrics.contentTop;
     const topAreaHeight = metrics.contentBottom - top;
+
+    if (this.shouldUseReflowDesktopLayout(metrics)) {
+      const topRowHeight = clamp(Math.round(topAreaHeight * 0.26), 154, 194);
+      const summaryHeight = clamp(Math.round(topAreaHeight * 0.075), 48, 58);
+      const heroWidth = clamp(Math.round(usableWidth * 0.64), 400, usableWidth - 280);
+      const traitWidth = usableWidth - heroWidth - metrics.gap;
+      const actionHeight = topAreaHeight - topRowHeight - summaryHeight - metrics.gap * 2;
+      const creatureFrame: PanelFrame = {
+        x: leftX,
+        y: top,
+        width: heroWidth,
+        height: topRowHeight,
+      };
+      const traitFrame: PanelFrame = {
+        x: leftX + heroWidth + metrics.gap,
+        y: top,
+        width: traitWidth,
+        height: topRowHeight,
+      };
+      const actionFrame: PanelFrame = {
+        x: leftX,
+        y: top + topRowHeight + metrics.gap,
+        width: usableWidth,
+        height: actionHeight,
+      };
+      const topActionFrame: PanelFrame = {
+        x: leftX,
+        y: actionFrame.y + actionFrame.height + metrics.gap,
+        width: usableWidth,
+        height: summaryHeight,
+      };
+
+      this.layoutCreaturePanel(metrics, creatureFrame);
+      this.layoutTraitPanel(metrics, traitFrame);
+      this.layoutActionPanel(metrics, actionFrame);
+      this.layoutResolveArea(metrics, {
+        x: leftX,
+        y: actionFrame.y + actionFrame.height,
+        width: usableWidth,
+        height: 0,
+      });
+      this.layoutTopActionPanel(metrics, topActionFrame);
+
+      this.traitPanel.setVisible(true);
+      this.traitPanelTitle.setVisible(true);
+      this.topActionPanel.setVisible(true);
+      this.topActionTitle.setVisible(false);
+      this.topActionBody.setVisible(true);
+      this.memoryPanel.setVisible(false);
+      this.memoryTitleText.setVisible(false);
+      this.memoryBodyText.setVisible(false);
+      return;
+    }
+
     const mainWidth = compactDesktop ? usableWidth : Math.round(usableWidth * 0.6);
     const rightWidth = compactDesktop ? 0 : usableWidth - mainWidth - metrics.gap;
     const rightX = leftX + mainWidth + metrics.gap;
@@ -1178,7 +1242,7 @@ export class Game extends Scene {
     const innerWidth = panelWidth - metrics.cardInsetX * 2;
     this.actionTitleText.setWordWrapWidth(innerWidth);
     this.voteSummaryText.setWordWrapWidth(innerWidth);
-    const useSingleRow = metrics.mode === 'desktop' && panelWidth >= 720;
+    const useSingleRow = this.shouldUseSingleRowActionButtons(metrics, panelWidth);
     const columns = useSingleRow ? Math.max(this.optionButtons.length, 1) : Math.min(2, Math.max(this.optionButtons.length, 1));
     const buttonRows = Math.ceil(Math.max(this.optionButtons.length, 1) / columns);
     const buttonHeight = buttonRows * metrics.actionButtonHeight + (buttonRows - 1) * metrics.buttonGap;
@@ -1218,11 +1282,16 @@ export class Game extends Scene {
     const trustWeight = traits.trust / 100;
     const courageWeight = traits.courage / 100;
     const chaosWeight = traits.chaos / 100;
+    const useReflowDesktop = this.shouldUseReflowDesktopLayout(metrics);
 
     this.creatureArtFrame.setPosition(innerX, innerY);
     this.creatureArtFrame.setSize(innerWidth, artHeight);
-    const creatureCenterX = innerX + innerWidth * (metrics.mode === 'desktop' ? 0.48 : 0.5) + (chaosWeight - 0.5) * 8;
-    const creatureCenterY = innerY + artHeight * ((metrics.mode === 'desktop' ? 0.6 : 0.52) - courageWeight * 0.04);
+    const creatureCenterX =
+      innerX +
+      innerWidth * (useReflowDesktop ? 0.5 : metrics.mode === 'desktop' ? 0.48 : 0.5) +
+      (chaosWeight - 0.5) * 8;
+    const creatureCenterY =
+      innerY + artHeight * ((useReflowDesktop ? 0.58 : metrics.mode === 'desktop' ? 0.6 : 0.52) - courageWeight * 0.04);
     const bodyWidth = Math.min(innerWidth * (metrics.mode === 'desktop' ? 0.26 : 0.34), artHeight * (metrics.mode === 'desktop' ? 0.72 : 0.82)) * (dna.bodyWidthScale + trustWeight * 0.08);
     const bodyHeight = Math.min(artHeight * (metrics.mode === 'desktop' ? 0.7 : 0.8), bodyWidth * 1.12) * (dna.bodyHeightScale + courageWeight * 0.06);
     const eyeOffsetX = bodyWidth * 0.16 * dna.eyeSpacing * (1 + curiosityWeight * 0.08);
@@ -1268,8 +1337,8 @@ export class Game extends Scene {
     this.layoutCreatureAccessories(creatureCenterX, creatureCenterY, bodyWidth, bodyHeight);
     const compactDesktop = metrics.mode === 'desktop' && frame.width < 620;
     const portraitSize = Math.min(
-      innerWidth * (metrics.mode === 'desktop' ? (compactDesktop ? 0.36 : 0.46) : 0.64),
-      artHeight * (metrics.mode === 'desktop' ? (compactDesktop ? 0.78 : 0.92) : 1.04)
+      innerWidth * (useReflowDesktop ? 0.7 : metrics.mode === 'desktop' ? (compactDesktop ? 0.36 : 0.46) : 0.64),
+      artHeight * (useReflowDesktop ? 1.12 : metrics.mode === 'desktop' ? (compactDesktop ? 0.78 : 0.92) : 1.04)
     );
     this.creatureSnapshot.setPosition(creatureCenterX, creatureCenterY - bodyHeight * 0.02);
     this.creatureSnapshot.setDisplaySize(portraitSize, portraitSize);
@@ -1281,13 +1350,21 @@ export class Game extends Scene {
     if (metrics.mode === 'desktop') {
       this.moodBadgeText.setPosition(innerX + innerWidth - this.moodBadgeText.width - 18, innerY + 14);
     }
-    this.futureSlotText.setWordWrapWidth(
-      Math.max(metrics.mode === 'desktop' ? 180 : 128, innerWidth * (metrics.mode === 'desktop' ? 0.28 : 0.24))
-    );
-    this.futureSlotText.setPosition(innerX + innerWidth - 18, this.moodBadgeText.y + this.moodBadgeText.height + 10);
-    this.futureSlotText.setOrigin(1, 0);
-    this.creatureCaptionText.setVisible(metrics.mode === 'desktop');
-    this.futureSlotText.setVisible(metrics.mode === 'desktop');
+    if (useReflowDesktop) {
+      this.futureSlotText.setWordWrapWidth(Math.max(170, innerWidth * 0.34));
+      this.futureSlotText.setPosition(creatureCenterX, innerY + artHeight * 0.8);
+      this.futureSlotText.setOrigin(0.5, 0.5);
+      this.creatureCaptionText.setVisible(false);
+      this.futureSlotText.setVisible(this.futureSlotText.text.trim().length > 0);
+    } else {
+      this.futureSlotText.setWordWrapWidth(
+        Math.max(metrics.mode === 'desktop' ? 180 : 128, innerWidth * (metrics.mode === 'desktop' ? 0.28 : 0.24))
+      );
+      this.futureSlotText.setPosition(innerX + innerWidth - 18, this.moodBadgeText.y + this.moodBadgeText.height + 10);
+      this.futureSlotText.setOrigin(1, 0);
+      this.creatureCaptionText.setVisible(metrics.mode === 'desktop');
+      this.futureSlotText.setVisible(metrics.mode === 'desktop');
+    }
   }
 
   private layoutCreatureFace(
@@ -1366,7 +1443,7 @@ export class Game extends Scene {
     const innerY = frame.y + mobileInsetY;
     const innerWidth = frame.width - mobileInsetX * 2;
     const buttonCount = Math.max(this.optionButtons.length, 1);
-    const useSingleRow = metrics.mode === 'desktop' && frame.width >= 720;
+    const useSingleRow = this.shouldUseSingleRowActionButtons(metrics, frame.width);
     const columns = useSingleRow ? buttonCount : Math.min(2, buttonCount);
     const buttonGap = metrics.mode === 'desktop' ? metrics.buttonGap : Math.max(10, metrics.buttonGap - 2);
 
@@ -1403,15 +1480,19 @@ export class Game extends Scene {
     }
 
     const barKeys: TraitKey[] = ['curiosity', 'chaos', 'trust', 'courage'];
+    const useStackedTraitBars = metrics.mode === 'mobile' || this.shouldUseReflowDesktopLayout(metrics);
 
-    if (metrics.mode === 'mobile') {
+    if (useStackedTraitBars) {
       const innerX = frame.x + metrics.cardInsetX;
       const innerWidth = frame.width - metrics.cardInsetX * 2;
-      const valueWidth = 28;
-      const trackHeight = 7;
-      const labelToBarGap = 4;
-      const groupGap = 6;
-      const startY = frame.y + metrics.cardInsetY;
+      const valueWidth = metrics.mode === 'mobile' ? 28 : 34;
+      const trackHeight = metrics.mode === 'mobile' ? 7 : 8;
+      const labelToBarGap = metrics.mode === 'mobile' ? 4 : 3;
+      const groupGap = metrics.mode === 'mobile' ? 6 : 4;
+      const startY =
+        metrics.mode === 'mobile'
+          ? frame.y + metrics.cardInsetY
+          : this.traitPanelTitle.y + this.traitPanelTitle.height + 6;
 
       barKeys.forEach((traitKey, index) => {
         const bar = this.traitBars?.[traitKey];
@@ -1463,9 +1544,20 @@ export class Game extends Scene {
   private layoutTopActionPanel(metrics: LayoutMetrics, frame: PanelFrame): void {
     this.topActionPanel.setPosition(frame.x, frame.y);
     this.topActionPanel.setSize(frame.width, frame.height);
-    this.topActionTitle.setPosition(frame.x + metrics.cardInsetX, frame.y + metrics.cardInsetY);
-    this.topActionBody.setPosition(frame.x + metrics.cardInsetX, this.topActionTitle.y + this.topActionTitle.height + 6);
+    const useReflowDesktop = this.shouldUseReflowDesktopLayout(metrics);
+    this.topActionTitle.setVisible(!useReflowDesktop);
+    if (!useReflowDesktop) {
+      this.topActionTitle.setPosition(frame.x + metrics.cardInsetX, frame.y + metrics.cardInsetY);
+      this.topActionBody.setPosition(frame.x + metrics.cardInsetX, this.topActionTitle.y + this.topActionTitle.height + 6);
+      this.topActionBody.setWordWrapWidth(frame.width - metrics.cardInsetX * 2);
+      return;
+    }
+
     this.topActionBody.setWordWrapWidth(frame.width - metrics.cardInsetX * 2);
+    this.topActionBody.setPosition(
+      frame.x + metrics.cardInsetX,
+      frame.y + Math.max(12, Math.floor((frame.height - this.topActionBody.height) / 2))
+    );
   }
 
   private layoutMemoryPanel(metrics: LayoutMetrics, frame: PanelFrame): void {
@@ -1733,9 +1825,14 @@ export class Game extends Scene {
       return;
     }
 
+    const metrics = this.getLayoutMetrics(this.scale.width, this.scale.height);
+    const useReflowDesktop = this.shouldUseReflowDesktopLayout(metrics);
     const { pettit, activeEncounter, recentMemories } = this.pettitState;
-    this.titleText.setText(pettit.name);
-    this.subtitleText.setText('Community Creature');
+    this.titleText.setText('Pettit Together');
+    this.subtitleText.setText('Community Creature • Raised by the community');
+    this.navBrandSubText.setText(
+      'Use the Reddit app menu to suggest names for Pettit and community gifts.\n\nVoting runs on a 24-hour cycle.'
+    );
     this.summaryText.setText(
       `Day ${pettit.ageDays} - ${pettit.birthdaySummary} - Mood: ${this.capitalize(pettit.mood)} - Top traits: ${pettit.topTraits
         .map((trait) => this.formatTraitName(trait))
@@ -1746,9 +1843,11 @@ export class Game extends Scene {
     this.moodBadgeText.setText(this.formatMoodBadge(pettit.mood));
     this.applyMoodBadgeStyle(pettit.mood);
     this.futureSlotText.setText(
-      pettit.canReceiveCommunityName
-        ? `Raised by the community.\n${pettit.birthdaySummary}.\nUse the subreddit menu to submit name ideas for Pettit.`
-        : `Raised by the community.\n${pettit.birthdaySummary}.`
+      useReflowDesktop
+        ? ''
+        : pettit.canReceiveCommunityName
+          ? `Raised by the community.\n${pettit.birthdaySummary}.\nUse the subreddit menu to submit name ideas for Pettit.`
+          : `Raised by the community.\n${pettit.birthdaySummary}.`
     );
 
     this.actionTitleText.setText(activeEncounter.title);
@@ -1761,21 +1860,7 @@ export class Game extends Scene {
     );
 
     this.topActionTitle.setText('Today & Community');
-    this.topActionBody.setText(
-      [
-        `${this.formatCount(activeEncounter.totalVotes)} votes on today's encounter`,
-        `${this.formatCount(this.pettitState.communityStats.encountersCompleted)} shared stories so far`,
-        `${this.formatCount(this.pettitState.communityStats.memoriesCreated)} keepsakes and memories held`,
-        this.pettitState.communityContributions.pendingGiftBallot
-          ? this.pettitState.communityContributions.pendingGiftBallot.isReady
-            ? 'A community gift vote is ready.'
-            : `${this.pettitState.communityContributions.pendingGiftBallot.submissionCount}/3 gift ideas are waiting.`
-          : 'No community gift ballot yet.',
-        this.pettitState.pendingNamingTargets.length > 0
-          ? `${this.formatCount(this.pettitState.pendingNamingTargets.length)} naming stories are waiting.`
-          : 'No naming stories are waiting yet.',
-      ].join('\n')
-    );
+    this.topActionBody.setText(this.buildTopActionSummary(useReflowDesktop));
 
     this.applySeasonalAccent(this.pettitState.seasonal.activeEvent?.accentColor ?? null);
 
@@ -1796,6 +1881,46 @@ export class Game extends Scene {
 
     this.renderHallOverlayContent();
     this.updateLayout(this.scale.width, this.scale.height);
+  }
+
+  private buildTopActionSummary(useReflowDesktop: boolean): string {
+    if (!this.pettitState) {
+      return '';
+    }
+
+    const { activeEncounter, communityStats, communityContributions, pendingNamingTargets, pettit } =
+      this.pettitState;
+
+    if (useReflowDesktop) {
+      const summaryBits = [
+        `Votes today: ${activeEncounter.totalVotes}`,
+        `Stories: ${communityStats.encountersCompleted}`,
+        `Memories: ${communityStats.memoriesCreated}`,
+        `Day: ${pettit.ageDays}`,
+      ];
+
+      if (communityContributions.pendingGiftBallot?.isReady) {
+        summaryBits.push('Gift vote ready');
+      } else if (pendingNamingTargets.length > 0) {
+        summaryBits.push(`Names waiting: ${pendingNamingTargets.length}`);
+      }
+
+      return summaryBits.join('  |  ');
+    }
+
+    return [
+      `${this.formatCount(activeEncounter.totalVotes)} votes on today's encounter`,
+      `${this.formatCount(communityStats.encountersCompleted)} shared stories so far`,
+      `${this.formatCount(communityStats.memoriesCreated)} keepsakes and memories held`,
+      communityContributions.pendingGiftBallot
+        ? communityContributions.pendingGiftBallot.isReady
+          ? 'A community gift vote is ready.'
+          : `${communityContributions.pendingGiftBallot.submissionCount}/3 gift ideas are waiting.`
+        : 'No community gift ballot yet.',
+      pendingNamingTargets.length > 0
+        ? `${this.formatCount(pendingNamingTargets.length)} naming stories are waiting.`
+        : 'No naming stories are waiting yet.',
+    ].join('\n');
   }
 
   private renderTraitBars(): void {

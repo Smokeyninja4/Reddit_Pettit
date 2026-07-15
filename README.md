@@ -61,3 +61,19 @@ The current build supports a single shared Pettit per subreddit, one active dail
 - `npm run build` currently surfaces Devvit/Vite warnings around `sourcemapFileNames` and `inlineDynamicImports`; they are upstream packaging warnings and are non-blocking for local build, playtest, and upload flows.
 - `v1_checklist.md` is the manual sign-off sheet for final submission testing.
 - `v1_features.md` is the current V1 scope reference so late changes do not accidentally expand the build.
+
+## Competition Development
+
+During the final weeks of development, my family experienced a bereavement which significantly reduced the amount of time I was able to dedicate to the project.
+
+This note is not included as an excuse or in the hope of receiving special consideration. The project should be judged on what has been submitted. I simply wanted to provide context for why some planned content, polish, and quality-of-life improvements remain unfinished.
+
+Pettit is a project I genuinely care about and intend to continue developing at a later date after the competition. This submission represents the **first public milestone** of that journey rather than its final form, and I hope it demonstrates the direction and potential of the project.
+
+## Testing Subreddit
+
+Prior to submission, the project's testing subreddit was changed from **Private** to **Public** to allow judges to access the game.
+
+At the time of submission, Reddit's approval process for this change may still have been pending. The request was submitted before the competition deadline, and the subreddit will become publicly accessible as soon as Reddit completes the change.
+
+If access is temporarily unavailable due to this approval process, it is the result of Reddit's moderation workflow rather than the project itself.
