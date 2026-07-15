@@ -1013,7 +1013,7 @@ export class Game extends Scene {
     const leftX = metrics.frameLeft + metrics.padding + resolvedRailWidth + metrics.gap;
     const top = metrics.contentTop;
     const topAreaHeight = metrics.contentBottom - top;
-    const mainWidth = compactDesktop ? usableWidth : Math.round(usableWidth * 0.62);
+    const mainWidth = compactDesktop ? usableWidth : Math.round(usableWidth * 0.6);
     const rightWidth = compactDesktop ? 0 : usableWidth - mainWidth - metrics.gap;
     const rightX = leftX + mainWidth + metrics.gap;
     const creatureHeight = clamp(Math.round(topAreaHeight * (compactDesktop ? 0.23 : 0.31)), compactDesktop ? 126 : 170, compactDesktop ? 176 : 254);
@@ -1071,8 +1071,8 @@ export class Game extends Scene {
     }
 
     const traitHeight = clamp(Math.round(topAreaHeight * 0.31), 150, 214);
-    const topActionHeight = clamp(Math.round(topAreaHeight * 0.22), 110, 162);
-    const memoryHeight = clamp(Math.round(topAreaHeight * 0.18), 100, 152);
+    const topActionHeight = clamp(Math.round(topAreaHeight * 0.24), 124, 176);
+    const memoryHeight = clamp(Math.round(topAreaHeight * 0.17), 96, 144);
     const traitFrame: PanelFrame = { x: rightX, y: top, width: rightWidth, height: traitHeight };
     const topActionFrame: PanelFrame = {
       x: rightX,
@@ -1108,9 +1108,9 @@ export class Game extends Scene {
     const mobileContentTop = this.summaryText.y + this.summaryText.height + metrics.gap;
     const gap = Math.max(6, metrics.gap - 6);
     const availableHeight = frameBottom - mobileContentTop;
-    const traitWidth = clamp(Math.round(contentWidth * 0.34), 108, 136);
+    const traitWidth = clamp(Math.round(contentWidth * 0.4), 118, 152);
     const heroWidth = contentWidth - traitWidth - gap;
-    let topRowHeight = 114;
+    let topRowHeight = 122;
     let traitHeight = topRowHeight;
     const measuredActionHeight = this.measureActionPanelHeight(metrics, contentWidth);
     let actionHeight = measuredActionHeight;
@@ -1906,6 +1906,30 @@ export class Game extends Scene {
     return Math.max(1, Math.ceil(hall.archive.length / 12));
   }
 
+  private setHallOverlayPagingControls(options: {
+    showPageText: boolean;
+    pageText?: string;
+    showPrevious: boolean;
+    showNext: boolean;
+  }): void {
+    this.hallOverlayPageText.setVisible(options.showPageText);
+    this.hallOverlayPageText.setText(options.pageText ?? '');
+
+    this.hallOverlayPrevButton.setVisible(options.showPrevious);
+    if (options.showPrevious) {
+      this.hallOverlayPrevButton.setInteractive({ useHandCursor: true }).setAlpha(1);
+    } else {
+      this.hallOverlayPrevButton.disableInteractive().setAlpha(0.45);
+    }
+
+    this.hallOverlayNextButton.setVisible(options.showNext);
+    if (options.showNext) {
+      this.hallOverlayNextButton.setInteractive({ useHandCursor: true }).setAlpha(1);
+    } else {
+      this.hallOverlayNextButton.disableInteractive().setAlpha(0.45);
+    }
+  }
+
   private renderHallOverlayContent(): void {
     if (!this.hallOverlayVisible) {
       return;
@@ -1927,9 +1951,11 @@ export class Game extends Scene {
       this.hallOverlayArchiveTitleText.setText('Memory Book');
       this.hallOverlayHighlightedBodyText.setText('Loading today’s journal...');
       this.hallOverlayArchiveBodyText.setText('Loading the rest of the memory book...');
-      this.hallOverlayPageText.setText('');
-      this.hallOverlayPrevButton.disableInteractive().setAlpha(0.45);
-      this.hallOverlayNextButton.disableInteractive().setAlpha(0.45);
+      this.setHallOverlayPagingControls({
+        showPageText: false,
+        showPrevious: false,
+        showNext: false,
+      });
       return;
     }
 
@@ -1959,19 +1985,12 @@ export class Game extends Scene {
         ? archivePage.map((memory) => this.formatHallDetailLine(memory, 52)).join('\n')
         : 'No earlier pages yet.'
     );
-    this.hallOverlayPageText.setText(`Volume ${this.hallArchivePage + 1} of ${pageCount}`);
-
-    if (this.hallArchivePage > 0) {
-      this.hallOverlayPrevButton.setInteractive({ useHandCursor: true }).setAlpha(1);
-    } else {
-      this.hallOverlayPrevButton.disableInteractive().setAlpha(0.45);
-    }
-
-    if (this.hallArchivePage < pageCount - 1) {
-      this.hallOverlayNextButton.setInteractive({ useHandCursor: true }).setAlpha(1);
-    } else {
-      this.hallOverlayNextButton.disableInteractive().setAlpha(0.45);
-    }
+    this.setHallOverlayPagingControls({
+      showPageText: pageCount > 1,
+      pageText: `Volume ${this.hallArchivePage + 1} of ${pageCount}`,
+      showPrevious: this.hallArchivePage > 0,
+      showNext: this.hallArchivePage < pageCount - 1,
+    });
   }
 
   private renderInventoryOverlayContent(): void {
@@ -1997,9 +2016,11 @@ export class Game extends Scene {
         ? 'Choose a keepsake below to see its details.'
         : 'A future gift vote will fill this collection.'
     );
-    this.hallOverlayPageText.setText('');
-    this.hallOverlayPrevButton.disableInteractive().setAlpha(0.45);
-    this.hallOverlayNextButton.disableInteractive().setAlpha(0.45);
+    this.setHallOverlayPagingControls({
+      showPageText: false,
+      showPrevious: false,
+      showNext: false,
+    });
 
     this.overlayInventoryButtons.forEach((button, index) => {
       const item = [...inventory].reverse()[index];
@@ -2052,9 +2073,11 @@ export class Game extends Scene {
           : 'No naming stories are waiting right now.',
       ].join('\n')
     );
-    this.hallOverlayPageText.setText('');
-    this.hallOverlayPrevButton.disableInteractive().setAlpha(0.45);
-    this.hallOverlayNextButton.disableInteractive().setAlpha(0.45);
+    this.setHallOverlayPagingControls({
+      showPageText: false,
+      showPrevious: false,
+      showNext: false,
+    });
     this.overlayInventoryButtons.forEach((button) => button.setVisible(false));
   }
 

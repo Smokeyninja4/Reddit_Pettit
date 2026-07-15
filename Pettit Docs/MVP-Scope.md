@@ -1,224 +1,109 @@
-\# MVP-Scope.md
+# MVP-Scope.md
 
-
-
-\# Competition MVP
-
-
+# Competition MVP
 
 This document overrides all feature requests.
 
-
-
 If a feature is not listed here, it is not required for submission.
 
+---
 
+# Required Systems
 
-\---
+## Pettit
 
+* creation
+* age
+* mood
+* traits
 
+---
 
-\# Required Systems
+## Encounter Loop
 
+* one active encounter
+* community choices
+* result storage
+* next encounter generation
 
+---
 
-\## Pettit
+## Voting
 
+* daily vote
+* vote results
+* duplicate-vote protection
 
+---
 
-\* Creation
+## Traits
 
-\* Age
+* trait changes
+* trait persistence
+* mood updates from trait direction
 
-\* Mood
+---
 
-\* Traits
+## Memories
 
+* memory creation
+* memory storage
+* memory recall
 
+---
 
-\---
+## Journal
 
+* daily journal
+* personality influence
 
+---
 
-\## Voting
+# Nice To Have
 
+* inventory
+* gifts
+* achievements
+* seasonal events
+* community naming
 
+---
 
-\* Daily vote
+# Not Required
 
-\* Vote results
+* migration
+* family trees
+* multiple Pettits
+* cross-community travel
+* GhostWire
+* diplomacy
+* world map
+* trading
+* breeding
+* guilds
+* politics
+* full moderator dashboard
+* moderator analytics tooling
+* advanced operations console
 
-\* Result storage
+---
 
-
-
-\---
-
-
-
-\## Traits
-
-
-
-\* Trait changes
-
-\* Trait persistence
-
-
-
-\---
-
-
-
-\## Memories
-
-
-
-\* Memory creation
-
-\* Memory storage
-
-\* Memory recall
-
-
-
-\---
-
-
-
-\## Journal
-
-
-
-\* Daily journal
-
-\* Personality influence
-
-
-
-\---
-
-
-
-\## Quests
-
-
-
-\* Quest generation
-
-\* Community choices
-
-\* Outcomes
-
-
-
-\---
-
-
-
-\# Nice To Have
-
-
-
-\* Inventory
-
-\* Gifts
-
-\* Achievements
-
-\* Seasonal events
-
-\* Community naming
-
-
-
-\---
-
-
-
-\# Not Required
-
-
-
-\* Migration
-
-\* Family trees
-
-\* Multiple Pettits
-
-\* Cross-community travel
-
-\* GhostWire
-
-\* Diplomacy
-
-\* World map
-
-\* Trading
-
-\* Breeding
-
-\* Guilds
-
-\* Politics
-
-\* Full moderator dashboard
-
-\* Moderator analytics tooling
-
-\* Advanced operations console
-
-
-
-\---
-
-
-
-\# Operational Note
-
-
+# Operational Note
 
 Expanded moderator tooling is not part of the core competition MVP loop.
 
-
-
 However, any moderator-only action that already exists in the build should use real subreddit moderator authorization rather than a personal developer username.
 
+---
 
-
-\---
-
-
-
-\# Definition Of Done
-
-
+# Definition Of Done
 
 A subreddit can:
 
-
-
-1\. Vote
-
-
-
-2\. Influence Pettit's personality
-
-
-
-3\. Create memories
-
-
-
-4\. Read a daily journal
-
-
-
-5\. Complete quests
-
-
+1. vote on Pettit's current encounter
+2. influence Pettit's personality
+3. create memories through resolved encounter outcomes
+4. read a daily journal
+5. keep Pettit's shared story progressing through the encounter loop
 
 If these five actions work reliably, the MVP is complete.
-
-
-

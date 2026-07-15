@@ -14,7 +14,7 @@ The community votes on decisions, shapes its personality, creates memories, and 
 
 Submission candidate: polished first playable dashboard build
 
-The current build supports a single shared Pettit per subreddit, one active daily encounter, persistent memories and journals in Redis, automated daily advancement with playtest resolve support, trait feedback after resolves, community gifts and naming, seasonal story moments, milestones, and a polished expanded dashboard UI.
+The current build supports a single shared Pettit per subreddit, one active daily encounter, persistent memories and journals in Redis, automated daily advancement, moderator-only manual resolve/reset operations, trait feedback after resolves, community gifts and naming, seasonal story moments, milestones, and a polished expanded dashboard UI.
 
 ## Current Features
 

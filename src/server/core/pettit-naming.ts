@@ -272,7 +272,6 @@ export const getPendingNamingTargets = (
   const targets = [
     getPettitTarget(state, resolvedEncounterCount),
     ...state.inventory.map((item) => getGiftTarget(item)).filter((target): target is NamingTarget => target !== null),
-    ...state.landmarks.map((landmark) => getLandmarkTarget(landmark)).filter((target): target is NamingTarget => target !== null),
   ]
     .filter((target): target is NamingTarget => target !== null)
     .sort(sortByDiscovery);
