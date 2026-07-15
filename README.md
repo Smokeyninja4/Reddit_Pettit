@@ -70,10 +70,4 @@ This note is not included as an excuse or in the hope of receiving special consi
 
 Pettit is a project I genuinely care about and intend to continue developing at a later date after the competition. This submission represents the **first public milestone** of that journey rather than its final form, and I hope it demonstrates the direction and potential of the project.
 
-## Testing Subreddit
 
-Prior to submission, the project's testing subreddit was changed from **Private** to **Public** to allow judges to access the game.
-
-At the time of submission, Reddit's approval process for this change may still have been pending. The request was submitted before the competition deadline, and the subreddit will become publicly accessible as soon as Reddit completes the change.
-
-If access is temporarily unavailable due to this approval process, it is the result of Reddit's moderation workflow rather than the project itself.

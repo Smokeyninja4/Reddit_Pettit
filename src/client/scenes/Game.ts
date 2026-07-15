@@ -530,8 +530,7 @@ export class Game extends Scene {
       .setInteractive({ useHandCursor: true })
       .on('pointerdown', () => this.changeHallArchivePage(1));
 
-    const desktopNavConfig: Array<{ label: string; view: OverlayView | null; color: string }> = [
-      { label: 'Main View', view: null, color: '#6f4aa5' },
+    const desktopNavConfig: Array<{ label: string; view: OverlayView; color: string }> = [
       { label: 'Journal', view: 'journal', color: '#8d6a3f' },
       { label: 'Inventory', view: 'inventory', color: '#7c5b39' },
       { label: 'Stats', view: 'stats', color: '#4b6a9d' },
@@ -549,11 +548,7 @@ export class Game extends Scene {
         .setDepth(5)
         .setInteractive({ useHandCursor: true })
         .on('pointerdown', () => {
-          if (view) {
-            void this.openOverlay(view);
-          } else {
-            this.closeHallOverlay();
-          }
+          void this.openOverlay(view);
         });
       this.desktopNavButtons.push(button);
     });
@@ -936,9 +931,10 @@ export class Game extends Scene {
     }
 
     this.layoutNavigation(metrics, railWidth);
+    const contentStartY = Math.max(metrics.contentTop, this.summaryText.y + this.summaryText.height + metrics.gap);
 
     if (metrics.mode === 'desktop') {
-      this.layoutDesktopDashboard(metrics, railWidth);
+      this.layoutDesktopDashboard(metrics, railWidth, contentStartY);
     } else {
       this.layoutMobileDashboard(metrics);
     }
@@ -1017,17 +1013,17 @@ export class Game extends Scene {
     return metrics.mode === 'desktop' && !this.shouldUseReflowDesktopLayout(metrics) && panelWidth >= 720;
   }
 
-  private layoutDesktopDashboard(metrics: LayoutMetrics, railWidth: number): void {
+  private layoutDesktopDashboard(metrics: LayoutMetrics, railWidth: number, contentStartY: number): void {
     const compactDesktop = metrics.frameWidth < 980;
     const resolvedRailWidth = compactDesktop ? clamp(Math.round(metrics.frameWidth * 0.11), 108, 128) : railWidth;
     const usableWidth = metrics.frameWidth - metrics.padding * 2 - resolvedRailWidth - metrics.gap;
     const leftX = metrics.frameLeft + metrics.padding + resolvedRailWidth + metrics.gap;
-    const top = metrics.contentTop;
+    const top = contentStartY;
     const topAreaHeight = metrics.contentBottom - top;
 
     if (this.shouldUseReflowDesktopLayout(metrics)) {
       const topRowHeight = clamp(Math.round(topAreaHeight * 0.26), 154, 194);
-      const summaryHeight = clamp(Math.round(topAreaHeight * 0.075), 48, 58);
+      const summaryHeight = clamp(Math.round(topAreaHeight * 0.05), 34, 40);
       const heroWidth = clamp(Math.round(usableWidth * 0.64), 400, usableWidth - 280);
       const traitWidth = usableWidth - heroWidth - metrics.gap;
       const actionHeight = topAreaHeight - topRowHeight - summaryHeight - metrics.gap * 2;
@@ -1137,7 +1133,7 @@ export class Game extends Scene {
 
     const traitHeight = clamp(Math.round(topAreaHeight * 0.31), 150, 214);
     const topActionHeight = clamp(Math.round(topAreaHeight * 0.24), 124, 176);
-    const memoryHeight = clamp(Math.round(topAreaHeight * 0.17), 96, 144);
+    const memoryHeight = Math.max(topAreaHeight - traitHeight - topActionHeight - metrics.gap * 2, 120);
     const traitFrame: PanelFrame = { x: rightX, y: top, width: rightWidth, height: traitHeight };
     const topActionFrame: PanelFrame = {
       x: rightX,
@@ -1362,8 +1358,8 @@ export class Game extends Scene {
       );
       this.futureSlotText.setPosition(innerX + innerWidth - 18, this.moodBadgeText.y + this.moodBadgeText.height + 10);
       this.futureSlotText.setOrigin(1, 0);
-      this.creatureCaptionText.setVisible(metrics.mode === 'desktop');
-      this.futureSlotText.setVisible(metrics.mode === 'desktop');
+      this.creatureCaptionText.setVisible(false);
+      this.futureSlotText.setVisible(false);
     }
   }
 
@@ -1843,7 +1839,7 @@ export class Game extends Scene {
     this.moodBadgeText.setText(this.formatMoodBadge(pettit.mood));
     this.applyMoodBadgeStyle(pettit.mood);
     this.futureSlotText.setText(
-      useReflowDesktop
+      metrics.mode === 'desktop'
         ? ''
         : pettit.canReceiveCommunityName
           ? `Raised by the community.\n${pettit.birthdaySummary}.\nUse the subreddit menu to submit name ideas for Pettit.`
@@ -1873,7 +1869,7 @@ export class Game extends Scene {
       this.memoryBodyText.setText(
         recentMemories
           .map((memory) => this.formatMemoryPreview(memory.title))
-          .join('\n\n')
+          .join('\n')
       );
     } else {
       this.memoryBodyText.setText(`No memories yet. The first resolved encounter will give ${pettit.name} a first page worth keeping.`);
