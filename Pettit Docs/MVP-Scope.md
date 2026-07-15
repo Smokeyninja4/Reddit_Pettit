@@ -59,13 +59,31 @@ If a feature is not listed here, it is not required for submission.
 
 ---
 
+## Community Contributions
+
+* community gift rounds
+* community gift submissions
+* Pettit naming
+* gift naming
+* landmark naming
+
+---
+
+## Progression And Continuity
+
+* inventory / keepsakes
+* milestones
+* seasonal events
+* expanded memory browsing
+* mobile, desktop, and fullscreen expanded layouts
+
+---
+
 # Nice To Have
 
-* inventory
-* gifts
-* achievements
-* seasonal events
-* community naming
+* more encounter variety
+* additional presentation polish
+* extra quality-of-life guidance and onboarding copy
 
 ---
 

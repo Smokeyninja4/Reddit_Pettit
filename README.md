@@ -14,7 +14,7 @@ The community votes on decisions, shapes its personality, creates memories, and 
 
 Submission candidate: polished first playable dashboard build
 
-The current build supports a single shared Pettit per subreddit, one active daily encounter, persistent memories and journals in Redis, automated daily advancement, moderator-only manual resolve/reset operations, trait feedback after resolves, community gifts and naming, seasonal story moments, milestones, and a polished expanded dashboard UI.
+The current build supports a single shared Pettit per subreddit, one active daily encounter, persistent memories and journals in Redis, automated daily advancement, moderator-only manual resolve/reset operations, trait feedback after resolves, community gifts and naming, seasonal story moments, milestones, and a submission-polished expanded dashboard UI across mobile, desktop, and fullscreen layouts.
 
 ## Current Features
 
@@ -24,7 +24,8 @@ The current build supports a single shared Pettit per subreddit, one active dail
 - Trait feedback after each resolved community choice
 - Community gift rounds, naming, keepsakes, and shared milestones
 - Expanded Phaser dashboard with hero, encounter, journal, memories, traits, and progress widgets
-- Mobile, desktop, and fullscreen preview support with stabilized viewport switching
+- Submission-polished mobile, desktop, and fullscreen layouts with stabilized viewport switching
+- Subreddit-moderator authorization for operational resolve/reset actions
 
 ## Project Structure
 
@@ -69,5 +70,4 @@ During the final weeks of development, my family experienced a bereavement which
 This note is not included as an excuse or in the hope of receiving special consideration. The project should be judged on what has been submitted. I simply wanted to provide context for why some planned content, polish, and quality-of-life improvements remain unfinished.
 
 Pettit is a project I genuinely care about and intend to continue developing at a later date after the competition. This submission represents the **first public milestone** of that journey rather than its final form, and I hope it demonstrates the direction and potential of the project.
-
 

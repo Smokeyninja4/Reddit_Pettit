@@ -37,10 +37,10 @@ Use this as the final manual sign-off sheet for the V1 submission candidate.
 
 - [ ] The naming form opens from the subreddit menu when a target is eligible.
 - [ ] A normal user can submit one name per target.
+- [ ] A subreddit moderator can submit more than one name for the same target when testing or curating a ballot.
 - [ ] Duplicate candidate names are rejected.
 - [ ] After three valid submissions, the naming ballot becomes eligible in the main encounter loop.
 - [ ] Resolving a naming encounter writes the canon name into the world and persists it after refresh.
-- [ ] Naming submissions allow one submission per user per target.
 
 ## Community Gift Contributions
 
@@ -48,6 +48,7 @@ Use this as the final manual sign-off sheet for the V1 submission candidate.
 - [ ] Gift name, category, and description validation works.
 - [ ] Duplicate gift ideas are rejected cleanly.
 - [ ] A user can submit only one gift idea per filling ballot.
+- [ ] A subreddit moderator can submit more than one gift idea to the same filling ballot when testing or curating it.
 - [ ] After three valid submissions, the community gift ballot becomes eligible in the main encounter loop.
 - [ ] Resolving that encounter creates a persistent keepsake and normal memory/journal output.
 
